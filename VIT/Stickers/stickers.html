@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Киоски · Стикеры — прототип на ДС</title>
+<!--
+  ЭКРАН S1 «Управление киосками → Стикеры» — справочник стикеров (kiosk-management → «Стикеры»).
+  ОТКУДА ЧТО ВЗЯТО:
+    • постановка — вики VIT 181778772 «Управление стикерами» (задачи PB-8147 / WEB-23823 / WEB-23824,
+      ЯТ NKP-1221); подписи в разметке — дословно из сценариев B-01…B-09 раздела «Стикеры»:
+      «Стикеры», «Внешнее меню», «Добавить», «Изображение», «Наименование стикера», «Описание»,
+      «Где размещён», «Удалить», «Отменить», «Очистить выбор», «Ничего не найдено»;
+    • каркас — по образцу раздела «Баннеры» (VIT/Banners, banners-spisok.html): подключение одной
+      строкой, статичная разметка, свой скрипт только на клики;
+    • плашка ревью, шапка и боковое меню приложения — из `../../Design-System/connect.js` (сами, не собираются);
+    • организмы подключаются вручную по своим readme: `app-header-content` (шапка раздела: заголовок,
+      поиск и «+ Добавить» — постановка B-02/B-04), `app-table-header-actions` (полоса таблицы:
+      «Выбрано: N» + крестик очистки, справа — массовое «Удалить»; показывается только при выборе строк);
+    • компоненты ДС: Tabs (вкладки раздела «Стикеры»/«Внешнее меню»), Button, Button group, Button icon,
+      Search (XS → S, механика организма header-content), Table (шапка через Element cell + Text UI,
+      чекбоксы строк через Element cell --checkbox), Checkbox, Dialog + Backdrop, Snackbar,
+      Text UI (многозначные ячейки обычным текстом — «ещё»/«свернуть», как в баннерах), Icon size, Divider;
+    • иконки — Material Icons лигатурой (правило ДС), кроме глифов наборов организмов:
+      шапка `app-header-content` (search, close, search-off, add — data-hc-icon) и полоса
+      `table-header-actions` (close, delete-negative — data-tha-icon) — их подставляют модули организмов
+      из точных SVG Figma; инлайн-спрайт — только стрелка сортировки;
+    • миниатюры «Изображение» — заглушки-картинки контента (байтов стикеров в прототипе нет):
+      цвет/подпись стикера, у стикеров без подписи — иконка; САМ СТИКЕР = картинка, не компонент ДС,
+      поэтому вид миниатюры — обвязка контента (.st-thumb), цвета заданы в <style> со сноской;
+    • поведение — как на стендах и в баннерах: удаление — с модалкой подтверждения (ТЗ B-06/B-08,
+      «Удалить»/«Отменить»; в отличие от баннеров — НЕ снэкбар-undo); привязки стикера удаляются
+      вместе с ним (F-4/F-13); чекбокс заголовка выделяет всё (индент при частичном выборе);
+      название строки — ссылка (открывает карточку, как в баннерах), иконка удаления — по наведению;
+      иконки «изменить» в строке нет (правило ДС; ТЗ — рекомендация); поиск — по названию;
+      пустые состояния: «Стикеров пока нет» (старт) ≠ «Ничего не найдено» (поиск).
+    • вне ДС — только раскладка (классы .page/.t-c*/.sec-tabs/.t-empty/.counter), помечено в <style>.
+-->
+<script src="sidenav-menu.js"></script>
+<script>window.DSR_NO_CHROME = true;</script>
+<script src="../../../Design-System/connect.js" defer></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
+<script src="../../../Design-System/organisms/app-header-content/header-content.js?v=1" defer></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-table-header-actions/table-header-actions.css?v=3">
+<script src="../../../Design-System/organisms/app-table-header-actions/table-header-actions.js?v=3" defer></script>
+<style>
+  html, body { margin: 0; font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+
+  /* шапка приложения — для этого проекта без меню ресторанов, периода/календаря и поиска
+     (как в баннерах, 20.10; остаются помощь и уведомления; сам организм не меняем) */
+  .apph__store, .apph__tabs, .apph__pill, .apph__cal, .apph__search, .apph__mpill, .apph__mright { display: none !important; }
+
+  /* иконки — только Material Icons Outlined (правило) */
+  .material-icons { font-family: 'Material Icons Outlined'; }
+
+  /* ── раскладка страницы (вне ДС) ─────────────────────────────────────────── */
+  .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
+  @media (max-width: 1160px) { .frame { padding: var(--ds-space-5x, 20px) var(--ds-space-4x, 16px) var(--ds-space-6x, 24px); } }
+
+  .page { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  /* Полоса→таблица — 8 (правило 19.10) ТОЛЬКО при видимой полосе;
+     без полосы от заголовка раздела до таблицы — 16 (гайд) */
+  .page > #strip:not([hidden]) + .tbl,
+  .page > #strip:not([hidden]) + .t-empty { margin-top: calc(var(--ds-space-2x, 8px) - var(--ds-space-4x, 16px)); }
+
+  /* вкладки раздела «Стикеры» / «Внешнее меню» (ТЗ: раздел делится на два таба);
+     переход на таб — как в приложении (другая страница прототипа) */
+  .sec-tabs { margin: 0; }
+
+  /* полоса таблицы — только в режиме выбора (показывается/скрывается скриптом) */
+  #strip[hidden] { display: none !important; }
+  .tha__sel { display: flex; align-items: center; gap: var(--ds-size-2x, 8px); min-width: 0; }
+
+  /* косяк выгрузки ДС: у полос таблицы артбордный width: fit-content — полосы не тянутся на всю
+     ширину; в прототипе полосы — по контейнеру */
+  .tbl .ds-table-header-row, .tbl .ds-table-content-row { width: 100%; }
+
+  /* ── миниатюры стикеров (заглушки контента: цвет/подпись = картинка стикера, не компонент ДС) ── */
+  .st-thumb { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    min-width: 44px; height: 28px; padding: 0 var(--ds-space-2x, 8px);
+    border-radius: var(--ds-radius-1-5x, 6px);
+    background: var(--st-c, #e0e0e0); color: var(--st-t, #ffffff);
+    font: var(--ds-font-caption-l-12-normal-medium); letter-spacing: var(--ds-font-caption-l-12-normal-medium-spacing);
+    white-space: nowrap; }
+  .st-thumb--icon { background: var(--ds-color-surface-default, #ffffff);
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0); color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .st-thumb--icon .material-icons { font-size: var(--ds-size-5x, 20px); line-height: var(--ds-size-5x, 20px); }
+
+  /* таблица: ширины колонок — обвязка (правило спеки Table: ширины задаются на ячейках);
+     по самому длинному в колонке (шапка: текст + зазор 8 + иконка 20; контент + паддинги 16);
+     «Наименование стикера» — ПЕРВАЯ колонка после чекбокса (активная, со ссылкой на редактирование —
+     правило 03.11.2026). Ширины считает fitColumns() автоматически по данным: если текста станет
+     больше — колонка подстроится сама; свободное место распределяется отступами между колонками,
+     а не одной широкой колонкой (ниже — только fallback-ширины) */
+  .t-c-check { width: 36px; flex: none; }   /* ширина чекбокс-ячейки 36 — как на стенде Table */
+  .t-c-img { width: 108px; flex: none; }    /* шапка «Изображение» 91.2 + 16 */
+  .t-c-name { width: 209px; flex: none; }   /* шапка «Наименование стикера» 165 + зазор 8 + иконка сортировки 20 + паддинги 16 — в ОДНУ строку */
+  .t-c-desc { width: 188px; flex: none; }   /* самое длинное описание «Стикер для новых блюд» 169.3 + 16 — в ОДНУ строку */
+  .t-c-where { width: 187px; flex: none; }   /* «Киоск: Основное меню» ~171 + 16; свободное место распределяет fitColumns() */
+  .t-c-actions { flex: 0 0 44px; width: auto; justify-content: flex-end; }   /* под действие: одна иконка удаления 28 + паддинги 8+8 (заказчик 03.11.2026: колонка подстраивается под действия) */
+  .ds-table-header-cell.t-c-actions { flex: 0 0 44px; width: auto; }
+
+  /* Контент в ячейках прижат к ВЕРХУ всегда (заказчик 19.10.2026); в css ДС у
+     .ds-table-content-cell стоит align-items: center — перекрываем обвязкой */
+  .tbl .ds-table-content-cell { align-items: flex-start; }
+  /* иконки миниатюр — по центру ячейки (правило 19.10) */
+  .tbl .ds-table-content-cell.t-c-img { justify-content: center; }
+
+  /* разделители шапки: после чекбокс-ячейки линии нет (как на стенде Table) */
+  .tbl .ds-table-header-cell.t-c-check + .ds-table-header-cell::before { content: none; }
+
+  /* сортировка — как на стенде Table (журнал ДС №177): клик по колонке переставляет строки,
+     активная колонка — Icon/Accent, повторный клик разворачивает стрелку */
+  .ds-table-header-cell[data-sort] { cursor: pointer; }
+  .ds-table-header-cell[data-sort] .ds-icon-size { color: var(--ds-color-icon-primary, #616161); }
+  .ds-table-header-cell[data-sort] svg { position: relative; transition: transform .15s ease; }
+  .ds-table-header-cell[data-dir="asc"] svg { transform: rotate(180deg); }
+  .ds-table-header-cell.th-active .ds-text-ui__element-right .ds-icon-size { color: var(--ds-color-icon-accent, #448aff); }
+
+  /* Ховер — ОДИН ТОН НА ВСЮ СТРОКУ (замечание заказчика 16.10): Table surfase/Hover #F5F5F5;
+     отдельной подсветки ячейки нет, рамки ячейки при наведении нет */
+  .tbl .ds-table-content-cell:hover:not(:focus):not(:focus-within):not(.t-c-actions) { background: transparent; }
+  /* ховер ячейки — только у действенных: название стикера — ссылка на карточку
+     (слой ДС: фон Neutral/100 #EBEBEB; журнал ДС №176/№197) */
+  .tbl .ds-table-content-cell.t-c-name:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
+  .tbl .ds-table-content-cell:focus, .tbl .ds-table-content-cell:focus-within { box-shadow: none; }
+  .tbl .ds-table-content-cell:hover { border: none; }
+
+  /* колонка действий: иконка удаления скрыта до наведения на строку
+     (правило ДС: на страницах действия не показываются постоянно; иконки «изменить» в строке нет —
+     редактирование открывается ссылкой на названии, как в баннерах);
+     при наведении колонка прижимается к правому краю видимой области (как в баннерах) */
+  .t-row-actions { display: inline-flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .12s ease; }
+  .ds-table-content-row:hover .t-row-actions,
+  .ds-table-content-row:focus-within .t-row-actions { opacity: 1; }
+  .t-row-actions .row-del { color: var(--ds-color-text-negative, #ff5252); }
+  .t-row-actions .ds-icon-size { color: inherit; }
+  .t-row-actions [hidden] { display: none !important; }
+  .tbl .ds-btn-icon:focus, .tbl .ds-btn-icon:focus-visible { outline: none; }
+  .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions,
+  .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions:hover,
+  .tbl .ds-table-content-row:focus-within > .ds-table-content-cell.t-c-actions {
+    position: sticky; right: 0; z-index: 3;
+    background: var(--ds-color-table-row-content-hover-background, #f5f5f5);
+  }
+  .tbl .ds-table-content-row--selected:hover > .ds-table-content-cell.t-c-actions,
+  .tbl .ds-table-content-row--selected:focus-within > .ds-table-content-cell.t-c-actions {
+    background: var(--ds-palette-accent-5, #f8f9fc);
+  }
+
+  /* многозначная ячейка «Где размещён» и «Описание» — обычным текстом (чипсы не используются);
+     максимум 2 строки, при переполнении — ссылка «ещё» сразу за обрезанным текстом в конце
+     2-й строки (как в баннерах; к правому краю НЕ прижимается — подстраивается под контент);
+     исключение (заказчик 03.11.2026): ячейка .t-c-desc-fixed — фиксированный короткий текст
+     (~1,5 строки), «ещё» нет */
+  .t-c-where .ds-text-ui__list-item, .t-c-desc .ds-text-ui__list-item { display: block; white-space: normal; overflow-wrap: break-word; }
+  /* обвязка ячейки тянется на всю ширину колонки: у выгрузки ДС .ds-table-content-cell__element и
+     .ds-element-cell — width: fit-content, ячейка оказывается уже своего блока, и текст обрезается
+     по узкой обвязке, а не по колонке (03.11.2026); цепочка до текста — display:block на всю ширину */
+  .t-c-where .ds-table-content-cell__element, .t-c-desc .ds-table-content-cell__element,
+  .t-c-where .ds-element-cell, .t-c-desc .ds-element-cell,
+  .t-c-where .ds-text-ui, .t-c-desc .ds-text-ui,
+  .t-c-where .ds-text-ui__content, .t-c-desc .ds-text-ui__content { display: block; width: 100%; min-width: 0; }
+  /* «ещё»/«свернуть» — сразу за текстом (как в баннерах), временный вид ссылки:
+     в ДС состояния Link нет — Text/Accent + подчёркивание (косяк ДС) */
+  .cell-more-link { border: 0; background: none; padding: 0 2px; margin: 0;
+    font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-ui-link-text-color, #448aff); cursor: pointer; }
+  /* ссылка — сразу синяя, подчёркивания на ховере НЕТ (заказчик 06.11.2026: «У нас нет и не было никогда при наведении подчёркивания») */
+  /* название строки — ссылка (как в баннерах: открывает карточку; в ДС состояния Link нет —
+     Text/Accent + подчёркивание по наведению, косяк ДС) */
+  .g-name-btn { border: 0; background: none; padding: 0; text-align: left;
+    font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-ui-link-text-color, #448aff); cursor: pointer; }
+  /* без подчёркивания на ховере (заказчик 06.11.2026) */
+  /* ховер-фон — только у действенных ячеек (№176/№195): ссылка в названии и «ещё» */
+  .tbl .ds-table-content-cell.t-c-name:hover:not(:focus):not(:focus-within),
+  .tbl .ds-table-content-cell.t-c-desc:hover:not(:focus):not(:focus-within):has(.cell-more-link),
+  .tbl .ds-table-content-cell.t-c-where:hover:not(:focus):not(:focus-within):has(.cell-more-link) {
+    background: var(--ds-palette-neutral-100, #ebebeb);
+  }
+  .ds-table-content-cell .ds-text-ui { width: 100%; }
+
+  /* пустое состояние — объясняет ситуацию и даёт действие (E1 UX-памятки) */
+  .t-empty { display: flex; flex-direction: column; align-items: center; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-space-8x, 32px) var(--ds-space-4x, 16px) var(--ds-space-10x, 40px); }
+  /* серая — ТОЛЬКО большая иконка пустого состояния (прямой потомок). Иконки внутри кнопки
+     наследуют цвет кнопки (у Accent Filled — Text/Inversive #FFFFFF), иначе знак «+» был серым
+     на синем (баг 06.11.2026: селектор цеплял и .ds-btn__icon) */
+  .t-empty > .ds-icon-size { color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .t-empty .ds-btn .ds-icon-size { color: inherit; }
+  .t-empty__title { font: var(--ds-font-body-m-16-normal-medium); color: var(--ds-color-text-primary, #333333); }
+  .t-empty__text { font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-secondary, #616161); text-align: center; }
+
+  /* раскрытое поле поиска — механика стенда организма header-content (CSS оттуда же) */
+  .hc-search[hidden] { display: none; }
+  .hc-search__input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0;
+    font: inherit; color: var(--ds-color-search-focusvalue-text-color, #333333); }
+  .hc-search__input::placeholder { color: var(--ds-color-search-focus-text-color, #d6d6d6); opacity: 1; }
+  .hc-search:focus-within { border-color: var(--ds-color-search-focus-border-color, #448aff); }
+  .hc-search .ds-search__right-icon { align-self: stretch; }
+  .hc-search .ds-search__right-icon > .ds-divider { width: 1px; height: 100%; flex: none; }
+
+  /* ── диалог удаления — компонент Dialog ДС + Backdrop (анатомия: шапка 24/24/8,
+     контент 8/24/8, подвал 16/24 — токены ДС, высота по контенту) ── */
+  .dlg-dim { position: fixed; inset: 0; z-index: 100; opacity: .15; }
+  .dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 110;
+    min-height: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); }
+  .dlg[hidden], .dlg-dim[hidden] { display: none !important; }
+  .dlg .ds-dialog-header { width: 100%; gap: var(--ds-dialog-header-gap, 8px);
+    padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px)
+             var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
+  .dlg .ds-dialog-header__label { white-space: normal; }
+  .dlg .ds-dialog-header__description { background: none; }
+  .dlg .ds-dialog-view__action { height: auto; flex-direction: row; justify-content: flex-end; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-dialog-footer-pad-top, 16px) var(--ds-dialog-footer-pad-right, 24px)
+             var(--ds-dialog-footer-pad-bottom, 16px) var(--ds-dialog-footer-pad-left, 24px); }
+
+  /* предпросмотр стикера (как в баннерах, B-21): клик по миниатюре «Изображение» открывает попап;
+     контент диалога — по анатомии Dialog view (8/24/8); ширина 720 и площадка 160 — как в баннерах */
+  .dlg .ds-dialog-content { width: 100%; min-height: 0; padding: var(--ds-dialog-content-pad-top, 8px) var(--ds-dialog-content-pad-right, 24px)
+    var(--ds-dialog-content-pad-bottom, 8px) var(--ds-dialog-content-pad-left, 24px); overflow-y: auto; }
+  .dlg.preview-dlg { width: 720px; }
+  .dlg .ds-dialog-content.preview-body { min-height: 160px; }
+  .preview-body { display: flex; flex-direction: column; align-items: center; gap: var(--ds-space-3x, 12px); justify-content: center; width: 100%; }
+  .preview-file { font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-secondary, #616161); text-align: center; }
+  .st-thumb--lg { height: 56px; min-width: 120px; padding: 0 24px; font-size: 24px; border-radius: var(--ds-radius-2x, 8px); }
+  .st-thumb--lg.st-thumb--icon { width: 120px; height: 120px; }
+  .st-thumb--lg.st-thumb--icon .material-icons { font-size: 56px; line-height: 56px; }
+  /* миниатюра в таблице — кликабельная (открывает предпросмотр) */
+  .t-c-img { cursor: pointer; }
+
+  /* тост — Snackbar (компонент ДС, Single Dark) */
+  .sb { position: fixed; left: 50%; bottom: var(--ds-space-6x, 24px); transform: translateX(-50%); z-index: 130; max-width: 560px; }
+  .sb[hidden] { display: none !important; }
+  .sb [hidden] { display: none !important; }
+  .sb .ds-snackbar__icon { color: #ffffff; }
+  .sb--negative .ds-snackbar__icon { color: var(--ds-color-icon-negative, #ff5252); }
+  .sb--positive .ds-snackbar__icon { color: var(--ds-color-icon-positive, #14b456); }
+  .sb .ds-snackbar__icon .material-icons { font-size: var(--ds-size-5x, 20px); line-height: var(--ds-size-5x, 20px); }
+  .sb .ds-snackbar__progress { transform-origin: right center; }
+  .sb--run .ds-snackbar__progress { animation: sb-count 5s linear forwards; }
+  @keyframes sb-count { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+  /* hidden поверх авторских display у ds-* классов */
+  .page [hidden] { display: none !important; }
+</style>
+<style>
+  /* Разделитель строк таблицы: у ПОСЛЕДНЕЙ строки линии нет (правило заказчика 06.11.2026).
+     :has(~ …:not([hidden])) — именно последняя ВИДИМАЯ: учтены строки, скрытые поиском/фильтром.
+     Заголовки групп аккордеона (.group-row) — не строки данных, их линия остаётся всегда. */
+  .ds-table-content-row:not(.group-row):not([hidden]):not(:has(~ .ds-table-content-row:not([hidden]))) { border-bottom: 0; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sort" viewBox="0 0 20 20"><path transform="translate(5 4.58333)" d="M5 10.8333L0 5.83333L1.16667 4.66667L4.16667 7.66667V0H5.83333V7.66667L8.83333 4.66667L10 5.83333L5 10.8333Z"/></symbol>
+</svg>
+<style>/* спрайтовые иконки: fill ставится на сам svg — селектор «svg path» не доходит до содержимого use */
+.ds-icon-size svg, .ds-btn__icon svg, .ds-btn-icon__icon svg { fill: currentColor; }</style>
+
+<div class="page">
+
+  <!-- Шапка раздела — организм header-content: заголовок, ПОИСК и ДЕЙСТВИЯ (Search XS + Button).
+       Постановка B-02: поиск — по совпадению названия стикера; B-04: «+ Добавить» открывает карточку.
+       Заголовок с кнопками — ВЫШЕ табов раздела (макет 04-tab-vm: шапка сверху, табы под ней). -->
+  <header class="hc">
+    <div class="hc__left">
+      <div class="ds-text-ui hc__title">
+        <span class="ds-text-ui__content"><span class="ds-text-ui__list-item hc__heading">Стикеры</span></span>
+      </div>
+    </div>
+    <div class="hc__right">
+      <span class="ds-search ds-search--xs hc__search" role="button" tabindex="0" aria-label="Поиск по названию">
+        <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><img data-hc-icon="search" width="20" height="20" alt=""></span></span>
+      </span>
+      <!-- раскрытое поле поиска — механика стенда организма: круглая Search XS раскрывается в поле Search S -->
+      <span class="ds-search ds-search--s hc-search" id="hc-search" hidden>
+        <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><img data-hc-icon="search" width="20" height="20" alt=""></span></span>
+        <input class="ds-search__label hc-search__input" type="text" id="searchInput" placeholder="Поиск по названию" aria-label="Поиск по названию">
+        <span class="ds-search__right-icon"><span class="ds-divider"></span><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><img data-hc-icon="search-off" width="20" height="20" alt=""></span></span>
+      </span>
+      <div class="ds-btn-group ds-btn-group--horizontal hc__actions">
+        <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="addBtn" onclick="location.href='sticker-card.html?w=1440'">
+          <span class="ds-btn__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">add</span></span></span>
+          <span class="ds-btn__label">Добавить</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Вкладки раздела (ТЗ: раздел делится на два таба) — под заголовком (макет 04) -->
+  <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
+    <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Стикеры</button>
+    <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="external-menu.html?state=list">Внешнее меню</button>
+  </div>
+
+  <!-- Полоса таблицы — организм table-header-actions: в обычном режиме скрыта (выбор не идёт);
+       при выборе строк: слева «Выбрано: N» + крестик очистки, справа — «Удалить» (B-07/B-08).
+       Иконки полосы — из набора организма по data-tha-icon. -->
+  <div class="tha" id="strip" hidden>
+    <div class="tha__left">
+      <span class="tha__sel">
+        <span class="tha__title" id="selCount">Выбрано: 0</span>
+        <div class="tha__after">
+          <button type="button" class="tha__text-action" id="selClear" aria-label="Очистить выбор"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><img data-tha-icon="close" width="20" height="20" alt=""></span></button>
+        </div>
+      </span>
+    </div>
+    <div class="tha__right">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--negative ds-btn--text" aria-label="Удалить выбранные" title="Удалить" id="massDelete">
+        <span class="ds-btn__icon"><img data-tha-icon="delete-negative" width="20" height="20" alt=""></span>
+        <span class="ds-btn__label">Удалить</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Таблица справочника (ТЗ п.2.2): чекбокс · Наименование стикера · Изображение · Описание ·
+       Где размещён; наименование — ПЕРВАЯ колонка (активная, ссылка на карточку — как в баннерах),
+       иконка удаления по наведению -->
+  <div class="tbl">
+    <div class="ds-table-header-row">
+      <div class="ds-table-header-cell t-c-check"><div class="ds-element-cell ds-element-cell--checkbox"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" data-check-all aria-label="Выбрать все стикеры"><span class="ds-checkbox__box"></span></label></div></div>
+      <div class="ds-table-header-cell t-c-name" data-sort="name"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Наименование стикера</span></div><span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><svg width="20" height="20" aria-hidden="true"><use href="#i-sort"/></svg></span></span></div></div></div>
+      <div class="ds-table-header-cell t-c-img"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Изображение</span></div></div></div></div>
+      <div class="ds-table-header-cell t-c-desc"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Описание</span></div></div></div></div>
+      <div class="ds-table-header-cell t-c-where"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Где размещён</span></div></div></div></div>
+      <div class="ds-table-header-cell t-c-actions"></div>
+    </div>
+    <div id="rows"></div>
+  </div>
+
+  <!-- Пустое состояние — E1 UX-памятки: старт («Стикеров пока нет» + «+ Добавить»)
+       ≠ «Ничего не найдено» (поиск без совпадений; кнопка сбрасывает поиск) -->
+  <div class="t-empty" id="tEmpty" hidden>
+    <span class="ds-icon-size ds-icon-size--6x"><span class="material-icons" id="tEmptyIcon" aria-hidden="true">search_off</span></span>
+    <span class="t-empty__title" id="tEmptyTitle">Ничего не найдено</span>
+    <span class="t-empty__text" id="tEmptyText">Измените условия поиска.</span>
+    <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="tEmptyAdd" hidden><span class="ds-btn__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">add</span></span></span><span class="ds-btn__label">Добавить</span></button>
+    <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="tEmptyAction" hidden><span class="ds-btn__label">Сбросить поиск</span></button>
+  </div>
+</div>
+
+<!-- Диалог удаления (B-06/B-08) — компонент Dialog ДС + Backdrop; кнопки — Button ДС -->
+<div class="ds-backdrop dlg-dim" id="dlgDim" hidden></div>
+<div class="ds-dialog-view dlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container">
+      <span class="ds-dialog-header__label" id="dlgTitle">Удалить стикер</span>
+    </div>
+    <span class="ds-dialog-header__description" id="dlgText"></span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="dlgCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--negative ds-btn--filled" id="dlgConfirm"><span class="ds-btn__label">Удалить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- B-21 (как в баннерах): предпросмотр стикера по клику на миниатюру «Изображение» —
+     компонент Dialog ДС + Backdrop; картинок в прототипе нет — крупная миниатюра-заглушка -->
+<div class="ds-backdrop dlg-dim" id="previewDim" hidden></div>
+<div class="ds-dialog-view dlg preview-dlg" id="previewDlg" role="dialog" aria-modal="true" aria-labelledby="previewTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container">
+      <span class="ds-dialog-header__label" id="previewTitle">Предпросмотр</span>
+    </div>
+  </div>
+  <div class="ds-dialog-content preview-body" id="previewBody"></div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="previewClose"><span class="ds-btn__label">Закрыть</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Тост — Snackbar (компонент ДС, Single Dark) -->
+<div class="ds-snackbar ds-snackbar--single ds-snackbar--dark sb sb--neutral" id="snackbar" role="status" aria-live="polite" hidden>
+  <div class="ds-snackbar__body">
+    <span class="ds-snackbar__icon"><span class="material-icons" aria-hidden="true">info</span></span>
+    <div class="ds-snackbar__content"><span class="ds-snackbar__label" id="sbLabel"></span></div>
+  </div>
+  <div class="ds-snackbar__progress"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* Демо-данные в sessionStorage: одинаковое состояние во всех окнах и на всех адресах */
+  var __store = (function () {
+    try { window.sessionStorage.setItem('__t', '1'); window.sessionStorage.removeItem('__t'); return window.sessionStorage; }
+    catch (e) { return window.localStorage; }
+  })();
+
+  var qs = function (s, r) { return (r || document).querySelector(s); };
+  var qsa = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* ── данные (вики 181778772; демо-значения — как в макетах mockups/) ── */
+  var KEY = 'vitStickersData';
+
+  function seed() {
+    return {
+      v: 8,
+      stickers: [
+        { id: 'novinka', name: 'Новинка', desc: 'Стикер для новых блюд и акционных позиций: ставится на картинку продукта, чтобы гость сразу видел новинки в меню киоска. Размещается в одном из четырёх углов картинки, отображается на всех размерах блюда и на итоговой картинке комбо.', label: 'НОВИНКА', color: '#FF6B8A', textColor: '#FFFFFF', image: { fileName: 'novinka.svg', fileType: 'svg' } },
+        { id: 'hit', name: 'Хит', desc: 'Хит продаж — отмечает самые популярные блюда, которые гости заказывают чаще всего. Ставится на картинку продукта в выбранном углу и помогает выделить позиции с высоким спросом.', descShort: 'Хит продаж — отмечает самые популярные блюда, которые гости заказывают чаще всего.', label: 'ХИТ', color: '#90CAF9', textColor: '#1C2B46', image: { fileName: 'hit.svg', fileType: 'svg' } },
+        { id: 'vygodno', name: 'Выгодно', desc: 'Акция на блюдо — стикер для позиций, участвующих в акциях и специальных предложениях: выделяет выгодную цену и условия акции прямо на картинке продукта в киоске.', label: 'ВЫГОДНО', color: '#81C784', textColor: '#1C2B46', image: { fileName: 'vygodno.svg', fileType: 'svg' } },
+        { id: 'kombo', name: 'Комбо', desc: 'Комбо-предложение', label: 'КОМБО', color: '#66BB6A', textColor: '#1C2B46', image: { fileName: 'kombo.svg', fileType: 'svg' } },
+        { id: 'stm1', name: 'Стикермания 1', desc: 'Не используется', label: '', color: '', textColor: '', image: { fileName: 'stikermania-1.png', fileType: 'png' } },
+        { id: 'stm2', name: 'Стикермания 2', desc: '', label: '', color: '', textColor: '', image: { fileName: 'stikermania-2.png', fileType: 'png' } }
+      ],
+      menus: [
+        { id: 'kiosk-main', name: 'Киоск: Основное меню', versions: [{ id: 'base', name: 'Базовая', base: true }, { id: 'v1', name: 'v1' }] },
+        { id: 'kiosk-brk', name: 'Киоск: Завтрак', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'kiosk-night', name: 'Киоск: Ночное меню', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'adv-main', name: 'ADV: Основное меню', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'adv-brk', name: 'ADV: Завтрак', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'adv-night', name: 'ADV: Ночное меню', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'del-main', name: 'Delivery: Основное меню', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'del-brk', name: 'Delivery: Завтрак', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'del-night', name: 'Delivery: Ночное меню', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'test', name: 'Тест меню', versions: [{ id: 'base', name: 'Базовая', base: true }] },
+        { id: 'test-combo', name: 'Киоск: Основное меню (Тест Комбо в основной папке)', versions: [{ id: 'base', name: 'Базовая', base: true }] }
+      ],
+      catalog: {
+        'kiosk-main|base': [
+          { name: 'Соусы', items: [
+            { code: '3112', name: 'Соус Сырный + Соус Кисло-Сладкий', sys: 'СОУС СЫРН И КИСЛ-СЛАД', type: 'modifier', sizes: [] },
+            { code: '3111', name: 'Соус Сырный + Соус Сырный', sys: 'СОУС СЫРН И СОУС СЫРН', type: 'modifier', sizes: [] },
+            { code: '3114', name: 'Соус Кисло-сладкий + Соус Кисло-сладкий', sys: 'СОУС КИСЛ-СЛАД И КИСЛ-СЛАД', type: 'modifier', sizes: [] },
+            { code: '2364', name: 'Соус Сырный', sys: 'СОУС СЫРНЫЙ ПОРЦ', type: 'modifier', sizes: [] },
+            { code: '2371', name: 'Соус Кисло-сладкий', sys: 'СОУС КИСЛО-СЛАДКИЙ', type: 'modifier', sizes: [] },
+            { code: '2396', name: 'Соус 1000 островов', sys: 'СОУС "1000 ОСТРОВОВ"', type: 'modifier', sizes: [] },
+            { code: '2373', name: 'Соус Горчичный', sys: 'СОУС ГОРЧИЧНЫЙ', type: 'modifier', sizes: [] }
+          ] },
+          { name: 'Комбо', items: [
+            { code: '1001', name: 'Комбо Чикен Премьер', sys: 'КОМБО ЧИКЕН ПРЕМЬЕР', type: 'combo', sizes: [] },
+            { code: '1002', name: 'Комбо Ланч', sys: 'КОМБО ЛАНЧ', type: 'combo', sizes: [] }
+          ] },
+          { name: 'Напитки', items: [
+            { code: '8869', name: 'Чикен Премьер', sys: 'ЧИКЕН ПРЕМЬЕР', type: 'dish', sizes: ['Маленький', 'Средний'] },
+            { code: '3010', name: 'Картофель Фри', sys: 'КАРТОФЕЛЬ ФРИ', type: 'dish', sizes: ['Маленький', 'Средний'] },
+            { code: '2000', name: 'Гамбургер', sys: 'ГАМБУРГЕР', type: 'dish', sizes: [] },
+            { code: '2001', name: 'Чизбургер', sys: 'ЧИЗБУРГЕР', type: 'dish', sizes: [] },
+            { code: '2104', name: 'Пара Биг Хит', sys: 'ПАРА БИГ ХИТ', type: 'dish', sizes: [] },
+            { code: '3012', name: 'Капучино 300 мл', sys: 'КАПУЧИНО 300 МЛ', type: 'dish', sizes: [] },
+            { code: '3013', name: 'Латте 300 мл', sys: 'ЛАТТЕ 300 МЛ', type: 'dish', sizes: [] },
+            { code: '3014', name: 'Американо 250 мл', sys: 'АМЕРИКАНО 250 МЛ', type: 'dish', sizes: [] }
+          ] }
+        ],
+        'kiosk-main|v1': [
+          { name: 'Соусы', items: [
+            { code: '3112', name: 'Соус Сырный + Соус Кисло-Сладкий', sys: 'СОУС СЫРН И КИСЛ-СЛАД', type: 'modifier', sizes: [] },
+            { code: '3114', name: 'Соус Кисло-сладкий + Соус Кисло-сладкий', sys: 'СОУС КИСЛ-СЛАД И КИСЛ-СЛАД', type: 'modifier', sizes: [] },
+            { code: '2371', name: 'Соус Кисло-сладкий', sys: 'СОУС КИСЛО-СЛАДКИЙ', type: 'modifier', sizes: [] }
+          ] },
+          { name: 'Комбо', items: [ { code: '1001', name: 'Комбо Чикен Премьер', sys: 'КОМБО ЧИКЕН ПРЕМЬЕР', type: 'combo', sizes: [] } ] },
+          { name: 'Бургеры', items: [
+            { code: '2000', name: 'Гамбургер', sys: 'ГАМБУРГЕР', type: 'dish', sizes: [] },
+            { code: '2001', name: 'Чизбургер', sys: 'ЧИЗБУРГЕР', type: 'dish', sizes: [] },
+            { code: '2104', name: 'Пара Биг Хит', sys: 'ПАРА БИГ ХИТ', type: 'dish', sizes: [] }
+          ] },
+          { name: 'Напитки', items: [
+            { code: '3010', name: 'Картофель Фри', sys: 'КАРТОФЕЛЬ ФРИ', type: 'dish', sizes: ['Маленький', 'Средний'] },
+            { code: '3012', name: 'Капучино 300 мл', sys: 'КАПУЧИНО 300 МЛ', type: 'dish', sizes: [] }
+          ] }
+        ],
+        'kiosk-brk|base': [
+          { name: 'Завтраки', items: [
+            { code: '4001', name: 'Омлет с беконом', sys: 'ОМЛЕТ С БЕКОНОМ', type: 'dish', sizes: [] },
+            { code: '4002', name: 'Сырники со сметаной', sys: 'СЫРНИКИ СО СМЕТАНОЙ', type: 'dish', sizes: [] }
+          ] },
+          { name: 'Напитки', items: [ { code: '3012', name: 'Капучино 300 мл', sys: 'КАПУЧИНО 300 МЛ', type: 'dish', sizes: [] } ] }
+        ],
+        'kiosk-night|base': [
+          { name: 'Основное', items: [
+            { code: '5001', name: 'Крылья BBQ', sys: 'КРЫЛЬЯ BBQ', type: 'dish', sizes: [] },
+            { code: '5002', name: 'Наггетсы', sys: 'НАГГЕТСЫ', type: 'dish', sizes: [] }
+          ] }
+        ],
+        'adv-main|base': [
+          { name: 'Бургеры', items: [ { code: '2000', name: 'Гамбургер', sys: 'ГАМБУРГЕР', type: 'dish', sizes: [] } ] },
+          { name: 'Соусы', items: [ { code: '2371', name: 'Соус Кисло-сладкий', sys: 'СОУС КИСЛО-СЛАДКИЙ', type: 'modifier', sizes: [] } ] }
+        ],
+        'adv-brk|base': [
+          { name: 'Завтраки', items: [ { code: '4001', name: 'Омлет с беконом', sys: 'ОМЛЕТ С БЕКОНОМ', type: 'dish', sizes: [] } ] }
+        ],
+        'adv-night|base': [
+          { name: 'Основное', items: [ { code: '5001', name: 'Крылья BBQ', sys: 'КРЫЛЬЯ BBQ', type: 'dish', sizes: [] } ] }
+        ],
+        'del-main|base': [
+          { name: 'Бургеры', items: [ { code: '2000', name: 'Гамбургер', sys: 'ГАМБУРГЕР', type: 'dish', sizes: [] } ] },
+          { name: 'Напитки', items: [ { code: '3012', name: 'Капучино 300 мл', sys: 'КАПУЧИНО 300 МЛ', type: 'dish', sizes: [] } ] }
+        ],
+        'del-brk|base': [
+          { name: 'Завтраки', items: [ { code: '4002', name: 'Сырники со сметаной', sys: 'СЫРНИКИ СО СМЕТАНОЙ', type: 'dish', sizes: [] } ] }
+        ],
+        'del-night|base': [
+          { name: 'Основное', items: [ { code: '5002', name: 'Наггетсы', sys: 'НАГГЕТСЫ', type: 'dish', sizes: [] } ] }
+        ],
+        'test|base': [
+          { name: 'Тест', items: [ { code: '9001', name: 'Тест блюдо', sys: 'ТЕСТ БЛЮДО', type: 'dish', sizes: [] } ] }
+        ],
+        'test-combo|base': [
+          { name: 'Тест комбо', items: [ { code: '9002', name: 'Тест Комбо', sys: 'ТЕСТ КОМБО', type: 'combo', sizes: [] } ] }
+        ]
+      },
+      placements: [
+        /* Киоск: Основное меню · Базовая (макет 04-tab-vm.png) */
+        { sticker: 'novinka', menu: 'kiosk-main', version: 'base', code: '3112', size: null, angle: 'TOP_LEFT', combo: true },
+        { sticker: 'hit', menu: 'kiosk-main', version: 'base', code: '3112', size: null, angle: 'TOP_RIGHT', combo: false },
+        { sticker: 'novinka', menu: 'kiosk-main', version: 'base', code: '3114', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'hit', menu: 'kiosk-main', version: 'base', code: '2396', size: null, angle: 'TOP_RIGHT', combo: false },
+        { sticker: 'kombo', menu: 'kiosk-main', version: 'base', code: '1001', size: null, angle: 'TOP_LEFT', combo: true },
+        /* Киоск: Основное меню · v1 */
+        { sticker: 'novinka', menu: 'kiosk-main', version: 'v1', code: '3114', size: null, angle: 'TOP_LEFT', combo: false },
+        /* Картофель Фри · Маленький (макет 06-element-stikery.png) */
+        { sticker: 'novinka', menu: 'kiosk-main', version: 'v1', code: '3010', size: 'Маленький', angle: 'TOP_LEFT', combo: false },
+        { sticker: 'stm2', menu: 'kiosk-main', version: 'v1', code: '3010', size: 'Маленький', angle: 'BOTTOM_RIGHT', combo: true },
+        /* Картофель Фри · Средний */
+        { sticker: 'stm2', menu: 'kiosk-main', version: 'v1', code: '3010', size: 'Средний', angle: 'TOP_RIGHT', combo: true },
+        { sticker: 'vygodno', menu: 'kiosk-main', version: 'v1', code: '3010', size: 'Средний', angle: 'BOTTOM_LEFT', combo: false },
+        /* ADV: Основное меню · Базовая — второй ВМ для «Где размещён» */
+        { sticker: 'novinka', menu: 'adv-main', version: 'base', code: '2000', size: null, angle: 'TOP_LEFT', combo: false },
+        /* ещё ВМ — чтобы «Где размещён» у «Новинки» был длинным (много значений, «ещё») */
+        { sticker: 'novinka', menu: 'kiosk-brk', version: 'base', code: '4001', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'kiosk-night', version: 'base', code: '5001', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'adv-brk', version: 'base', code: '4001', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'adv-night', version: 'base', code: '5001', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'del-main', version: 'base', code: '2000', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'del-brk', version: 'base', code: '4002', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'del-night', version: 'base', code: '5002', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'novinka', menu: 'test', version: 'base', code: '9001', size: null, angle: 'TOP_LEFT', combo: false },
+        { sticker: 'hit', menu: 'adv-main', version: 'base', code: '2000', size: null, angle: 'TOP_RIGHT', combo: false },
+        { sticker: 'hit', menu: 'kiosk-brk', version: 'base', code: '4002', size: null, angle: 'TOP_RIGHT', combo: false }
+      ]
+    };
+  }
+
+  function loadData() {
+    var raw = null;
+    try { raw = __store.getItem(KEY); } catch (e) {}
+    if (raw) {
+      try {
+        var d = JSON.parse(raw);
+        if (d && d.stickers && d.menus && d.v === 8) return d;
+      } catch (e) {}
+    }
+    var d = seed();
+    /* «Название в системе» — без капса: в таблице не бывает текста капсом (правило 06.11.2026) */
+    Object.keys(d.catalog).forEach(function (key) {
+      d.catalog[key].forEach(function (g) {
+        g.items.forEach(function (it) {
+          if (it.sys) it.sys = it.sys.toLowerCase().replace(/^[а-яёa-z]/, function (c) { return c.toUpperCase(); });
+        });
+      });
+    });
+    saveData(d);
+    return d;
+  }
+  function saveData(d) { try { __store.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
+  var data = loadData();
+  /* ── шаг панели ревью: ?state=empty — ПУСТОЙ СПРАВОЧНИК (старт, ТЗ B-03 / F-3).
+     Данные прототипа НЕ удаляем: пустой вид — это только отображение шага
+     (до этого пустое состояние можно было увидеть лишь удалив все строки) ── */
+  var REVIEW_STATE = (function () {
+    var m = /(?:^|&)state=([^&]*)/.exec(location.search.slice(1));
+    try { return m ? decodeURIComponent(m[1]) : 'list'; } catch (e) { return 'list'; }
+  })();
+  var PREVIEW_EMPTY = REVIEW_STATE === 'empty';
+  /* свежесозданный/изменённый стикер — показать тост на списке */
+  var JUST_KEY = 'vitStickerJustSaved';
+  var justSaved = null;
+  try { justSaved = __store.getItem(JUST_KEY) || ''; } catch (e) {}
+
+  var q = '';
+  var rowsHost = qs('#rows');
+  var tbl = qs('.tbl');
+  var tEmpty = qs('#tEmpty');
+  var tEmptyTitle = qs('#tEmptyTitle');
+  var tEmptyText = qs('#tEmptyText');
+  var tEmptyAdd = qs('#tEmptyAdd');
+  var tEmptyAction = qs('#tEmptyAction');
+  var tEmptyIcon = qs('#tEmptyIcon');
+  var addBtn = qs('#addBtn');
+  /* поиск в шапке — прячем на пустом справочнике (искать нечего) */
+  var hcSearchBtn = qs('.hc__search');
+  var hcSearchField = qs('#hc-search');
+  var strip = qs('#strip');
+  var selCount = qs('#selCount');
+  var searchInput = qs('#searchInput');
+
+  /* ── помощники ── */
+  function stickerById(id) { return data.stickers.filter(function (s) { return s.id === id; })[0] || null; }
+  function menuById(id) { return data.menus.filter(function (m) { return m.id === id; })[0] || null; }
+  function stickerMenus(st) {
+    var out = [];
+    data.placements.forEach(function (p) {
+      if (p.sticker !== st.id) return;
+      var m = menuById(p.menu);
+      if (m && out.indexOf(m.name) < 0) out.push(m.name);
+    });
+    return out;
+  }
+  function thumbHtml(st) {
+    if (st.label) {
+      return '<span class="st-thumb" style="--st-c:' + esc(st.color) + ';--st-t:' + esc(st.textColor) + '">' + esc(st.label) + '</span>';
+    }
+    return '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>';
+  }
+  /* ── рендер строк ── */
+  function rowHtml(st) {
+    var menus = stickerMenus(st);
+    return '<div class="ds-table-content-row" data-sticker="' + esc(st.id) + '">' +
+      '<div class="ds-table-content-cell t-c-check"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--checkbox"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" data-row="' + esc(st.id) + '"><span class="ds-checkbox__box"></span></label></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-name"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item"><button type="button" class="g-name-btn" data-edit-sticker="' + esc(st.id) + '">' + esc(st.name) + '</button></span></div></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-img">' + thumbHtml(st) + '</div>' +
+      '<div class="ds-table-content-cell t-c-desc' + (st.descShort ? ' t-c-desc-fixed' : '') + '"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(st.descShort || st.desc || '—') + '</span></div></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-where"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item" data-values="' + esc(menus.join('|')) + '">' + esc(menus.join(', ') || '—') + '</span></div></div></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-actions"><span class="t-row-actions">' +
+        '<button type="button" class="ds-btn-icon ds-btn-icon--s ds-btn-icon--neutral ds-btn-icon--text row-del" data-row-del="' + esc(st.id) + '" aria-label="Удалить стикер" title="Удалить"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">delete</span></span></button>' +
+      '</span></div>' +
+    '</div>';
+  }
+
+  function render() {
+    rowsHost.innerHTML = PREVIEW_EMPTY ? '' : data.stickers.map(rowHtml).join('');
+    applyQuery();
+  }
+
+  /* панель ревью: «Стикеры · список» (list) ↔ «Стикеры · пусто (старт)» (empty).
+     Переключение шага не трогает данные справочника — меняется только вид. */
+  window.DSReviewState = function (id) {
+    REVIEW_STATE = id || 'list';
+    PREVIEW_EMPTY = REVIEW_STATE === 'empty';
+    render();
+  };
+
+  /* поиск по названию (B-02); фильтрует строки; пустой результат ≠ пустой справочник */
+  function applyQuery() {
+    var hits = 0;
+    qsa('[data-sticker]', rowsHost).forEach(function (row) {
+      var st = stickerById(row.getAttribute('data-sticker'));
+      var pass = !q || (st && st.name.toLowerCase().indexOf(q) >= 0);
+      row.hidden = !pass;
+      if (pass) hits++;
+    });
+    var total = PREVIEW_EMPTY ? 0 : data.stickers.length;
+    tbl.hidden = hits === 0;   /* пусто / нет результатов — таблицы с шапкой нет (как в баннерах) */
+    /* старт (справочник пуст): одна кнопка добавления — ПО ЦЕНТРУ пустого состояния,
+       из шапки убираем (решение заказчика 06.11.2026); при наличии стикеров — кнопка в шапке.
+       Поиск в шапке на пустом справочнике тоже не показываем — искать нечего (B-02). */
+    if (addBtn) addBtn.hidden = total === 0;
+    if (hcSearchBtn) hcSearchBtn.hidden = total === 0 || (hcSearchField && !hcSearchField.hidden);
+    if (total === 0 && hcSearchField && !hcSearchField.hidden) hcSearchField.hidden = true;
+    tEmpty.hidden = !(total === 0 || hits === 0);
+    if (!tEmpty.hidden) {
+      if (total === 0) {
+        tEmptyTitle.textContent = 'Стикеров пока нет';
+        tEmptyText.textContent = 'Создайте первый стикер, нажав «Добавить».';
+        tEmptyIcon.textContent = 'sell';   /* не «поиск»: это пустой справочник, а не пустой результат поиска */
+        tEmptyAdd.hidden = false;
+        tEmptyAction.hidden = true;
+      } else {
+        tEmptyTitle.textContent = 'Ничего не найдено';
+        tEmptyText.textContent = 'По запросу «' + (q || '') + '» стикеров нет. Измените условия поиска.';
+        tEmptyIcon.textContent = 'search_off';
+        tEmptyAdd.hidden = true;
+        tEmptyAction.hidden = false;
+      }
+    }
+    fitColumns();
+    decorateCells();   /* обрезка «ещё» — после пересчёта ширины колонок */
+    syncSelection();
+  }
+
+  /* многозначная ячейка «Где размещён» и длинное «Описание» — максимум 2 строки,
+     при переполнении «ещё»/«свернуть» (механика как в баннерах): «ещё» — сразу за
+     обрезанным текстом в конце 2-й строки, «свернуть» — сразу за полным текстом;
+     исключение (заказчик 03.11.2026): ячейка t-c-desc-fixed — фиксированный текст
+     ~1,5 строки («Хит»), «ещё» нет */
+  function decorateCells() {
+    var lineH = 20;   /* Body S 14/20 */
+    function moreWrap(label, withEllipsis, onClick) {
+      var wrap = document.createElement('span');
+      wrap.className = 'cell-more';
+      if (withEllipsis) wrap.textContent = '…';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cell-more-link';
+      btn.textContent = label;
+      btn.addEventListener('click', function (e) { e.stopPropagation(); onClick(); });
+      wrap.appendChild(btn);
+      return wrap;
+    }
+    /* «Где размещён» — значения через запятую (data-values) */
+    qsa('.t-c-where .ds-text-ui__list-item', rowsHost).forEach(function (item) {
+      var old = item.querySelector('.cell-more');
+      if (old) old.remove();
+      var values = (item.getAttribute('data-values') || '—').split('|');
+      if (values.length === 1 && (values[0] === '—' || !values[0])) return;
+      if (item.classList.contains('is-open')) {
+        item.textContent = values.join(', ');
+        item.appendChild(moreWrap('свернуть', false, function () { item.classList.remove('is-open'); decorateCells(); }));
+        return;
+      }
+      item.textContent = values.join(', ');
+      if (item.scrollHeight <= lineH * 2 + 1) return;
+      for (var k = values.length - 1; k >= 0; k--) {
+        item.textContent = values.slice(0, k).join(', ');
+        var wrap = moreWrap('ещё', true, function () { item.classList.add('is-open'); decorateCells(); });
+        item.appendChild(wrap);
+        if (item.scrollHeight <= lineH * 2 + 1) break;
+        wrap.remove();
+      }
+    });
+    /* «Описание» — длинный текст: больше 2 строк — обрезается по словам, «ещё» раскрывает */
+    qsa('.t-c-desc .ds-text-ui__list-item', rowsHost).forEach(function (item) {
+      var cell = item.closest('.ds-table-content-cell');
+      if (cell && cell.classList.contains('t-c-desc-fixed')) return;   /* фиксированный текст, «ещё» нет */
+      var old = item.querySelector('.cell-more');
+      if (old) old.remove();
+      var full = item.dataset.full || item.textContent.trim();
+      item.dataset.full = full;
+      if (!full || full === '—') return;
+      if (item.classList.contains('is-open')) {
+        item.textContent = full;
+        item.appendChild(moreWrap('свернуть', false, function () { item.classList.remove('is-open'); decorateCells(); }));
+        return;
+      }
+      item.textContent = full;
+      if (item.scrollHeight <= lineH * 2 + 1) return;
+      var words = full.split(' ');
+      for (var k = words.length - 1; k > 0; k--) {
+        item.textContent = words.slice(0, k).join(' ');
+        var wrap = moreWrap('ещё', true, function () { item.classList.add('is-open'); decorateCells(); });
+        item.appendChild(wrap);
+        if (item.scrollHeight <= lineH * 2 + 1) break;
+        wrap.remove();
+      }
+    });
+  }
+
+  /* ── ширины колонок: автоматически по данным + распределение свободного места ──
+     Ширина колонки = самое длинное значение/шапка (текст + зазор 8 + иконка сортировки 20) + паддинги 16;
+     свободное место распределяется отступами между колонками ПОРОВНУ, а не одной широкой колонкой
+     (правила 19.10/03.11.2026: «воздух» отступами; «Колонка Где размещён — очень широкая!!»).
+     Ширины считаются от данных — если текста станет больше, колонка подстроится сама. */
+  function textWidth(text, el) {
+    var s = document.createElement('span');
+    s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;';
+    var cs = getComputedStyle(el);
+    s.style.fontFamily = cs.fontFamily;
+    s.style.fontSize = cs.fontSize;
+    s.style.fontWeight = cs.fontWeight;
+    s.style.letterSpacing = cs.letterSpacing;
+    s.textContent = text;
+    document.body.appendChild(s);
+    var w = s.getBoundingClientRect().width;
+    s.remove();
+    return w;
+  }
+  function fitColumns() {
+    if (tbl.hidden || !tbl.clientWidth) return;
+    var hdrCells = qsa('.ds-table-header-row > .ds-table-header-cell', tbl);
+    var n = hdrCells.length;
+    var rows = qsa('.ds-table-content-row:not([hidden])', rowsHost);
+    var svc = [], widths = [];
+    hdrCells.forEach(function (h, i) {
+      svc[i] = h.classList.contains('t-c-check') || h.classList.contains('t-c-actions');
+      if (svc[i]) { widths[i] = Math.round(h.getBoundingClientRect().width); return; }
+      var best = 0;
+      var hText = h.querySelector('.ds-text-ui__list-item');
+      var hIcon = h.querySelector('.ds-text-ui__element-right');
+      if (hText) best = Math.max(best, textWidth(hText.textContent.trim(), hText) + (hIcon ? 28 : 0));
+      rows.forEach(function (r) {
+        var c = r.children[i];
+        if (!c) return;
+        if (c.classList.contains('t-c-img')) {
+          var th = c.querySelector('.st-thumb');
+          if (th) best = Math.max(best, th.getBoundingClientRect().width);
+          return;
+        }
+        var el = c.querySelector('.ds-text-ui__list-item');
+        if (!el) return;
+        var dv = el.getAttribute('data-values');
+        if (dv && dv !== '—') {
+          dv.split('|').forEach(function (v) { if (v) best = Math.max(best, textWidth(v, el)); });
+        } else {
+          /* описание — свободный текст: ширина не по всей строке целиком, а с разумным максимумом
+             (длинный текст уходит в 2 строки + «ещё»); полный текст хранится в dataset.full */
+          var fullT = (el.dataset.full || el.textContent).trim().replace(/…\s*$/, '').replace(/—$/, '').trim();
+          if (fullT && c.classList.contains('t-c-desc')) best = Math.max(best, Math.min(textWidth(fullT, el), 280));
+          else if (fullT) best = Math.max(best, textWidth(fullT, el));
+        }
+      });
+      widths[i] = Math.ceil(best) + 16;   /* паддинги ячейки 8+8 */
+    });
+    hdrCells.forEach(function (h, i) { h.style.width = widths[i] + 'px'; });
+    rows.forEach(function (r) {
+      for (var i = 0; i < n; i++) { if (r.children[i]) r.children[i].style.width = widths[i] + 'px'; }
+    });
+    /* свободное место — распределяется между колонками (к ширине текстовых колонок добавляется
+       равная доля — «воздух» справа; не одной широкой колонкой) */
+    var total = 0;
+    widths.forEach(function (w) { total += w; });
+    var free = tbl.clientWidth - total;
+    if (free <= 0) return;
+    var shareCols = [];
+    hdrCells.forEach(function (h, i) { if (!svc[i] && !h.classList.contains('t-c-img')) shareCols.push(i); });
+    if (!shareCols.length) return;
+    var share = Math.floor(free / shareCols.length);
+    shareCols.forEach(function (i, k) {
+      widths[i] += (k === shareCols.length - 1) ? free - share * (shareCols.length - 1) : share;
+      hdrCells[i].style.width = widths[i] + 'px';
+      rows.forEach(function (r) { var c = r.children[i]; if (c) c.style.width = widths[i] + 'px'; });
+    });
+  }
+
+  /* ── выбор строк и массовые действия (B-07/B-08) ── */
+  function rowBox(row) { return row.querySelector('input[data-row]'); }
+  function checkedIds() {
+    return qsa('input[data-row]:checked', rowsHost).map(function (b) { return b.getAttribute('data-row'); });
+  }
+  function syncSelection() {
+    var ids = checkedIds();
+    var boxes = qsa('input[data-row]', rowsHost);
+    var all = qs('input[data-check-all]');
+    all.checked = boxes.length > 0 && ids.length === boxes.length;
+    all.indeterminate = ids.length > 0 && ids.length < boxes.length;
+    strip.hidden = ids.length === 0;
+    selCount.textContent = 'Выбрано: ' + ids.length;
+  }
+  qs('input[data-check-all]').addEventListener('change', function () {
+    var on = this.checked;
+    qsa('input[data-row]', rowsHost).forEach(function (b) {
+      b.checked = on;
+      b.closest('.ds-table-content-row').classList.toggle('ds-table-content-row--selected', on);
+    });
+    syncSelection();
+  });
+  rowsHost.addEventListener('change', function (e) {
+    var b = e.target.closest && e.target.closest('input[data-row]');
+    if (!b) return;
+    b.closest('.ds-table-content-row').classList.toggle('ds-table-content-row--selected', b.checked);
+    syncSelection();
+  });
+  qs('#selClear').addEventListener('click', function () {
+    qsa('input[data-row]:checked', rowsHost).forEach(function (b) {
+      b.checked = false;
+      b.closest('.ds-table-content-row').classList.remove('ds-table-content-row--selected');
+    });
+    syncSelection();
+  });
+
+  /* ── удаление с подтверждением (B-06/B-08): «Удалить» — из справочника и со всех продуктов;
+       «Отменить» — окно закрывается (F-4.4) ── */
+  var dlgDim = qs('#dlgDim');
+  var dlg = qs('#dlg');
+  var dlgTitle = qs('#dlgTitle');
+  var dlgText = qs('#dlgText');
+  var pendingDel = [];
+
+  function openDeleteDialog(ids) {
+    pendingDel = ids.slice();
+    if (ids.length === 1) {
+      var st = stickerById(ids[0]);
+      dlgTitle.textContent = 'Удалить стикер';
+      dlgText.textContent = 'Вы уверены, что хотите удалить стикер «' + (st ? st.name : '') + '»? Он будет снят со всех продуктов, на которые был размещён.';
+    } else {
+      dlgTitle.textContent = 'Удалить стикеры';
+      dlgText.textContent = 'Вы уверены, что хотите удалить выбранные стикеры (' + ids.length + ')? Они будут сняты со всех продуктов, на которые были размещены.';
+    }
+    dlgDim.hidden = false;
+    dlg.hidden = false;
+  }
+  function closeDeleteDialog() { dlgDim.hidden = true; dlg.hidden = true; pendingDel = []; }
+
+  qs('#dlgCancel').addEventListener('click', closeDeleteDialog);
+  dlgDim.addEventListener('click', closeDeleteDialog);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !dlg.hidden) closeDeleteDialog(); });
+
+  qs('#dlgConfirm').addEventListener('click', function () {
+    var ids = pendingDel.slice();
+    closeDeleteDialog();
+    if (!ids.length) return;
+    var names = ids.map(function (id) { var s = stickerById(id); return s ? s.name : id; });
+    data.stickers = data.stickers.filter(function (s) { return ids.indexOf(s.id) < 0; });
+    data.placements = data.placements.filter(function (p) { return ids.indexOf(p.sticker) < 0; });   /* привязки удаляются вместе со стикером */
+    saveData(data);
+    render();
+    showToast(ids.length === 1 ? 'Стикер «' + names[0] + '» удалён' : 'Удалено стикеров: ' + ids.length, 'negative');
+  });
+
+  qs('#massDelete').addEventListener('click', function () {
+    var ids = checkedIds();
+    if (ids.length) openDeleteDialog(ids);
+  });
+
+  /* B-21 (как в баннерах): клик по миниатюре «Изображение» — предпросмотр стикера в попапе */
+  var previewDim = qs('#previewDim');
+  var previewDlg = qs('#previewDlg');
+  var previewBody = qs('#previewBody');
+  function closePreview() { previewDim.hidden = true; previewDlg.hidden = true; }
+  function openPreview(st) {
+    if (!st) return;
+    previewBody.innerHTML =
+      (st.label
+        ? '<span class="st-thumb st-thumb--lg" style="--st-c:' + esc(st.color || '#e0e0e0') + ';--st-t:' + esc(st.textColor || '#ffffff') + '">' + esc(st.label) + '</span>'
+        : '<span class="st-thumb st-thumb--icon st-thumb--lg"><span class="material-icons" aria-hidden="true">image</span></span>');
+    /* подпись — только когда показать нечего: нет ни картинки, ни плашки-подписи (label);
+       у стикеров с цветной плашкой плашка и есть предпросмотр — подпись не выводим */
+    if (!st.img && !st.label) {
+      previewBody.insertAdjacentHTML('beforeend', '<span class="preview-file">' + esc(st.name) + ' · предпросмотр изображения стикера в прототипе недоступен</span>');
+    }
+    previewDim.hidden = false;
+    previewDlg.hidden = false;
+  }
+  rowsHost.addEventListener('click', function (e) {
+    var img = e.target.closest('.t-c-img');
+    if (!img) return;
+    var row = img.closest('[data-sticker]');
+    if (row) openPreview(stickerById(row.getAttribute('data-sticker')));
+  });
+  qs('#previewClose').addEventListener('click', closePreview);
+  previewDim.addEventListener('click', closePreview);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !previewDlg.hidden) closePreview(); });
+
+  /* ── действия строк: название — ссылка (открывает карточку, B-05) и удаление
+       (B-06, иконка по наведению); иконки «изменить» в строке нет (правило ДС) ── */
+  rowsHost.addEventListener('click', function (e) {
+    var edit = e.target.closest('[data-edit-sticker]');
+    if (edit) { location.href = 'sticker-card.html?edit=' + encodeURIComponent(edit.getAttribute('data-edit-sticker')); return; }
+    var del = e.target.closest('[data-row-del]');
+    if (del) { openDeleteDialog([del.getAttribute('data-row-del')]); return; }
+  });
+
+  /* ── сортировка колонок (как на стенде Table, №177) ── */
+  qsa('.ds-table-header-cell[data-sort]').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var idx = Array.prototype.indexOf.call(th.parentElement.children, th);
+      var dir = th.getAttribute('data-dir') === 'asc' ? 'desc' : 'asc';
+      [].slice.call(th.parentElement.children).forEach(function (c) { c.removeAttribute('data-dir'); c.classList.remove('th-active'); });
+      th.setAttribute('data-dir', dir);
+      th.classList.add('th-active');
+      var rows = qsa('[data-sticker]', rowsHost);
+      rows.sort(function (a, b) {
+        var av = a.children[idx] ? a.children[idx].innerText.trim() : '';
+        var bv = b.children[idx] ? b.children[idx].innerText.trim() : '';
+        var r = av.localeCompare(bv, 'ru', { numeric: true, sensitivity: 'base' });
+        return dir === 'asc' ? r : -r;
+      });
+      rows.forEach(function (r) { rowsHost.appendChild(r); });
+    });
+  });
+
+  /* ── поиск: механика стенда организма header-content ── */
+  var hcSearchBtn = qs('.hc__search');
+  var hcSearchField = qs('#hc-search');
+  function openSearch() { hcSearchBtn.hidden = true; hcSearchField.hidden = false; searchInput.focus(); }
+  function closeSearch(reset) {
+    if (hcSearchField.hidden) return;
+    hcSearchField.hidden = true;
+    hcSearchBtn.hidden = false;
+    if (reset !== false) { searchInput.value = ''; q = ''; applyQuery(); }
+  }
+  hcSearchBtn.addEventListener('click', openSearch);
+  hcSearchBtn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSearch(); } });
+  searchInput.addEventListener('input', function () { q = searchInput.value.trim().toLowerCase(); applyQuery(); });
+  hcSearchField.querySelector('.ds-search__right-icon').addEventListener('click', function () { closeSearch(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSearch(true); });
+  document.addEventListener('click', function (e) {
+    if (hcSearchField.hidden) return;
+    if (hcSearchField.contains(e.target) || hcSearchBtn.contains(e.target)) return;
+    closeSearch(false);
+  });
+
+  tEmptyAction.addEventListener('click', function () { closeSearch(true); });
+  tEmptyAdd.addEventListener('click', function () { location.href = 'sticker-card.html?w=1440'; });
+
+  /* пересчёт ширины колонок при изменении ширины окна — вместе с пересчётом «ещё»:
+     обрезка всегда идёт ПОСЛЕ ширины, иначе «ещё» остаётся от старой узкой колонки */
+  window.addEventListener('resize', function () { fitColumns(); decorateCells(); });
+
+  /* вкладки раздела — переход между табами */
+  qsa('[data-go]').forEach(function (t) {
+    t.addEventListener('click', function () { location.href = t.getAttribute('data-go'); });
+  });
+
+  /* ── тост — Snackbar (компонент ДС, Single Dark) ── */
+  var snackbar = qs('#snackbar');
+  var sbLabel = qs('#sbLabel');
+  var sbTimer = null;
+  var SB_ICONS = { neutral: 'info', positive: 'check_circle', negative: 'error', warning: 'warning' };
+  function showToast(text, status) {
+    status = SB_ICONS[status] ? status : 'neutral';
+    snackbar.classList.remove('sb--neutral', 'sb--positive', 'sb--negative', 'sb--warning');
+    snackbar.classList.add('sb--' + status);
+    snackbar.querySelector('.ds-snackbar__icon .material-icons').textContent = SB_ICONS[status];
+    sbLabel.textContent = text;
+    snackbar.hidden = false;
+    snackbar.classList.remove('sb--run');
+    void snackbar.offsetWidth;
+    snackbar.classList.add('sb--run');
+    clearTimeout(sbTimer);
+    sbTimer = setTimeout(function () { snackbar.hidden = true; snackbar.classList.remove('sb--run'); }, 5000);
+  }
+
+  render();
+  /* итог создания/правки из карточки — тост на списке */
+  if (justSaved) {
+    try { __store.removeItem(JUST_KEY); } catch (e) {}
+    showToast(justSaved, 'positive');
+  }
+})();
+</script>
+</body>
+</html>

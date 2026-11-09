@@ -1,0 +1,1634 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Киоски · Стикеры — внешнее меню, прототип на ДС</title>
+<!--
+  ЭКРАНЫ S5 (список внешних меню), S6 (базовая версия ВМ), S7 (версия ВМ: табы и аккордеоны),
+  S8 (управление стикерами на элементе номенклатуры).
+  ОТКУДА ЧТО ВЗЯТО:
+    • постановка — вики VIT 181778772 «Управление стикерами», сценарии D-01…D-08; подписи:
+      «Внешнее меню», «Поиск по названию» (в макете — «Фильтр по названию», переименовано 06.11.2026,
+      чтобы не путать с фильтром), «Название для внеш. меню», «Блюдо», «Название в системе»,
+      «Артикул», «Стикеры», «Список блюд», «Модификаторы», «Версии меню», «Базовая», «Сохранить»,
+      «Отмена», «Левый верхний угол»…, «Отображать на итоговой картинке комбо», «Выберите стикер»,
+      «Поиск по названию и артикулу», «Сбросить», «Применить»;
+    • каркас — по образцу «Баннеров» (banners-spisok/banner-new/groups): подключение одной строкой,
+      статичная разметка, свой скрипт на клики; плашка ревью, шапка и сайдбар — из connect.js;
+      организмы header-content (шапка) и table-header-actions (полоса) — вручную по readme;
+    • компоненты ДС: Tabs, Table, Expansion panel (аккордеоны групп), Button + Button group,
+      Button icon + Badge (точка фильтра), Menu (ds-menu-container — фильтр списка ВМ, ⚠️ D-02),
+      Search, Select form + Select container (выбор ВМ/версии; селекты стикеров в S8), Checkbox,
+      Slide toggle, Dialog + Backdrop (панель S8), Snackbar, Scroll, Divider, Icon size, Text UI;
+    • иконки — Material Icons лигатурой (правило), кроме глифов набора организма header-content
+      (arrow-back — data-hc-icon, точный SVG); иконки элементов номенклатуры: блюдо — restaurant,
+      комбо — brunch_dining, модификатор — tune (Material, по смыслу номенклатуры);
+    • миниатюры/превью стикеров — заглушки контента (.st-thumb), как на S1; изображение продукта —
+      заглушка-иконка (байтов картинок в прототипе нет, как в баннерах);
+    • поведение: S5 — строки ВМ ведут в базовую версию; выбор ВМ — чекбоксами в строках + тумблер
+      «Показать выбранные» в полосе (как в группе баннеров), при выборе — «Выбрано: N» + ✕;
+      отметки/тумблер сохраняются под учёткой (localStorage, ⚠️ D-02); вариант с фильтром — в
+      external-menu-v2.html (сравнение); экран ВМ — ОДИН (06.11.2026, вместо отдельной страницы
+      версии): в полосе селекты «Внешнее меню» и «Версии меню» (одиночные, выбранный пункт —
+      галочка справа) и «Тип» — мультивыбор «Все / Список блюд / Модификаторы» (⚠️ отклонение от
+      D-04 «два таба» — согласовано с заказчиком); таблица — аккордеоны групп (раскрыть/свернуть,
+      счётчик), колонки «Название для внеш. меню · Название в системе · Артикул · Стикеры»
+      (миниатюры, без привязок «—», ⚠️ D-05), глобальный поиск по названию и артикулу, сортировка
+      по колонкам; клик по строке — панель S8;
+      S8 — секции по размерам, таблица 4 углов × Select стикера + тоггл комбо (недоступен без
+      стикера в строке, F-8), превью картинка+стикеры, Сохранить/Отмена (D-07);
+      макс. 4 стикера на размер — по числу углов (E-01).
+    • вне ДС — только раскладка (классы .page/.vm-*/.tbl/.t-c*/.el-*/.st-thumb/.dlg), помечено в <style>.
+-->
+<script src="sidenav-menu.js"></script>
+<script>window.DSR_NO_CHROME = true;</script>
+<script src="../../../Design-System/connect.js" defer></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
+<script src="../../../Design-System/organisms/app-header-content/header-content.js?v=1" defer></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-table-header-actions/table-header-actions.css?v=3">
+<script src="../../../Design-System/organisms/app-table-header-actions/table-header-actions.js?v=3" defer></script>
+<style>
+  html, body { margin: 0; font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+  .apph__store, .apph__tabs, .apph__pill, .apph__cal, .apph__search, .apph__mpill, .apph__mright { display: none !important; }
+  .material-icons { font-family: 'Material Icons Outlined'; }
+
+  /* ── раскладка (вне ДС) ── */
+  .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
+  @media (max-width: 1160px) { .frame { padding: var(--ds-space-5x, 20px) var(--ds-space-4x, 16px) var(--ds-space-6x, 24px); } }
+  .page { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  .sec-tabs { margin: 0; }
+  /* внутри экрана блоки — с шагом 16; полоса→таблица/аккордеоны — 8 (правило 19.10) */
+  .vm-view { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  .vm-view > .tbl, .vm-view > .t-empty, .vm-view > .vm-acc { margin-top: calc(var(--ds-space-2x, 8px) - var(--ds-space-4x, 16px)); }
+
+  /* косяк выгрузки ДС: полосы таблиц — артбордной ширины; разворачиваем в строку по контейнеру */
+  /* ячейки ТЯНУТСЯ на всю высоту строки (align-items: stretch — как в эталоне «Баннеры»): иначе
+     при разной высоте ячеек (миниатюры стикеров 44) короткие ячейки висели 36 и подсветка ховера
+     обрывалась выше края строки (замечание заказчика 06.11.2026 «почему ячейка не на всю высоту»).
+     Прижатие КОНТЕНТА к верху задаёт сама ячейка — правилом ниже */
+  .tbl .ds-table-header-row, .tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
+  .tbl .ds-table-content-cell { align-items: flex-start; }
+  .tbl .ds-table-content-cell:hover { border: none; }
+  .tbl .ds-table-content-cell:focus, .tbl .ds-table-content-cell:focus-within { box-shadow: none; }
+
+  /* ── S5: список ВМ ── */
+  /* строка ВМ — ссылка (правило ссылок: сразу #448AFF, без подчёркивания) */
+  .vm-link { border: 0; background: none; padding: 0; text-align: left; cursor: pointer;
+    font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-ui-link-text-color, #448aff); }
+  /* без подчёркивания на ховере (заказчик 06.11.2026) */
+  .t-c-vmname { flex: 1 1 320px; min-width: 320px; }
+  /* служебная колонка чекбоксов — 36 (как в остальных таблицах) */
+  .t-c-vmcheck { width: 36px; flex: none; }
+  /* счётчик выбранного + крестик — одной группой: зазор 8 только между «N» и «✕» (как в стикерах) */
+  .tha__sel { display: flex; align-items: center; gap: var(--ds-size-2x, 8px); min-width: 0; }
+  /* без выбора разделителя перед тумблером нет (как в группе баннеров) */
+  #vmSel[hidden] + .tha__after .tha__divider { display: none; }
+  /* в шапке — только поиск (выбор/отсев — чекбоксы + тумблер в полосе, как в группе баннеров) */
+  #viewList .hc__right { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); }
+  /* поиск — механика организма header-content, ОДНА на всех страницах: Search XS (круглая иконка)
+     раскрывается в поле Search S; левый крестик/стрелка нет — справа search-off очищает и сворачивает */
+  .hc__search { cursor: pointer; }
+  .hc__search.ds-search--xs { background: var(--ds-color-search-default-background-xs, #f0f5ff); border: 0; justify-content: center; }
+  .hc__search.ds-search--xs:hover { background: var(--ds-color-search-hover-background-xs, #e8f0ff); border: 0; }
+  .hc-search[hidden] { display: none; }
+  .hc-search__input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0; font: inherit; color: var(--ds-color-search-focusvalue-text-color, #333333); }
+  .hc-search__input::placeholder { color: var(--ds-color-search-focus-text-color, #d6d6d6); opacity: 1; }
+  .hc-search:focus-within { border-color: var(--ds-color-search-focus-border-color, #448aff); }
+  .hc-search .ds-search__right-icon { align-self: stretch; }
+  .hc-search .ds-search__right-icon > .ds-divider { width: 1px; height: 100%; flex: 0 0 auto; }
+
+  /* ── S6/S7: селекты ВМ и версии — В СТРОКЕ полосы рядом с «Блюдами», размер XS (как в списке баннеров) ── */
+  /* зазор между полями полосы — 8 (Space/2x): как в эталоне «Киоски · Баннеры» (.filter-fields gap 8);
+     было `--ds-space-1x, 8px` — токен Space/1x = 4px, fallback 8 не срабатывал → поля стояли в 4 px */
+  .vm-selects { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); min-width: 0; }
+  /* ширину НЕ задаём — её берём у компонента: .ds-select-form { width: 250px } (select-form.css) */
+  .vm-selects .field-anchor { width: auto; }
+  /* XS-поле — как в компоненте (Select_DS/demo.html «XS — только нижняя граница» + fixes.css п.15):
+     только НИЖНЯЯ линия, без рамки по кругу, скругления и заливки;
+     высота 28, паддинги 4/8, текст 14/20 #333, стрелка 20 #616161 (Form-Field-Input_DS/input.css) */
+  .vm-selects .ds-input--xs .ds-input__frame {
+    border: 0;
+    border-bottom: var(--ds-form-field-border-size, 1px) solid var(--ds-color-stroke-default, #e0e0e0);
+    border-radius: var(--ds-radius-0);
+    background: none;
+  }
+  .vm-selects .ds-input--xs .ds-input__frame:hover { background: none; border-bottom-color: var(--ds-color-form-field-filled-hover-border-color, #9e9e9e); }
+  /* фокус/открыт — линия акцентом (состояние Focus из демо) */
+  .vm-selects .fsel.is-open .ds-input__frame,
+  .vm-selects .fsel:focus-visible .ds-input__frame { border-bottom-color: var(--ds-color-form-field-filled-focus-border-color, #448aff); }
+
+  /* поле-обёртка/селект — как на карточке */
+  .field-anchor { position: relative; display: block; min-width: 0; align-self: start; }
+  .fsel { cursor: pointer; }
+  .fsel .ds-input__field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fsel.is-open .ds-input__frame { border-color: var(--ds-color-form-field-filled-focus-border-color, #448aff); }
+  .fsel.is-open .ds-input__label { color: var(--ds-color-form-field-filled-focus-label-text-color, #448aff); }
+  .fsel.is-open.ds-select-form--empty .ds-input__field { color: var(--ds-color-form-field-filled-focus-input-text-placeholder-color, #d6d6d6); }
+  .fsel.is-open .ds-input__icon > .ds-icon-size:only-child .material-icons { transform: rotate(180deg); }
+  .fpop { position: absolute; top: calc(100% + 2px); left: 0; z-index: 40; width: 100%; min-height: 0; }
+  .fpop .ds-select-item { width: 100%; cursor: pointer; align-items: flex-start; }
+  .fpop .ds-select-item__label { white-space: normal; }
+  .fpop .ds-select-item__content { flex: 1 1 auto; min-width: 0; }
+  .fpop__wrap { display: flex; flex-direction: row; align-items: flex-start; width: 100%; min-height: 0; }
+  /* у контента контейнера паддинга нет (select-ontainer.css: только padding контейнера 8/0/8/0) */
+  .fpop__scroll { flex: 1 1 auto; min-width: 0; max-height: 320px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; padding: 0; }
+  .fpop__scroll::-webkit-scrollbar { display: none; }
+  .fpop .fscroll { flex: none; align-self: stretch; }
+
+  /* ── S6: таблица базовой версии ── */
+  .t-c-sys { width: 180px; flex: none; }
+  .t-c-sku { width: 96px; flex: none; }
+  .t-c-dish .ds-text-ui__list-item, .t-c-sys .ds-text-ui__list-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* сортировка — как на стенде Table (№177) */
+  .ds-table-header-cell[data-sort] { cursor: pointer; }
+  .ds-table-header-cell[data-sort] .ds-icon-size { color: var(--ds-color-icon-primary, #616161); }
+  .ds-table-header-cell[data-sort] svg { position: relative; transition: transform .15s ease; }
+  .ds-table-header-cell[data-dir="asc"] svg { transform: rotate(180deg); }
+  .ds-table-header-cell.th-active .ds-text-ui__element-right .ds-icon-size { color: var(--ds-color-icon-accent, #448aff); }
+
+  /* ── S7: аккордеоны групп — компонент Expansion panel ДС ── */
+  .vm-acc { display: flex; flex-direction: column; gap: var(--ds-space-2x, 8px); }
+  .vm-acc .ds-expansion { width: 100%; position: relative; }
+  /* Рамка панели Expansion: в fixes.css она сделана inset-тенью (бордер переведён в тень, чтобы
+     не ехала высота), но белые строки таблицы её перекрывают — линия видна только в шапке.
+     Рисуем ту же рамку ПОВЕРХ контента (псевдоэлемент, на размеры не влияет). */
+  .vm-acc .ds-expansion::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit;
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0);
+    pointer-events: none;
+  }
+  .vm-acc .ds-expansion__header { justify-content: flex-start; }
+  .vm-acc .ds-expansion__content { width: 100%; }
+  /* название и счётчик группы — в одном стиле компонента (счётчик = соседний текст, правило 19.10) */
+  .acc-title { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); min-width: 0; }
+  .acc-name, .acc-count { font: inherit; color: inherit; }
+  .acc-count { display: inline-flex; align-items: baseline; gap: var(--ds-space-2x, 8px); }
+  /* дополнительные показатели строки группировки — шрифтом подписи из списка баннеров
+     (.grp-type / ds-text-ui__label-down: 12/16 regular, Text/Secondary #616161) */
+  .cnt-extra { font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-secondary, #616161); }
+  /* таблица в аккордеоне — по тому же стандарту, что и все таблицы (.tbl): строки в линию,
+     ячейки — к ВЕРХУ, ховер/фокус ячеек без рамок; название строки — ссылка (см. разметку) */
+  .acc-rows { width: 100%; }
+  .acc-rows .ds-table-content-row:hover { background: var(--ds-color-table-row-content-hover-background, #f5f5f5); }
+  /* Ховер ячейки — ТОЛЬКО у действенных (fixes.md №176/№197: «ховер у ячейки только там, где ячейка
+     может как-то редактироваться — или есть ссылки»): в таблице ВМ действенная — ячейка названия
+     (в ней ссылка на панель элемента S8, сценарий D-07); «Название в системе», «Артикул» и «Стикеры» —
+     данные, реакции нет. Фон ячейки — Neutral/100 #EBEBEB (тот же токен, что в слое ДС).
+     06.11.2026: подсветки не было вообще (слой ДС в черновой копии гасит фон у всех ячеек) —
+     замечание заказчика «почему ячейки не подсвечиваются редактируемые». */
+  .acc-rows .ds-table-content-cell.t-c-vname:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
+  /* ВМ-таблица: категории — строки-группы (эталон — список баннеров, .group-row) */
+  #vmCatTable { width: 100%; }
+  #vmCatTable .ds-table-content-row:hover { background: var(--ds-color-table-row-content-hover-background, #f5f5f5); }
+  #vmCatTable .ds-table-content-row:not(.group-row) .t-c-vname:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
+  #vmCatTable .group-row { cursor: pointer; }
+  #vmCatTable .group-row .t-c-vname .ds-table-content-cell__element { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); min-width: 0; }
+  #vmCatTable .grp-arrow { display: inline-flex; flex: none; color: var(--ds-color-icon-primary, #616161); transition: transform .15s ease; }
+  #vmCatTable .group-row.is-open .grp-arrow { transform: rotate(90deg); }
+  #vmCatTable .grp-name { font: var(--ds-font-body-s-14-normal-medium); color: var(--ds-color-text-primary, #333333); white-space: nowrap; }
+  #vmCatTable .grp-count { font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-secondary, #616161); flex: none; }
+  /* у последней видимой строки таблицы (в т.ч. строки-группы) нижний разделитель не показываем */
+  #vmCatTable .ds-table-content-row:not([hidden]):not(:has(~ .ds-table-content-row:not([hidden]))) { border-bottom: 0; }
+  .t-c-vname { flex: 1 1 240px; min-width: 240px; }
+  .t-c-vsys { width: 180px; flex: none; }
+  .t-c-vsku { width: 96px; flex: none; }
+  .t-c-vst { width: 204px; flex: none; }
+  .t-c-vname .ds-text-ui__list-item, .t-c-vsys .ds-text-ui__list-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* колонка «Стикеры» — миниатюры рядом (⚠️ D-05); нет привязок — «—» (правило 19.10) */
+  .st-cell { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); flex-wrap: wrap; min-height: 28px; }
+  /* миниатюра + бейдж-статус «на итоговой картинке комбо» в правом верхнем углу
+     (Badge Positive 18×18, паддинг 1, radius circular — размеры компонента Counter; внутри Icon size 4x) */
+  .st-thumb-wrap { position: relative; display: inline-flex; }
+  .st-badge { position: absolute; top: calc(-1 * var(--ds-size-1x, 4px)); right: calc(-1 * var(--ds-size-1x, 4px));
+    width: 18px; height: 18px; min-width: 18px; padding: var(--ds-size-0-25x, 1px); }
+  .st-badge .ds-icon-size { color: var(--ds-color-text-inversive, #ffffff); }
+
+  /* ── миниатюры/превью стикеров (заглушки контента, как на S1) ── */
+  .st-thumb { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    min-width: 44px; height: 28px; padding: 0 var(--ds-space-2x, 8px);
+    border-radius: var(--ds-radius-1-5x, 6px);
+    background: var(--st-c, #e0e0e0); color: var(--st-t, #ffffff);
+    font: var(--ds-font-caption-l-12-normal-medium); letter-spacing: var(--ds-font-caption-l-12-normal-medium-spacing);
+    white-space: nowrap; }
+  .st-thumb--icon { background: var(--ds-color-surface-default, #ffffff);
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0); color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .st-thumb--icon .material-icons { font-size: var(--ds-size-5x, 20px); line-height: var(--ds-size-5x, 20px); }
+
+  /* пустое состояние (E1 памятки) */
+  .t-empty { display: flex; flex-direction: column; align-items: center; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-space-8x, 32px) var(--ds-space-4x, 16px) var(--ds-space-10x, 40px); }
+  .t-empty .ds-icon-size { color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .t-empty__title { font: var(--ds-font-body-m-16-normal-medium); color: var(--ds-color-text-primary, #333333); }
+  .t-empty__text { font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-secondary, #616161); text-align: center; }
+
+  /* ── S8: панель элемента — Dialog ДС + Backdrop ── */
+  .dlg-dim { position: fixed; inset: 0; z-index: 100; opacity: .15; }
+  .dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 110;
+    min-height: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow: hidden; }
+  .dlg[hidden], .dlg-dim[hidden] { display: none !important; }
+  .el-dlg { width: 1080px; max-width: calc(100vw - 32px); }
+  .el-dlg .ds-dialog-header { position: relative; width: 100%; gap: var(--ds-dialog-header-gap, 8px);
+    padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px)
+             var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
+  /* шапка: заголовок забирает свободное место, крестик — ШТАТНЫЙ СЛОТ компонента Dialog header
+     (ds-dialog-header__icon, Icon size 6x, Icon/Primary), а не своя абсолютная кнопка */
+  .el-dlg .ds-dialog-header__label { white-space: normal; flex: 1 0 0; min-width: 1px; }
+  .el-dlg .ds-dialog-header__description { background: none; }
+  .el-dlg .ds-dialog-header__icon { cursor: pointer; color: var(--ds-color-icon-primary, #616161); }
+  .el-dlg .ds-dialog-view__footer { padding: 0; }
+  .el-dlg .ds-dialog-view__action { height: auto; flex-direction: row; justify-content: flex-end; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-dialog-footer-pad-top, 16px) var(--ds-dialog-footer-pad-right, 24px) var(--ds-dialog-footer-pad-bottom, 16px) var(--ds-dialog-footer-pad-left, 24px);
+    border-top: 0; }
+  /* Разделители шапки и подвала диалога — ОТ КРАЯ ДО КРАЯ диалога (замечание 06.11.2026: линия не доходила
+     до краёв, т.к. висела на action, у которого боковые паддинги 24) и ТОЛЬКО когда контент прокручивается.
+     Линия — inset-тень у контейнеров (у футера и шапки без боковых паддингов), геометрия не меняется */
+  .el-dlg .ds-dialog-view__footer { box-shadow: inset 0 1px 0 var(--ds-color-stroke-default, #e0e0e0); }
+  .el-dlg .ds-dialog-header { box-shadow: inset 0 -1px 0 var(--ds-color-stroke-default, #e0e0e0); }
+  .el-dlg:not(.is-scroll) .ds-dialog-view__footer,
+  .el-dlg:not(.is-scroll) .ds-dialog-header { box-shadow: none; }
+  /* тело панели — слот Dialog content компонента (падинги 8/24, как в баннерах); прокручивается,
+     если контент выше окна */
+  .el-dlg .ds-dialog-content { width: 100%; display: flex; flex-direction: row; align-items: stretch; min-height: 0; box-sizing: border-box; padding: 0; }
+  /* контент: паддинги 8/24 компонента; СИСТЕМНУЮ полосу скрываем — по ДС скролл показывает компонент Scroll */
+  .el-body { flex: 1 1 auto; min-width: 0; box-sizing: border-box;
+    padding: var(--ds-space-2x, 8px) var(--ds-dialog-header-pad-right, 24px) 0 var(--ds-dialog-header-pad-left, 24px);
+    max-height: calc(100vh - 64px - 120px); overflow-y: auto; scrollbar-width: none; }
+  .el-body::-webkit-scrollbar { display: none; }
+  /* колонка скролла — компонент Scroll (12); нет прокрутки — DSPatterns её скрывает */
+  .el-dlg .el-scroll { flex: none; align-self: stretch; width: var(--ds-size-3x, 12px); box-sizing: border-box; }
+  .el-sec { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: var(--ds-space-4x, 16px);
+    padding-bottom: var(--ds-space-4x, 16px); }
+  .el-sec + .el-sec { border-top: 1px solid var(--ds-color-stroke-default, #e0e0e0); padding-top: var(--ds-space-4x, 16px); }
+  .el-sec__cap { font: var(--ds-font-body-s-14-normal-medium); color: var(--ds-color-text-primary, #333333);
+    grid-column: 1 / -1; margin-bottom: var(--ds-space-2x, 8px); }
+  .el-tbl { display: flex; flex-direction: column; }
+  /* ячейки тянутся на всю высоту строки (stretch): иначе при поле 36 + паддинги в одной ячейке
+     соседние ячейки висели 36 и не доходили до низа строки (правило «ячейка на всю высоту»);
+     контент внутри ячейки — к верху (правило 19.10) */
+  .el-tbl .ds-table-header-row, .el-tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
+  .el-tbl .ds-table-content-cell { align-items: flex-start; }
+  .e-c-angle { flex: 1 1 220px; min-width: 220px; }
+  .e-c-st { width: 280px; flex: none; }
+  .e-c-combo { width: 129px; flex: none; position: relative; }
+  /* тумблер — по центру своей ячейки (горизонтально и вертикально): контрол без подписи,
+     выравнивание по верху здесь не нужно, ячейка тянется на высоту строки */
+  .el-tbl .ds-table-content-cell.e-c-combo { align-items: center; justify-content: center; }
+  .e-c-combo .ds-table-content-cell__element { width: 100%; display: flex; align-items: center; justify-content: center; }
+  .e-c-combo .ds-slide-toggle { display: flex; align-items: center; }
+  /* заголовок колонки тоггла: «Отображать» + иконка подсказки (Icon size 5x, Icon/Primary — как стрелка сортировки);
+     зазор текст↔иконка — компонентный gap 8 (ds-text-ui), своих margin не добавляем */
+  .e-c-combo .e-hint-ic { color: var(--ds-color-icon-primary, #616161); cursor: pointer; }
+  /* подсказка — компонент Hint (ds-hint-container, направление down).
+     Живёт на уровне страницы (position: fixed), а не внутри ячейки шапки:
+     у `.ds-table-header-row` overflow: hidden — вложенный тултип срезался снизу */
+  /* подсказка — компонент Hint (Tooltip): корень ds-hint-container--up (хвостик сверху) +
+     хвостик 8×4 + тело с фоном/радиусом (как в Hint-Tooltip_DS/demo.html, Single) */
+  .e-hint { position: fixed; z-index: 220; width: max-content; }
+  .e-hint__arrow { display: block; flex-shrink: 0; width: 8px; height: 4px; fill: var(--ds-color-hint-background-color, #424242); }
+  .e-hint__body { display: flex; flex-direction: column; width: 100%; min-width: 0;
+    background: var(--ds-color-hint-background-color, #424242);
+    border-radius: var(--ds-hint-border-radius, 8px); overflow: hidden; }
+  .e-hint[hidden] { display: none !important; }
+  /* селект стикера в ячейке — Select form S (36) + контейнер; поле по ширине ячейки
+     (у компонента своя фикс-ширина 250 — без этого он вылезал в соседнюю колонку;
+     обвязка ячейки тоже тянется на всю ширину, иначе поле сжимается по контенту) */
+  .e-c-st .ds-table-content-cell__element { width: 100%; }
+  .e-anchor { position: relative; display: block; width: 100%; }
+  .e-c-st .fsel { width: 100%; background: transparent; }
+  /* состояния — из компонента input.css: hover #F5F5F5/#9E9E9E, focus #F8F9FC/#448AFF;
+     наш слой только делает фон прозрачным В ПОКОЕ (указание заказчика 06.11.2026) */
+  .e-c-st .fsel .ds-input__frame:not(:hover):not(:focus-within) { background: transparent; }
+  .e-c-st .fsel.is-open .ds-input__frame {
+    background: var(--ds-color-shapes-default-variant, #f8f9fc);
+    border-color: var(--ds-color-stroke-accent, #448aff);
+  }
+  .e-c-st .fsel.is-open .ds-input__icon .ds-icon-group__icon:last-child .material-icons { transform: rotate(180deg); }
+  .e-anchor .fpop { width: 100%; }
+  .e-anchor .fpop .fpop__scroll { max-height: 320px; }
+  /* слой попапов вне диалога (portal): у .dlg transform, поэтому fixed внутри него считается от диалога
+     и попап уезжал/обрезался; в слое координаты — от вьюпорта */
+  #elPopLayer { position: fixed; inset: 0; pointer-events: none; z-index: 240; }
+  #elPopLayer .fpop { position: fixed; top: 0; left: 0; right: auto; bottom: auto; width: auto; pointer-events: auto; }
+  .fpop__title { font-size: var(--ds-font-body-s-14-normal-regular-size); line-height: var(--ds-font-body-s-14-normal-regular-line);
+    letter-spacing: var(--ds-font-body-s-14-normal-regular-spacing); font-weight: var(--ds-font-body-s-14-normal-medium-weight);
+    color: var(--ds-color-text-primary, #333333); }
+  /* превью: картинка продукта (заглушка) + стикеры по углам */
+  .el-prev { display: flex; flex-direction: column; gap: var(--ds-space-2x, 8px); }
+  .el-prev__box { position: relative; width: 200px; height: 200px; align-self: center; overflow: hidden;
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0); border-radius: var(--ds-radius-2x, 8px);
+    background: var(--ds-color-form-field-input-filled-background, #f8f9fc);
+    display: flex; align-items: center; justify-content: center; color: var(--ds-color-icon-disable, #9e9e9e); }
+  .el-prev__box .material-icons { font-size: 56px; line-height: 56px; }
+  .el-prev__st { position: absolute; display: inline-flex; }
+  .el-prev__st--tl { top: var(--ds-space-2x, 8px); left: var(--ds-space-2x, 8px); }
+  .el-prev__st--tr { top: var(--ds-space-2x, 8px); right: var(--ds-space-2x, 8px); }
+  .el-prev__st--bl { bottom: var(--ds-space-2x, 8px); left: var(--ds-space-2x, 8px); }
+  .el-prev__st--br { bottom: var(--ds-space-2x, 8px); right: var(--ds-space-2x, 8px); }
+  .el-prev__cap { text-align: center; font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-secondary, #616161); }
+
+  /* тост — Snackbar (компонент ДС, Single Dark) */
+  .sb { position: fixed; left: 50%; bottom: var(--ds-space-6x, 24px); transform: translateX(-50%); z-index: 130; max-width: 560px; }
+  .sb[hidden] { display: none !important; }
+  .sb [hidden] { display: none !important; }
+  .sb .ds-snackbar__icon { color: #ffffff; }
+  .sb--positive .ds-snackbar__icon { color: var(--ds-color-icon-positive, #14b456); }
+  .sb--negative .ds-snackbar__icon { color: var(--ds-color-icon-negative, #ff5252); }
+  .sb .ds-snackbar__icon .material-icons { font-size: var(--ds-size-5x, 20px); line-height: var(--ds-size-5x, 20px); }
+  .sb .ds-snackbar__progress { transform-origin: right center; }
+  .sb--run .ds-snackbar__progress { animation: sb-count 5s linear forwards; }
+  @keyframes sb-count { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+  .page [hidden] { display: none !important; }
+</style>
+<style>
+  /* Разделитель строк таблицы: у ПОСЛЕДНЕЙ строки линии нет (правило заказчика 06.11.2026).
+     :has(~ …:not([hidden])) — именно последняя ВИДИМАЯ: учтены строки, скрытые поиском/фильтром.
+     Заголовки групп аккордеона (.group-row) — не строки данных, их линия остаётся всегда. */
+  .ds-table-content-row:not(.group-row):not([hidden]):not(:has(~ .ds-table-content-row:not([hidden]))) { border-bottom: 0; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sort" viewBox="0 0 20 20"><path transform="translate(5 4.58333)" d="M5 10.8333L0 5.83333L1.16667 4.66667L4.16667 7.66667V0H5.83333V7.66667L8.83333 4.66667L10 5.83333L5 10.8333Z"/></symbol>
+</svg>
+<style>/* спрайтовые иконки: fill ставится на сам svg */
+.ds-icon-size svg, .ds-btn__icon svg, .ds-btn-icon__icon svg { fill: currentColor; }</style>
+
+<div class="page">
+
+  <!-- ═══ S5: список внешних меню ═══ -->
+  <div id="viewList" class="vm-view">
+    <!-- Шапка — организм header-content: заголовок РАЗДЕЛА «Стикеры» слева (раздел один, «Внешнее меню» — таб,
+         заголовок при переключении таба не меняется), справа — поиск по названию -->
+    <header class="hc">
+      <div class="hc__left">
+        <div class="ds-text-ui hc__title">
+          <span class="ds-text-ui__content"><span class="ds-text-ui__list-item hc__heading">Стикеры</span></span>
+        </div>
+      </div>
+      <div class="hc__right">
+        <span class="ds-search ds-search--xs hc__search" role="button" tabindex="0" aria-label="Поиск по названию">
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+        </span>
+        <span class="ds-search ds-search--s hc-search" id="hc-search" hidden>
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+          <input class="ds-search__label hc-search__input" type="text" id="vmSearch" placeholder="Поиск по названию" aria-label="Поиск по названию внешнего меню">
+          <span class="ds-search__right-icon"><span class="ds-divider"></span><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">search_off</span></span></span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Вкладки раздела (ТЗ: два таба) — под заголовком (макет 04) -->
+    <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
+      <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="stickers.html">Стикеры</button>
+      <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Внешнее меню</button>
+    </div>
+
+    <!-- Полоса таблицы — как в группе баннеров (groups.html, вкладка «Баннеры»):
+         при выборе строк — «Выбрано: N» + крестик, затем Divider и тумблер
+         «Показать выбранные»; без выбора остаётся только тумблер -->
+    <div class="tha">
+      <div class="tha__left">
+        <span class="tha__sel" id="vmSel" hidden>
+          <span class="tha__title" id="vmSelCount">Выбрано: 0</span>
+          <div class="tha__after">
+            <button type="button" class="tha__text-action" id="vmSelClear" aria-label="Снять все отметки"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><img data-tha-icon="close" width="20" height="20" alt=""></span></button>
+          </div>
+        </span>
+        <div class="tha__after">
+          <span class="ds-divider tha__divider"></span>
+          <label class="ds-slide-toggle tha__toggle" for="vmShowSel">
+            <span class="ds-slide-toggle__row">
+              <input class="ds-slide-toggle__input" type="checkbox" id="vmShowSel">
+              <span class="ds-slide-toggle__track"></span>
+              <span class="ds-slide-toggle__title">Показать выбранные</span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Построчный список ВМ (D-01): чекбокс + «Название для внеш. меню» (с сортировкой), строки — ссылки -->
+    <div class="tbl" id="vmTable">
+      <div class="ds-table-header-row">
+        <div class="ds-table-header-cell t-c-vmcheck"><div class="ds-element-cell ds-element-cell--checkbox"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" data-vm-check-all aria-label="Отметить все внешние меню"><span class="ds-checkbox__box"></span></label></div></div>
+        <div class="ds-table-header-cell t-c-vmname" data-sort="name"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Название для внеш. меню</span></div><span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><svg width="20" height="20" aria-hidden="true"><use href="#i-sort"/></svg></span></span></div></div></div>
+      </div>
+      <div id="vmRows"></div>
+    </div>
+
+    <!-- Пустое состояние: ничего не отмечено / нет результатов поиска -->
+    <div class="t-empty" id="vmEmpty" hidden>
+      <span class="ds-icon-size ds-icon-size--6x"><span class="material-icons" aria-hidden="true">search_off</span></span>
+      <span class="t-empty__title" id="vmEmptyTitle">Ничего не найдено</span>
+      <span class="t-empty__text" id="vmEmptyText">Измените условия поиска.</span>
+    </div>
+  </div>
+
+  <!-- ═══ S6/S7: экран внешнего меню ═══ -->
+  <div id="viewMenu" class="vm-view" hidden>
+    <!-- Шапка: стрелка назад к списку ВМ + заголовок РАЗДЕЛА «Стикеры»;
+         заголовок с кнопками — ВЫШЕ табов раздела (макет 04-tab-vm) -->
+    <header class="hc">
+      <div class="hc__left">
+        <div class="ds-text-ui hc__title">
+          <span class="ds-text-ui__element-left hc__back" role="button" tabindex="0" aria-label="Назад к списку внешних меню" id="vmBack">
+            <span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><img data-hc-icon="arrow-back" width="24" height="24" alt=""></span>
+          </span>
+          <span class="ds-text-ui__content"><span class="ds-text-ui__list-item hc__heading">Стикеры</span></span>
+        </div>
+      </div>
+      <!-- Поиск — наверху напротив заголовка, механика та же, что на всех страницах:
+           круглая Search XS раскрывается в поле Search S, справа search-off очищает и сворачивает -->
+      <div class="hc__right">
+        <span class="ds-search ds-search--xs hc__search" role="button" tabindex="0" aria-label="Поиск по названию и артикулу">
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+        </span>
+        <span class="ds-search ds-search--s hc-search" id="hc-search-m" hidden>
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+          <input class="ds-search__label hc-search__input" type="text" id="vmGSearch" placeholder="Поиск по названию" aria-label="Поиск по названию и артикулу">
+          <span class="ds-search__right-icon"><span class="ds-divider"></span><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">search_off</span></span></span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Вкладки раздела (ТЗ: два таба) — под заголовком (макет 04) -->
+    <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
+      <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="stickers.html">Стикеры</button>
+      <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Внешнее меню</button>
+    </div>
+
+    <!-- Выбор ВМ и версии — селекты ПЕРЕЕХАЛИ в полосу к «Блюдам» (размер XS, как в списке баннеров), см. #vmStrip -->
+
+    <!-- Один экран ВМ (06.11.2026, решение заказчика): отдельной страницы версии нет.
+         «Список блюд / Модификаторы» — мультиселект «Тип» в полосе (⚠️ D-04 в ТЗ говорит «два таба» — отклонение согласовано) -->
+
+    <!-- S6/S7: полоса таблицы — заголовок «Блюда» и селекты ВМ/версии в ОДНОЙ строке (XS, как в баннерах);
+         поиск — в шапке напротив заголовка экрана -->
+    <div class="tha" id="vmStrip">
+      <div class="tha__left">
+        <span class="tha__title" id="vmStripTitle">Фильтр:</span>
+        <span class="vm-selects">
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--menu" id="selMenuField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Внешнее меню">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content">
+                    <span class="ds-input__field" id="selMenuValue"></span>
+                  </div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selMenuPop" role="listbox" aria-label="Выберите внешнее меню" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Внешнее меню</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selMenuItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden>
+                  <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+                </div>
+              </div>
+            </div>
+          </span>
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--ver" id="selVerField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Версии меню">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content">
+                    <span class="ds-input__field" id="selVerValue"></span>
+                  </div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selVerPop" role="listbox" aria-label="Выберите версию меню" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Версии меню</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selVerItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden>
+                  <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+                </div>
+              </div>
+            </div>
+          </span>
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--type" id="selTypeField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Тип элементов">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content">
+                    <span class="ds-input__field" id="selTypeValue"></span>
+                  </div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selTypePop" role="listbox" aria-label="Тип элементов" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Тип элементов</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selTypeItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden>
+                  <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+                </div>
+              </div>
+            </div>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Таблица ВМ (было S6 + S7): аккордеоны групп (Expansion panel), сортировка по колонкам,
+         колонки «Название для внеш. меню · Название в системе · Артикул · Стикеры» -->
+    <div class="vm-acc" id="vmAcc" hidden></div>
+
+    <!-- Пустое состояние: нет результатов поиска -->
+    <div class="t-empty" id="vmMenuEmpty" hidden>
+      <span class="ds-icon-size ds-icon-size--6x"><span class="material-icons" aria-hidden="true">search_off</span></span>
+      <span class="t-empty__title">Ничего не найдено</span>
+      <span class="t-empty__text">Измените условия поиска.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S8: управление стикерами на элементе — Dialog ДС + Backdrop (D-07) ═══ -->
+<div class="ds-backdrop dlg-dim" id="elDim" hidden></div>
+<div class="ds-dialog-view dlg el-dlg" id="elDlg" role="dialog" aria-modal="true" aria-labelledby="elTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container">
+      <span class="ds-dialog-header__label" id="elTitle"></span>
+      <span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="elClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
+    </div>
+    <span class="ds-dialog-header__description" id="elDesc"></span>
+  </div>
+  <div class="ds-dialog-content">
+    <div class="el-body" id="elBody"></div>
+    <div class="ds-scroll ds-scroll--v el-scroll" id="elScroll" aria-hidden="true"><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="elCancel"><span class="ds-btn__label">Отмена</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="elSave"><span class="ds-btn__label">Сохранить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- подсказка к иконке «info» в панели S8 — компонент Hint (Tooltip): хвостик + тело -->
+<div class="ds-hint-container ds-hint-container--up e-hint" id="elHint" role="tooltip" hidden>
+  <svg class="e-hint__arrow" width="8" height="4" viewBox="0 0 8 4" aria-hidden="true"><path d="M0 4L4 0L8 4H0Z"/></svg>
+  <div class="e-hint__body">
+    <div class="ds-hint-container__content"><span class="ds-hint-content__label">Отображать на итоговой картинке комбо</span></div>
+  </div>
+</div>
+
+<!-- слой попапов панели: попап селекта живёт ВНЕ диалога (у .dlg transform — fixed внутри него считается от диалога) -->
+<div id="elPopLayer"></div>
+
+<!-- Тост — Snackbar (компонент ДС, Single Dark) -->
+<div class="ds-snackbar ds-snackbar--single ds-snackbar--dark sb sb--neutral" id="snackbar" role="status" aria-live="polite" hidden>
+  <div class="ds-snackbar__body">
+    <span class="ds-snackbar__icon"><span class="material-icons" aria-hidden="true">info</span></span>
+    <div class="ds-snackbar__content"><span class="ds-snackbar__label" id="sbLabel"></span></div>
+  </div>
+  <div class="ds-snackbar__progress"></div>
+</div>
+
+<script src="../../../Design-System/components-web/ds-patterns.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* Демо-данные в sessionStorage: одинаковое состояние во всех окнах и на всех адресах */
+  var __store = (function () {
+    try { window.sessionStorage.setItem('__t', '1'); window.sessionStorage.removeItem('__t'); return window.sessionStorage; }
+    catch (e) { return window.localStorage; }
+  })();
+  /* настройки «под учёткой» (⚠️ D-02): localStorage — сохраняются между сеансами */
+  var __prefs = (function () {
+    try { window.localStorage.setItem('__t', '1'); window.localStorage.removeItem('__t'); return window.localStorage; }
+    catch (e) { return __store; }
+  })();
+
+  var qs = function (s, r) { return (r || document).querySelector(s); };
+  var qsa = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* ── данные ── */
+  var KEY = 'vitStickersData';
+  function loadData() {
+    var raw = null;
+    try { raw = __store.getItem(KEY); } catch (e) {}
+    if (raw) {
+      try {
+        var d = JSON.parse(raw);
+        if (d && d.stickers && d.menus) return d;
+      } catch (e) {}
+    }
+    return null;
+  }
+  var data = loadData();
+  if (!data) { location.href = 'stickers.html'; return; }
+  function saveData() { try { __store.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+  function menuById(id) { return data.menus.filter(function (m) { return m.id === id; })[0] || null; }
+  function stickerById(id) { return data.stickers.filter(function (s) { return s.id === id; })[0] || null; }
+  function versionName(mId, vId) { var m = menuById(mId); if (!m) return ''; var v = (m.versions || []).filter(function (x) { return x.id === vId; })[0]; return v ? v.name : ''; }
+  function thumbHtml(st, combo) {
+    var inner = !st
+      ? '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>'
+      : (st.label
+        ? '<span class="st-thumb" style="--st-c:' + esc(st.color || '#e0e0e0') + ';--st-t:' + esc(st.textColor || '#ffffff') + '">' + esc(st.label) + '</span>'
+        : '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>');
+    if (!combo) return inner;
+    /* бейдж-статус «Отображать на итоговой картинке комбо»: Badge Positive + Icon size 4x (check).
+       В ДС бейджа с иконкой нет — пробел ДС №271 (собран из компонентов: Badge 18×18 + Icon size) */
+    return '<span class="st-thumb-wrap">' + inner +
+      '<span class="ds-badge ds-badge--counter ds-badge--positive st-badge" role="img" aria-label="Отображается на итоговой картинке комбо">' +
+        '<span class="ds-icon-size ds-icon-size--4x"><span class="material-icons" aria-hidden="true">check</span></span>' +
+      '</span></span>';
+  }
+  var ANGLES = [
+    { id: 'TOP_LEFT', name: 'Левый верхний угол' },
+    { id: 'BOTTOM_LEFT', name: 'Левый нижний угол' },
+    { id: 'TOP_RIGHT', name: 'Правый верхний угол' },
+    { id: 'BOTTOM_RIGHT', name: 'Правый нижний угол' }
+  ];
+
+  /* ── параметры и состояние страницы ── */
+  var Q = {};
+  (location.search.replace(/^\?/, '') || '').split('&').forEach(function (p) {
+    var i = p.indexOf('=');
+    if (i < 0) return;
+    try { Q[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1)); } catch (e) {}
+  });
+  var VIEW = Q.state === 'base' || Q.state === 'version' || Q.state === 'element' ? 'menu' : 'list';
+  var reviewState = VIEW === 'menu' ? (Q.state || 'base') : 'list';   /* текущий шаг панели ревью */
+  var sel = { menu: Q.menu || 'kiosk-main', version: Q.version || 'base' };
+  /* выбор ВМ запоминаем (прототип возвращается на последнее меню) */
+  var SEL_KEY = 'vitStickersMenuSel';
+  try {
+    var saved = JSON.parse(__prefs.getItem(SEL_KEY) || 'null');
+    if (saved && saved.menu && menuById(saved.menu)) sel = saved;
+  } catch (e) {}
+  if (VIEW === 'menu') { sel.menu = Q.menu && menuById(Q.menu) ? Q.menu : sel.menu; }
+  if (!data.catalog[sel.menu + '|' + sel.version]) sel.version = (menuById(sel.menu) || { versions: [{ id: 'base' }] }).versions[0].id;
+  function persistSel() { try { __prefs.setItem(SEL_KEY, JSON.stringify(sel)); } catch (e) {} }
+  var typeSel = { dishes: true, mods: true };   /* «Тип»: Список блюд / Модификаторы — мультивыбор */
+  var sortState = { key: '', dir: '' };         /* сортировка таблицы ВМ (D-03) */
+  var openGroups = {};     /* раскрытые аккордеоны групп — между перерисовками */
+  /* выбор ВМ в списке S5 (вариант C, как в группе баннеров): отметки чекбоксами + тумблер
+     «Показать выбранные»; выбор сохраняется под учёткой (⚠️ D-02) */
+  var CHECK_KEY = 'vitStickersVmChecked';
+  var SHOW_KEY = 'vitStickersVmShowSel';
+  var vmChecked = [];
+  var vmShowSel = false;
+  try { vmChecked = JSON.parse(__prefs.getItem(CHECK_KEY) || '[]') || []; } catch (e) {}
+  try { vmShowSel = __prefs.getItem(SHOW_KEY) === '1'; } catch (e) {}
+
+  /* ── переключение экранов ── */
+  function showView() {
+    qs('#viewList').hidden = VIEW !== 'list';
+    qs('#viewMenu').hidden = VIEW !== 'menu';
+    if (VIEW === 'list') renderVmList();
+    else renderMenuView();
+  }
+
+  /* ══════════ S5: список ВМ ══════════ */
+  var vmSearch = qs('#vmSearch');
+  var vmShowSelInput = qs('#vmShowSel');
+  var vmCheckAll = qs('#vmTable [data-vm-check-all]');
+  var vmSel = qs('#vmSel');
+  var vmSelCount = qs('#vmSelCount');
+  var vmSelClear = qs('#vmSelClear');
+  var vmSortDir = '';   /* сортировка списка ВМ: '' | asc | desc (стрелка в шапке колонки — макет 03) */
+
+  function persistVmSel() {
+    try { __prefs.setItem(CHECK_KEY, JSON.stringify(vmChecked)); } catch (e) {}
+    try { __prefs.setItem(SHOW_KEY, vmShowSel ? '1' : '0'); } catch (e) {}
+  }
+  function vmCheckedOn(id) { return vmChecked.indexOf(id) >= 0; }
+  /* отметки — только для существующих меню */
+  vmChecked = vmChecked.filter(function (id) { return !!menuById(id); });
+
+  function vmRowHtml(m) {
+    return '<div class="ds-table-content-row' + (vmCheckedOn(m.id) ? ' ds-table-content-row--selected' : '') + '" data-vm-row="' + esc(m.id) + '">' +
+      '<div class="ds-table-content-cell t-c-vmcheck"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--checkbox"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" data-vm-check="' + esc(m.id) + '"' + (vmCheckedOn(m.id) ? ' checked' : '') + '><span class="ds-checkbox__box"></span></label></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-vmname"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item"><button type="button" class="vm-link" data-vm="' + esc(m.id) + '">' + esc(m.name) + '</button></span></div></div></div></div>' +
+    '</div>';
+  }
+
+  function renderVmList() {
+    var q = vmSearch.value.trim().toLowerCase();
+    var host = qs('#vmRows');
+    host.innerHTML = '';
+    var list = data.menus.slice();
+    if (vmSortDir) {
+      list.sort(function (a, b) {
+        var r = a.name.localeCompare(b.name, 'ru', { numeric: true, sensitivity: 'base' });
+        return vmSortDir === 'asc' ? r : -r;
+      });
+    }
+    var hits = 0;
+    list.forEach(function (m) {
+      var pass = !q || m.name.toLowerCase().indexOf(q) >= 0;
+      pass = pass && (!vmShowSel || vmCheckedOn(m.id));
+      if (!pass) return;
+      hits++;
+      host.insertAdjacentHTML('beforeend', vmRowHtml(m));
+    });
+    qs('#vmTable').hidden = hits === 0;
+    qs('#vmEmpty').hidden = hits !== 0;
+    if (hits === 0) {
+      var nothingChosen = vmShowSel && vmChecked.length === 0;
+      qs('#vmEmptyTitle').textContent = nothingChosen ? 'Ничего не выбрано' : 'Ничего не найдено';
+      qs('#vmEmptyText').textContent = nothingChosen
+        ? 'Отметьте внешние меню чекбоксами слева или выключите «Показать выбранные».'
+        : 'Измените условия поиска' + (vmShowSel ? ' или отметьте нужные внешние меню' : '') + '.';
+    }
+    /* счётчик строк не выводим (в макете и в списке стикеров его нет) */
+    /* блок выбранного в полосе — всегда при выборе: «Выбрано: N» + крестик */
+    vmSel.hidden = vmChecked.length === 0;
+    vmSelCount.textContent = 'Выбрано: ' + vmChecked.length;
+    /* чекбокс в шапке — по видимым строкам (tri-state) */
+    var visible = qsa('#vmRows [data-vm-check]', host);
+    var picked = visible.filter(function (b) { return b.checked; }).length;
+    vmCheckAll.checked = visible.length > 0 && picked === visible.length;
+    vmCheckAll.indeterminate = picked > 0 && picked < visible.length;
+  }
+
+  vmSearch.addEventListener('input', renderVmList);
+  /* поиск — механика организма header-content (как на S1): XS раскрывается в поле S */
+  var hcSearchBtn = qs('#viewList .hc__search');
+  var hcSearchField = qs('#hc-search');
+  function openVmSearch() { hcSearchBtn.hidden = true; hcSearchField.hidden = false; vmSearch.focus(); }
+  function closeVmSearch(reset) {
+    if (hcSearchField.hidden) return;
+    hcSearchField.hidden = true;
+    hcSearchBtn.hidden = false;
+    if (reset !== false) { vmSearch.value = ''; renderVmList(); }
+  }
+  hcSearchBtn.addEventListener('click', openVmSearch);
+  hcSearchBtn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openVmSearch(); } });
+  hcSearchField.querySelector('.ds-search__right-icon').addEventListener('click', function () { closeVmSearch(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeVmSearch(true); });
+  document.addEventListener('click', function (e) {
+    if (hcSearchField.hidden) return;
+    if (hcSearchField.contains(e.target) || hcSearchBtn.contains(e.target)) return;
+    closeVmSearch(false);
+  });
+  /* крестик — снять весь выбор (как в стикерах и баннерах) */
+  vmSelClear.addEventListener('click', function () {
+    vmChecked = [];
+    persistVmSel();
+    renderVmList();
+  });
+  vmShowSelInput.checked = vmShowSel;
+  vmShowSelInput.addEventListener('change', function () {
+    vmShowSel = vmShowSelInput.checked;
+    persistVmSel();
+    renderVmList();
+  });
+  /* отметка строки — как в группе баннеров: чекбокс = выбран; при тумблере — сразу отсеивает */
+  qs('#vmRows').addEventListener('change', function (e) {
+    var box = e.target.closest && e.target.closest('[data-vm-check]');
+    if (!box) return;
+    var id = box.getAttribute('data-vm-check');
+    if (box.checked) { if (vmChecked.indexOf(id) < 0) vmChecked.push(id); }
+    else vmChecked = vmChecked.filter(function (x) { return x !== id; });
+    persistVmSel();
+    renderVmList();
+  });
+  /* чекбокс в шапке — отметить/снять все видимые строки */
+  vmCheckAll.addEventListener('change', function () {
+    var on = vmCheckAll.checked;
+    qsa('#vmRows [data-vm-check]').forEach(function (b) {
+      var id = b.getAttribute('data-vm-check');
+      if (on && vmChecked.indexOf(id) < 0) vmChecked.push(id);
+      if (!on) vmChecked = vmChecked.filter(function (x) { return x !== id; });
+    });
+    persistVmSel();
+    renderVmList();
+  });
+  /* сортировка по названию — клик по шапке колонки (макет 03: стрелка у заголовка) */
+  (function () {
+    var th = qs('#vmTable .ds-table-header-cell[data-sort]');
+    if (!th) return;
+    th.addEventListener('click', function () {
+      vmSortDir = th.getAttribute('data-dir') === 'asc' ? 'desc' : 'asc';
+      th.setAttribute('data-dir', vmSortDir);
+      th.classList.add('th-active');
+      renderVmList();
+    });
+  })();
+  /* клик по названию — переход в ВМ (чекбокс в отдельной ячейке, переход не вызывает) */
+  qs('#vmRows').addEventListener('click', function (e) {
+    var vm = e.target.closest('[data-vm]');
+    if (!vm) return;
+    sel.menu = vm.getAttribute('data-vm');
+    var m = menuById(sel.menu);
+    sel.version = m.versions[0].id;
+    persistSel();
+    /* экраны разделены адресами: список — ?state=list, таблица — ?state=base */
+    location.href = 'external-menu.html?state=base&menu=' + encodeURIComponent(sel.menu) + '&version=' + encodeURIComponent(sel.version) + '&w=' + (new URLSearchParams(location.search).get('w') || '1440');
+  });
+
+  /* ══════════ S6/S7: экран ВМ ══════════ */
+  var vmGSearch = qs('#vmGSearch');
+  qs('#vmBack').addEventListener('click', function () {
+    location.href = 'external-menu.html?state=list&w=' + (new URLSearchParams(location.search).get('w') || '1440');
+  });
+
+  /* селекты ВМ/версии (⚠️ D-04) */
+  var openPop = null;
+  function closePops() {
+    [qs('#selMenuField'), qs('#selVerField'), qs('#selTypeField')].forEach(function (f) {
+      f.classList.remove('is-open');
+      f.setAttribute('aria-expanded', 'false');
+    });
+    qs('#selMenuPop').hidden = qs('#selVerPop').hidden = qs('#selTypePop').hidden = true;
+    openPop = null;
+  }
+  function togglePop(field, pop, rebuild) {
+    var was = !pop.hidden;
+    closePops();
+    if (was) return;
+    pop.hidden = false;
+    field.classList.add('is-open');
+    field.setAttribute('aria-expanded', 'true');
+    openPop = pop;
+    rebuild();
+    DSPatterns.scrollSync(pop.querySelector('.fpop__scroll'), pop.querySelector('.fscroll'));
+  }
+  [qs('#selMenuPop'), qs('#selVerPop'), qs('#selTypePop')].forEach(function (pop) {
+    var sc = pop.querySelector('.fpop__scroll');
+    if (sc) sc.addEventListener('scroll', function () { DSPatterns.scrollSync(sc, pop.querySelector('.fscroll')); });
+  });
+  document.addEventListener('click', function (e) { if (openPop && !openPop.contains(e.target)) closePops(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePops(); });
+  window.addEventListener('resize', closePops);
+  window.addEventListener('resize', function () {
+    if (VIEW !== 'menu') return;
+    if (!qs('#vmAcc').hidden) {
+      var w = qs('#vmAcc').clientWidth;
+      qsa('.acc-rows', qs('#vmAcc')).forEach(function (x) { fitTable(x, w); });
+    }
+    if (!elDlg.hidden) qsa('.el-tbl', qs('#elBody')).forEach(function (t) { fitTable(t, t.clientWidth); });
+  });
+
+  function renderVmSelects() {
+    var mName = (menuById(sel.menu) || { name: '' }).name;
+    var vName = versionName(sel.menu, sel.version);
+    var mEl = qs('#selMenuValue'), vEl = qs('#selVerValue');
+    /* как в баннерах: «Имя поля: значение»; XS — без подписи, полное значение — в title */
+    var mText = 'Внешнее меню: ' + mName;
+    var vText = 'Версии меню: ' + vName;
+    mEl.textContent = mText; mEl.title = mText;
+    vEl.textContent = vText; vEl.title = vText;
+  }
+  function buildMenuSel() {
+    var host = qs('#selMenuItems');
+    host.innerHTML = '';
+    data.menus.forEach(function (m) {
+      var item = document.createElement('div');
+      /* как в баннерах (banner-new.html #typePop): у каждого пункта слот element-right с галочкой,
+         у выбранного она видна (состояние Selected — слоты в акценте), у остальных скрыта */
+      var onMenu = m.id === sel.menu;
+      item.className = 'ds-select-item ds-select-item--false' + (onMenu ? ' ds-select-item--selected' : '');
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', onMenu ? 'true' : 'false');
+      item.innerHTML = '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>' +
+        '<span class="ds-select-item__element-right"' + (onMenu ? '' : ' hidden') + '><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">check</span></span></span>';
+      item.querySelector('.ds-select-item__label').textContent = m.name;
+      item.addEventListener('click', function () {
+        sel.menu = m.id;
+        sel.version = m.versions[0].id;   /* при смене меню — базовая версия */
+        persistSel();
+        renderVmSelects();
+        renderMenuView();
+        closePops();
+      });
+      host.appendChild(item);
+    });
+  }
+  function buildVerSel() {
+    var host = qs('#selVerItems');
+    host.innerHTML = '';
+    var m = menuById(sel.menu);
+    (m.versions || []).forEach(function (v) {
+      var item = document.createElement('div');
+      /* как в баннерах: галочка в правом слоте видна только у выбранной версии */
+      var onVer = v.id === sel.version;
+      item.className = 'ds-select-item ds-select-item--false' + (onVer ? ' ds-select-item--selected' : '');
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', onVer ? 'true' : 'false');
+      item.innerHTML = '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>' +
+        '<span class="ds-select-item__element-right"' + (onVer ? '' : ' hidden') + '><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">check</span></span></span>';
+      item.querySelector('.ds-select-item__label').textContent = v.name;
+      item.addEventListener('click', function () {
+        sel.version = v.id;
+        persistSel();
+        renderVmSelects();
+        renderMenuView();
+        closePops();
+      });
+      host.appendChild(item);
+    });
+  }
+  qs('#selMenuField').addEventListener('click', function (e) { e.stopPropagation(); togglePop(qs('#selMenuField'), qs('#selMenuPop'), buildMenuSel); });
+  qs('#selVerField').addEventListener('click', function (e) { e.stopPropagation(); togglePop(qs('#selVerField'), qs('#selVerPop'), buildVerSel); });
+  qs('#selTypeField').addEventListener('click', function (e) { e.stopPropagation(); togglePop(qs('#selTypeField'), qs('#selTypePop'), buildTypeSel); });
+  qs('#selMenuPop').addEventListener('click', function (e) { e.stopPropagation(); });
+  qs('#selVerPop').addEventListener('click', function (e) { e.stopPropagation(); });
+  qs('#selTypePop').addEventListener('click', function (e) { e.stopPropagation(); });
+
+  /* каталог выбранного меню+версии */
+  function groupsOf() { return data.catalog[sel.menu + '|' + sel.version] || []; }
+  /* стикеры элемента в выбранной версии (колонка «Стикеры», C-16) */
+  function stickersOf(code) {
+    var list = data.placements.filter(function (p) {
+      return p.menu === sel.menu && p.version === sel.version && p.code === code;
+    }).sort(function (a, b) {
+      var order = ['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'];
+      return order.indexOf(a.angle) - order.indexOf(b.angle);
+    });
+    /* колонка «Стикеры» — какие стикеры присвоены блюду: без дублей по размерам */
+    var seen = {}, out = [];
+    list.forEach(function (p) { if (!seen[p.sticker]) { seen[p.sticker] = true; out.push(p); } });
+    return out;
+  }
+  /* ── ширины колонок — автоматически по данным (правило 19.10/03.11.2026) ──
+     Ширина = max(шапка: текст + зазор 8 + иконка сортировки 20; контент: самое длинное значение)
+     + паддинги 16 + иконка элемента (20+8, если колонка с иконкой); шапка и контент —
+     ВСЕГДА в одну строку; свободное место распределяется равными долями между
+     текстовыми колонками, а не одной широкой колонкой; служебные (Стикеры, Стикер) — по контенту. */
+  function textWidthOf(text, el) {
+    var s = document.createElement('span');
+    s.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;';
+    var cs = getComputedStyle(el);
+    s.style.fontFamily = cs.fontFamily;
+    s.style.fontSize = cs.fontSize;
+    s.style.fontWeight = cs.fontWeight;
+    s.style.letterSpacing = cs.letterSpacing;
+    s.textContent = text;
+    document.body.appendChild(s);
+    var w = s.getBoundingClientRect().width;
+    s.remove();
+    return w;
+  }
+  function fitTable(scope, tableW) {
+    if (!scope || !tableW) return;
+    var hdr = scope.querySelector('.ds-table-header-row');
+    if (!hdr) return;
+    var hdrCells = [].slice.call(hdr.children);
+    var rows = [].slice.call(scope.querySelectorAll('.ds-table-content-row'));
+    if (!hdrCells.length) return;
+    var widths = [], fixed = [];
+    hdrCells.forEach(function (h, i) {
+      /* служебные колонки (миниатюры, селект, «Артикул») ширину по данным — свободное место не забирают:
+         у чисел/коротких значений ширину задаёт шапка (правило ширин таблиц) */
+      var isFixed = h.classList.contains('t-c-vst') || h.classList.contains('e-c-st') || h.classList.contains('t-c-vsku') || h.classList.contains('e-c-combo');
+      var best = 0;
+      var hText = h.querySelector('.ds-text-ui__list-item');
+      if (hText) best = Math.max(best, textWidthOf(hText.textContent.trim(), hText) + (h.querySelector('.ds-text-ui__element-right') ? 28 : 0));
+      var hasIcon = false;
+      rows.forEach(function (r) {
+        var c = r.children[i];
+        if (!c) return;
+        if (c.querySelector('.ds-text-ui__element-left')) hasIcon = true;
+        if (isFixed) {
+          /* «Стикеры» — сумма миниатюр в строку; селект стикера — фикс-ширина поля; тоггл — дорожка + зазор + текст */
+          var stCell = c.querySelector('.st-cell');
+          if (stCell) {
+            var kids = [].slice.call(stCell.children), sum = 0;
+            kids.forEach(function (k, ki) { var kw = k.getBoundingClientRect().width; if (kw) sum += kw + (ki ? 4 : 0); });
+            best = Math.max(best, sum);
+          }
+          if (c.querySelector('.e-anchor')) best = Math.max(best, 260);
+          var tg = c.querySelector('.ds-slide-toggle');
+          if (tg) {
+            var track = tg.querySelector('.ds-slide-toggle__track');
+            var lbl = tg.querySelector('.ds-slide-toggle__title');
+            best = Math.max(best, (track ? track.getBoundingClientRect().width : 36) + 8 + (lbl ? textWidthOf(lbl.textContent.trim(), lbl) : 0));
+          }
+        }
+        var el = c.querySelector('.ds-text-ui__list-item');
+        if (el) best = Math.max(best, textWidthOf(el.textContent.trim(), el));
+      });
+      widths[i] = Math.ceil(best) + 16 + (hasIcon ? 28 : 0);
+      /* «Стикеры» — минимум 204 px (ширина из CSS колонки): миниатюрам нужен запас */
+      if (h.classList.contains('t-c-vst')) widths[i] = Math.max(widths[i], 204);
+      fixed[i] = isFixed;
+    });
+    var total = widths.reduce(function (a, b) { return a + b; }, 0);
+    var free = tableW - total;
+    var shareCols = [];
+    hdrCells.forEach(function (h, i) { if (!fixed[i]) shareCols.push(i); });
+    if (free > 0 && shareCols.length) {
+      var share = Math.floor(free / shareCols.length);
+      shareCols.forEach(function (i, k) {
+        widths[i] += (k === shareCols.length - 1) ? free - share * (shareCols.length - 1) : share;
+      });
+    }
+    hdrCells.forEach(function (h, i) { h.style.width = widths[i] + 'px'; h.style.flex = 'none'; });
+    rows.forEach(function (r) {
+      hdrCells.forEach(function (h, i) {
+        var c = r.children[i];
+        if (c) { c.style.width = widths[i] + 'px'; c.style.flex = 'none'; }
+      });
+    });
+  }
+
+  /* один экран ВМ: полоса с селектами (ВМ · Версия · Тип) + аккордеоны групп */
+  function renderMenuView() {
+    renderVmSelects();
+    renderTypeValue();
+    /* как в списке баннеров: в полосе подпись «Фильтр:», а в полях — «Имя поля: значение» */
+    qs('#vmStripTitle').textContent = 'Фильтр:';
+    qs('#vmStripTitle').hidden = false;
+    renderMenuContent();
+  }
+
+  /* «Тип»: значение в поле — «Все» / «Список блюд» / «Модификаторы» */
+  function renderTypeValue() {
+    var el = qs('#selTypeValue');
+    var t = (typeSel.dishes && typeSel.mods) ? 'Все' : (typeSel.dishes ? 'Список блюд' : 'Модификаторы');
+    var text = 'Тип элементов: ' + t;
+    el.textContent = text;
+    el.title = text;
+  }
+  function typeAllowed(it) { return it.type === 'modifier' ? typeSel.mods : typeSel.dishes; }
+  /* список мультивыбора: «Все» + Divider + пункты с чекбоксами (как фильтр списка ВМ) */
+  function buildTypeSel() {
+    var host = qs('#selTypeItems');
+    host.innerHTML = '';
+    function row(label, type, checked, indeterminate) {
+      var item = document.createElement('div');
+      item.className = 'ds-select-item ds-select-item--false';
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', checked ? 'true' : 'false');
+      item.setAttribute('data-type', type);
+      item.innerHTML = '<span class="ds-select-item__element-left"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" tabindex="-1"' + (checked ? ' checked' : '') + '><span class="ds-checkbox__box"></span></label></span>' +
+        '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>';
+      item.querySelector('.ds-select-item__label').textContent = label;
+      item.querySelector('.ds-checkbox__input').indeterminate = !!indeterminate;
+      host.appendChild(item);
+    }
+    var all = typeSel.dishes && typeSel.mods;
+    row('Все', 'ALL', all, !all && (typeSel.dishes || typeSel.mods));
+    var div = document.createElement('div');
+    div.className = 'ds-divider';
+    host.appendChild(div);
+    row('Список блюд', 'dishes', typeSel.dishes, false);
+    row('Модификаторы', 'mods', typeSel.mods, false);
+  }
+  qs('#selTypeItems').addEventListener('click', function (e) {
+    var it = e.target.closest('[data-type]');
+    if (!it) return;
+    var t = it.getAttribute('data-type');
+    if (t === 'ALL') {
+      var on = !(typeSel.dishes && typeSel.mods);
+      typeSel.dishes = on;
+      typeSel.mods = on;
+    } else if (t === 'dishes') {
+      typeSel.dishes = !typeSel.dishes;
+    } else {
+      typeSel.mods = !typeSel.mods;
+    }
+    /* пустой набор невозможен — возвращаем «Все» */
+    if (!typeSel.dishes && !typeSel.mods) { typeSel.dishes = true; typeSel.mods = true; }
+    buildTypeSel();
+    renderTypeValue();
+    renderMenuContent();
+  });
+
+  /* S6: базовая версия — таблица Блюдо/Название в системе/Артикул + глобальный поиск (D-03) */
+  var baseItemsCache = [];
+  function renderBaseTable() {
+    var host = qs('#vmBaseRows');
+    host.innerHTML = '';
+    var q = vmGSearch.value.trim().toLowerCase();
+    baseItemsCache = [];
+    var hits = 0;
+    groupsOf().forEach(function (g) {
+      g.items.forEach(function (it) {
+        var pass = !q || it.name.toLowerCase().indexOf(q) >= 0 || it.sys.toLowerCase().indexOf(q) >= 0 || it.code.indexOf(q) >= 0;
+        if (!pass) return;
+        hits++;
+        baseItemsCache.push(it);
+        var row = document.createElement('div');
+        row.className = 'ds-table-content-row';
+        row.innerHTML =
+          '<div class="ds-table-content-cell t-c-dish"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui">' + iconHtml(it.type) +
+            '<div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.name) + '</span></div></div></div></div>' +
+          '<div class="ds-table-content-cell t-c-sys"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.sys) + '</span></div></div></div></div>' +
+          '<div class="ds-table-content-cell t-c-sku"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.code) + '</span></div></div></div></div>';
+        host.appendChild(row);
+      });
+    });
+    qs('#vmMenuEmpty').hidden = hits !== 0;
+    qs('#vmBaseTable').hidden = hits === 0;
+    if (hits) fitTable(qs('#vmBaseTable'), qs('#vmBaseTable').clientWidth);
+  }
+  vmGSearch.addEventListener('input', function () { if (VIEW === 'menu') renderMenuView(); });
+  /* поиск экрана ВМ — та же механика, что везде: XS раскрывается в поле S, search-off очищает и сворачивает */
+  var mSearchBtn = qs('#viewMenu .hc__search');
+  var mSearchField = qs('#hc-search-m');
+  function openMenuSearch() { mSearchBtn.hidden = true; mSearchField.hidden = false; vmGSearch.focus(); }
+  function closeMenuSearch(reset) {
+    if (mSearchField.hidden) return;
+    mSearchField.hidden = true;
+    mSearchBtn.hidden = false;
+    if (reset !== false) { vmGSearch.value = ''; if (VIEW === 'menu') renderMenuView(); }
+  }
+  mSearchBtn.addEventListener('click', openMenuSearch);
+  mSearchBtn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenuSearch(); } });
+  mSearchField.querySelector('.ds-search__right-icon').addEventListener('click', function () { closeMenuSearch(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenuSearch(true); });
+  document.addEventListener('click', function (e) {
+    if (mSearchField.hidden) return;
+    if (mSearchField.contains(e.target) || mSearchBtn.contains(e.target)) return;
+    closeMenuSearch(false);
+  });
+
+  /* шапка колонки со стрелкой сортировки (D-03: сортировка по столбцам) */
+  function hdrCell(label, key, cls) {
+    var active = sortState.key === key;
+    return '<div class="ds-table-header-cell ' + cls + (active ? ' th-active' : '') + '" data-sort="' + key + '"' + (active ? ' data-dir="' + sortState.dir + '"' : '') + '>' +
+      '<div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + label + '</span></div>' +
+      '<span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state th-sort"><svg width="20" height="20" aria-hidden="true"><use href="#i-sort"/></svg></span></span></div></div></div>';
+  }
+
+  /* таблица ВМ: аккордеоны групп; фильтр по типу («Тип»), поиск, сортировка по колонкам (D-03/D-05) */
+  function renderMenuContent() {
+    var acc = qs('#vmAcc');
+    acc.innerHTML = '';
+    var q = vmGSearch.value.trim().toLowerCase();
+    var hits = 0;
+    var anyShown = false;
+    groupsOf().forEach(function (g) {
+      var items = g.items.filter(typeAllowed).filter(function (it) {
+        return !q || it.name.toLowerCase().indexOf(q) >= 0 || it.sys.toLowerCase().indexOf(q) >= 0 || it.code.indexOf(q) >= 0;
+      });
+      if (!items.length) return;
+      /* сортировка по колонкам (D-03) — внутри каждой группы */
+      if (sortState.key) {
+        items = items.slice().sort(function (a, b) {
+          var av = sortState.key === 'name' ? a.name : (sortState.key === 'sys' ? a.sys : a.code);
+          var bv = sortState.key === 'name' ? b.name : (sortState.key === 'sys' ? b.sys : b.code);
+          var r = String(av).localeCompare(String(bv), 'ru', { numeric: true, sensitivity: 'base' });
+          return sortState.dir === 'asc' ? r : -r;
+        });
+      }
+      hits += items.length;
+      /* сколько из показанных строк со стикером и у скольких включён признак
+         «Отображать на итоговой картинке комбо» (C-12) */
+      var cntSt = 0, cntOn = 0;
+      items.forEach(function (it) {
+        var p = stickersOf(it.code);
+        if (p.length) cntSt++;
+        if (p.some(function (x) { return !!x.combo; })) cntOn++;
+      });
+      /* раскрытость групп помним между перерисовками; при первом показе — первая группа;
+         при активном поиске — раскрываем все найденные группы */
+      var open = q ? true : (openGroups.hasOwnProperty(g.name) ? openGroups[g.name] : !anyShown);
+      anyShown = true;
+      var panel = document.createElement('div');
+      panel.className = 'ds-expansion' + (open ? ' ds-expansion--open' : '');
+      var rowsHtml = items.map(function (it) {
+        var sts = stickersOf(it.code);
+        /* строка — как во всех таблицах: название — ссылка (Text/UI Link сразу #448AFF, без подчёркивания),
+           вся строка кнопкой НЕ является (правило 03.11.2026) */
+        return '<div class="ds-table-content-row">' +
+          '<div class="ds-table-content-cell t-c-vname"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui">' +
+            '<div class="ds-text-ui__content"><span class="ds-text-ui__list-item"><button type="button" class="vm-link" data-el="' + esc(it.code) + '">' + esc(it.name) + '</button></span></div></div></div></div>' +
+          '<div class="ds-table-content-cell t-c-vsys"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.sys) + '</span></div></div></div></div>' +
+          '<div class="ds-table-content-cell t-c-vsku"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.code) + '</span></div></div></div></div>' +
+          '<div class="ds-table-content-cell t-c-vst"><div class="ds-table-content-cell__element">' +
+            (sts.length ? '<span class="st-cell">' + sts.map(function (p) { return thumbHtml(stickerById(p.sticker), p.combo); }).join('') + '</span>'
+                        : '<span class="ds-text-body-s-14-normal-regular">—</span>') +
+          '</div></div>' +
+        '</div>';
+      }).join('');
+      panel.innerHTML =
+        '<div class="ds-expansion__header" role="button" tabindex="0" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+          /* иконка стрелки — через контейнер Icon size (20), иначе глиф 24 вылезает за кадр 20×20 */
+          '<span class="ds-expansion__arrow"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">keyboard_arrow_down</span></span></span>' +
+          '<span class="ds-expansion__title acc-title"><span class="acc-name">' + esc(g.name) + '</span><span class="acc-count">' +
+            '<span class="cnt-total">' + items.length + '</span>' +
+            '<span class="cnt-extra">Стикер ' + cntSt + '</span>' +
+            (cntOn > 0 ? '<span class="cnt-extra">Отображено ' + cntOn + '</span>' : '') +
+          '</span></span>' +
+        '</div>' +
+        '<div class="ds-expansion__content ds-expansion__content--no-padding">' +
+          '<div class="acc-rows tbl">' +
+            '<div class="ds-table-header-row">' +
+              hdrCell('Название для внеш. меню', 'name', 't-c-vname') + hdrCell('Название в системе', 'sys', 't-c-vsys') + hdrCell('Артикул', 'sku', 't-c-vsku') +
+              '<div class="ds-table-header-cell t-c-vst"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Стикеры</span></div></div></div></div>' +
+            '</div>' +
+            rowsHtml +
+          '</div>' +
+        '</div>';
+      acc.appendChild(panel);
+      var header = panel.querySelector('.ds-expansion__header');
+      header.addEventListener('click', function () {
+        var now = !panel.classList.contains('ds-expansion--open');
+        panel.classList.toggle('ds-expansion--open', now);
+        header.setAttribute('aria-expanded', now ? 'true' : 'false');
+        openGroups[g.name] = now;
+        if (now) fitTable(panel.querySelector('.acc-rows'), qs('#vmAcc').clientWidth);
+      });
+      header.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); header.click(); }
+      });
+    });
+    /* сортировка по колонкам — клик по шапке группы (D-03) */
+    qsa('.ds-table-header-cell[data-sort]', acc).forEach(function (th) {
+      th.addEventListener('click', function () {
+        var key = th.getAttribute('data-sort');
+        sortState.dir = (sortState.key === key && sortState.dir === 'asc') ? 'desc' : 'asc';
+        sortState.key = key;
+        renderMenuContent();
+      });
+    });
+    /* название строки — ссылка, открывает панель S8 (D-07) */
+    qsa('.vm-link[data-el]', acc).forEach(function (link) {
+      link.addEventListener('click', function () {
+        openElementPanel(sel.menu, sel.version, link.getAttribute('data-el'));
+      });
+    });
+    /* ширины колонок — по данным (шапки и строки — в одну строку) */
+    var accW = qs('#vmAcc').clientWidth;
+    qsa('.acc-rows', acc).forEach(function (x) { fitTable(x, accW); });
+    /* нет результатов поиска — пустое состояние вместо пустой таблицы */
+    qs('#vmMenuEmpty').hidden = hits !== 0;
+    acc.hidden = hits === 0;
+  }
+  /* табы раздела убраны: тип выбирается мультиселектом «Тип» в полосе */
+
+  /* ══════════ S8: панель элемента (D-07) ══════════ */
+  var elDlg = qs('#elDlg');
+  var elDim = qs('#elDim');
+  var elBody = qs('#elBody'), elScroll = qs('#elScroll');
+  var elPopLayer = qs('#elPopLayer');
+  /* полоса прокрутки контента — компонент Scroll: слушатель ставим один раз, дальше — scrollSync */
+  if (window.DSPatterns && DSPatterns.initScroll) DSPatterns.initScroll(elBody, elScroll);
+  var elState = null;   /* { menu, version, code, item, rows: {size: [{angle, sticker, combo}]} } */
+  var elPop = null;      /* открытый попап селекта (живёт в #elPopLayer) */
+  var elPopAnchor = null; /* поле, к которому привязан попап */
+
+  /* закрыть попап и вернуть его разметку в поле (поле перерисовывается целиком) */
+  function closeElPop() {
+    if (!elPop) return;
+    var p = elPop, a = elPopAnchor;
+    elPop = null;
+    elPopAnchor = null;
+    p.hidden = true;
+    if (a) {
+      if (p.parentElement !== a) a.appendChild(p);
+      var f = a.querySelector('.fsel');
+      if (f) f.classList.remove('is-open');
+    } else if (p.parentElement === elPopLayer) {
+      elPopLayer.removeChild(p);
+    }
+  }
+
+  function itemByCode(menu, version, code) {
+    var groups = data.catalog[menu + '|' + version] || [];
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].items.length; j++) {
+        if (groups[i].items[j].code === code) return groups[i].items[j];
+      }
+    }
+    return null;
+  }
+  function openElementPanel(menu, version, code) {
+    var it = itemByCode(menu, version, code);
+    if (!it) return;
+    var sizes = it.sizes && it.sizes.length ? it.sizes : [null];
+    var rows = {};
+    sizes.forEach(function (sz) {
+      rows[sz] = ANGLES.map(function (a) {
+        var p = data.placements.filter(function (x) {
+          return x.menu === menu && x.version === version && x.code === code && (x.size || null) === sz && x.angle === a.id;
+        })[0];
+        return { angle: a.id, sticker: p ? p.sticker : '', combo: p ? !!p.combo : false };
+      });
+    });
+    elState = { menu: menu, version: version, code: code, item: it, rows: rows };
+    elDim.hidden = false;
+    elDlg.hidden = false;
+    renderElementPanel();
+  }
+  function closeElementPanel() {
+    elDim.hidden = true;
+    elDlg.hidden = true;
+    closeElPop();
+    var h = qs('#elHint'); if (h) h.hidden = true;
+    elState = null;
+  }
+  function elSelectHtml(sz, a, val) {
+    var st = stickerById(val);
+    return '<div class="e-anchor" data-anchor="' + esc(sz == null ? '' : sz) + '|' + a.angle + '">' +
+      '<div class="ds-select-form ds-select-form--s ds-select-form--' + (val ? 'populated' : 'empty') + ' fsel" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Стикер">' +
+        '<div class="ds-input ds-input--s ds-input--' + (val ? 'populated' : 'empty') + '">' +
+          '<div class="ds-input__frame">' +
+            '<div class="ds-input__content"><span class="ds-input__field">' + (st ? esc(st.name) : 'Выберите стикер') + '</span></div>' +
+            '<span class="ds-input__icon ds-icon-group">' +
+              '<span class="ds-icon-group__icon" data-el-clear="' + esc(sz == null ? '' : sz) + '|' + a.angle + '" role="button" tabindex="0" aria-label="Очистить"' + (val ? '' : ' hidden') + '><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>' +
+              '<span class="ds-icon-group__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ds-select-container fpop" hidden>' +
+        '<div class="ds-select-container__title"><span class="fpop__title">Выберите стикер</span></div>' +
+        '<div class="ds-divider"></div>' +
+        '<div class="fpop__wrap"><div class="ds-select-container__content fpop__scroll"></div>' +
+          '<div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  function renderElementPanel() {
+    if (!elState) return;
+    qs('#elTitle').textContent = elState.item.name;
+    qs('#elDesc').textContent = 'Артикул: ' + elState.item.code;
+    var body = qs('#elBody');
+    body.innerHTML = '';
+    var sizes = elState.item.sizes && elState.item.sizes.length ? elState.item.sizes : [null];
+    sizes.forEach(function (sz) {
+      var sec = document.createElement('div');
+      sec.className = 'el-sec';
+      var preview = '<div class="el-prev">' +
+        '<div class="el-prev__box"><span class="material-icons" aria-hidden="true">image</span>' +
+          elState.rows[sz].map(function (rr) {
+            var s = stickerById(rr.sticker);
+            /* превью — ВСЕ размещённые стикеры (D-07); тумблер «Отображать… комбо» на превью не влияет */
+            if (!s) return '';
+            var cls = { TOP_LEFT: 'tl', TOP_RIGHT: 'tr', BOTTOM_LEFT: 'bl', BOTTOM_RIGHT: 'br' }[rr.angle];
+            return '<span class="el-prev__st el-prev__st--' + cls + '">' + thumbHtml(s) + '</span>';
+          }).join('') +
+        '</div>' +
+        '<span class="el-prev__cap">Превью</span>' +
+      '</div>';
+      var rowsHtml = elState.rows[sz].map(function (r) {
+        return '<div class="ds-table-content-row">' +
+          '<div class="ds-table-content-cell e-c-angle"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(angleName(r.angle)) + '</span></div></div></div></div>' +
+          '<div class="ds-table-content-cell e-c-st"><div class="ds-table-content-cell__element">' + elSelectHtml(sz, r, r.sticker) + '</div></div>' +
+          '<div class="ds-table-content-cell e-c-combo"><div class="ds-table-content-cell__element">' +
+            /* Slide toggle БЕЗ подписи (набор «Slide toggle (Examples)»: Basic / ONLY / with icon / support / error):
+               название действия даёт заголовок колонки, повторять текст в каждой строке не нужно; доступное имя — aria-label */
+            '<label class="ds-slide-toggle"><span class="ds-slide-toggle__row">' +
+              '<input class="ds-slide-toggle__input" type="checkbox" aria-label="Отображать на итоговой картинке комбо" data-el-toggle="' + esc(sz == null ? '' : sz) + '|' + r.angle + '"' + (r.combo ? ' checked' : '') + (r.sticker ? '' : ' disabled') + '>' +
+              '<span class="ds-slide-toggle__track"></span>' +
+            '</span></label>' +
+          '</div></div>' +
+        '</div>';
+      }).join('');
+      sec.innerHTML = (sz ? '<div class="el-sec__cap">Размер: ' + esc(sz) + '</div>' : '') +
+        '<div class="el-tbl"><div class="ds-table-header-row">' +
+          '<div class="ds-table-header-cell e-c-angle"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Расположение стикера</span></div></div></div></div>' +
+          '<div class="ds-table-header-cell e-c-st"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Стикер</span></div></div></div></div>' +
+          '<div class="ds-table-header-cell e-c-combo">' +
+            '<div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui">' +
+              '<div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Отображать</span></div>' +
+              '<span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state e-hint-ic" role="button" tabindex="0" aria-label="Отображать на итоговой картинке комбо"><span class="material-icons" aria-hidden="true">info</span></span></span>' +
+            '</div></div>' +
+          '</div>' +
+        '</div>' + rowsHtml + '</div>' + preview;
+      body.appendChild(sec);
+    });
+    /* ширины колонок — по данным: шапка «Отображать…» и тогглы — в одну строку */
+    qsa('.el-tbl', body).forEach(function (t) { fitTable(t, t.clientWidth); });
+    syncDlgScroll();
+  }
+  /* разделители шапки/подвала диалога — по факту прокрутки тела (скролла нет — линии нет) */
+  function syncDlgScroll() {
+    var can = elBody.scrollHeight > elBody.clientHeight + 1;
+    elDlg.classList.toggle('is-scroll', can);
+    /* полоса — компонентом Scroll (сама прячется, если прокрутки нет) */
+    if (window.DSPatterns && DSPatterns.scrollSync) DSPatterns.scrollSync(elBody, elScroll);
+  }
+  window.addEventListener('resize', function () { if (elState) syncDlgScroll(); });
+  /* панель ревью/окно меняют размер кадра без события resize — следим за самим телом */
+  if (window.ResizeObserver) new ResizeObserver(function () { if (elState) syncDlgScroll(); }).observe(elBody);
+  function angleName(id) { var a = ANGLES.filter(function (x) { return x.id === id; })[0]; return a ? a.name : ''; }
+  /* поле селекта стикера: раскрытие, выбор, очистка */
+  function buildElPop(pop, anchor, sz, angle) {
+    var host = pop.querySelector('.fpop__scroll');
+    host.innerHTML = '';
+    data.stickers.forEach(function (st) {
+      var item = document.createElement('div');
+      item.className = 'ds-select-item ds-select-item--false' + (elState.rows[sz].filter(function (r) { return r.angle === angle; })[0].sticker === st.id ? ' ds-select-item--selected' : '');
+      item.innerHTML = '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>';
+      item.querySelector('.ds-select-item__label').textContent = st.name;
+      item.addEventListener('click', function () {
+        var row = elState.rows[sz].filter(function (r) { return r.angle === angle; })[0];
+        row.sticker = st.id;
+        closeElPop();
+        renderElementPanel();
+      });
+      host.appendChild(item);
+    });
+  }
+  qs('#elBody').addEventListener('click', function (e) {
+    /* клик по полю селекта не должен доходить до document — иначе попап закроется тем же кликом */
+    if (e.target.closest('.e-anchor')) e.stopPropagation();
+    /* крестик очистки в поле селекта */
+    var clr = e.target.closest('[data-el-clear]');
+    if (clr) {
+      var key = clr.getAttribute('data-el-clear').split('|');
+      var sz = key[0] === '' ? null : key[0];
+      var row = elState.rows[sz].filter(function (r) { return r.angle === key[1]; })[0];
+      row.sticker = '';
+      row.combo = false;
+      closeElPop();
+      renderElementPanel();
+      return;
+    }
+    /* поле селекта — открыть/закрыть список */
+    var anchor = e.target.closest('.e-anchor');
+    if (!anchor) return;
+    var pop = anchor.querySelector('.fpop');
+    if (!pop) return;
+    if (elPop === pop && !pop.hidden) { closeElPop(); return; }
+    closeElPop();
+    var key = anchor.getAttribute('data-anchor').split('|');
+    var sz = key[0] === '' ? null : key[0];
+    var angle = key[1];
+    /* попап — во вьюпорте (portal, fixed): измеряем полную высоту, потом решаем вниз/вверх / сколько места списку -
+       таки элементов немного — попап виден целиком */
+    var ar = anchor.getBoundingClientRect();
+    var GAP = 2, EDGE = 8;
+    elPopLayer.appendChild(pop);
+    pop.style.width = Math.round(ar.width) + 'px';
+    pop.style.left = Math.round(ar.left) + 'px';
+    pop.style.top = Math.round(ar.bottom + GAP) + 'px';
+    pop.classList.remove('is-up');
+    pop.hidden = false;
+    elPop = pop;
+    elPopAnchor = anchor;
+    buildElPop(pop, anchor, sz, angle);
+    var list = pop.querySelector('.fpop__scroll');
+    if (list) {
+      list.style.maxHeight = '';
+      var natural = pop.offsetHeight;
+      var chrome = Math.max(0, natural - list.offsetHeight);
+      var below = window.innerHeight - EDGE - (ar.bottom + GAP);
+      var above = ar.top - GAP - EDGE;
+      var goUp = natural > below && above > below;
+      pop.classList.toggle('is-up', goUp);
+      var avail = (goUp ? above : below) - chrome;
+      list.style.maxHeight = Math.max(44, Math.min(320, avail, list.scrollHeight)) + 'px';
+      var h = pop.offsetHeight;
+      pop.style.top = Math.round(goUp ? Math.max(EDGE, ar.top - GAP - h) : ar.bottom + GAP) + 'px';
+      if (window.DSPatterns) DSPatterns.scrollSync(list, pop.querySelector('.fscroll'));
+    }
+    anchor.querySelector('.fsel').classList.add('is-open');
+  });
+  /* прокрутка/страница — попап отрывается от поля, закрываем */
+  elBody.addEventListener('scroll', function () { closeElPop(); });
+  document.addEventListener('click', function (e) {
+    if (elPop && !elPop.contains(e.target)) closeElPop();
+  });
+  /* подсказка к иконке «info» в заголовке колонки тоггла — компонент Hint (ds-hint-container).
+     Элемент один на страницу (position: fixed): позиционируем по иконке, шапка таблицы его не срезает */
+  function showElHint(target, on) {
+    var ic = target.closest ? target.closest('.e-hint-ic') : null;
+    var hint = qs('#elHint');
+    if (!ic || !hint) return;
+    hint.hidden = !on;
+    if (!on) return;
+    var r = ic.getBoundingClientRect();
+    hint.style.left = '0px';
+    /* тултип не перекрывает шапку таблицы: ниже её нижней границы (но не ближе 8 к иконке) */
+    var row = ic.closest('.ds-table-header-row');
+    var top = r.bottom + 8;
+    if (row) top = Math.max(top, row.getBoundingClientRect().bottom + 4);
+    hint.style.top = Math.round(top) + 'px';
+    var hr = hint.getBoundingClientRect();
+    /* центрируем по иконке — хвостик указывает точно на неё; у края экрана — зажим,
+       а хвостик доворачиваем, чтобы он остался под иконкой */
+    var cx = r.left + r.width / 2;
+    var left = Math.max(8, Math.min(window.innerWidth - hr.width - 8, Math.round(cx - hr.width / 2)));
+    hint.style.left = left + 'px';
+    var arrow = hint.querySelector('.e-hint__arrow');
+    if (arrow) {
+      var aw = arrow.getBoundingClientRect().width || 8;
+      var shift = Math.round(cx - (left + hr.width / 2));
+      var maxShift = Math.round(hr.width / 2 - aw / 2 - 4);
+      shift = Math.max(-maxShift, Math.min(maxShift, shift));
+      arrow.style.transform = shift ? 'translateX(' + shift + 'px)' : '';
+    }
+  }
+  qs('#elBody').addEventListener('mouseover', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, true); });
+  qs('#elBody').addEventListener('mouseout', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, false); });
+  qs('#elBody').addEventListener('focusin', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, true); });
+  qs('#elBody').addEventListener('focusout', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, false); });
+  /* прокрутили контент — подсказка прячется (она позиционирована по экрану) */
+  qs('#elBody').addEventListener('scroll', function () { var h = qs('#elHint'); if (h) h.hidden = true; });
+  qs('#elBody').addEventListener('change', function (e) {
+    var tg = e.target.closest && e.target.closest('[data-el-toggle]');
+    if (!tg) return;
+    var key = tg.getAttribute('data-el-toggle').split('|');
+    var sz = key[0] === '' ? null : key[0];
+    var row = elState.rows[sz].filter(function (r) { return r.angle === key[1]; })[0];
+    row.combo = tg.checked;
+  });
+  /* F-8: тоггл недоступен без выбранного стикера в строке (disabled ставится при рендере) */
+  qs('#elClose').addEventListener('click', closeElementPanel);
+  qs('#elCancel').addEventListener('click', closeElementPanel);
+  elDim.addEventListener('click', closeElementPanel);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (elPop) { closeElPop(); return; }
+      if (!elDlg.hidden) closeElementPanel();
+    }
+  });
+  qs('#elSave').addEventListener('click', function () {
+    if (!elState) return;
+    /* заменяем привязки элемента в выбранной версии (D-07: Сохранить); привязки других элементов не трогаем */
+    data.placements = data.placements.filter(function (p) {
+      return !(p.menu === elState.menu && p.version === elState.version && p.code === elState.code);
+    });
+    Object.keys(elState.rows).forEach(function (szKey) {
+      var sz = szKey === 'null' ? null : szKey;
+      elState.rows[szKey].forEach(function (r) {
+        if (!r.sticker) return;
+        data.placements.push({ sticker: r.sticker, menu: elState.menu, version: elState.version, code: elState.code, size: sz, angle: r.angle, combo: r.combo });
+      });
+    });
+    saveData();
+    closeElementPanel();
+    renderMenuContent();
+    showToast('Стикеры сохранены', 'positive');
+  });
+
+  /* ── сортировка — в шапках аккордеонов, см. renderMenuContent() ── */
+
+  /* ── тост — Snackbar (компонент ДС, Single Dark) ── */
+  var snackbar = qs('#snackbar');
+  var sbLabel = qs('#sbLabel');
+  var sbTimer = null;
+  var SB_ICONS = { neutral: 'info', positive: 'check_circle', negative: 'error', warning: 'warning' };
+  function showToast(text, status) {
+    status = SB_ICONS[status] ? status : 'neutral';
+    snackbar.classList.remove('sb--neutral', 'sb--positive', 'sb--negative', 'sb--warning');
+    snackbar.classList.add('sb--' + status);
+    snackbar.querySelector('.ds-snackbar__icon .material-icons').textContent = SB_ICONS[status];
+    sbLabel.textContent = text;
+    snackbar.hidden = false;
+    snackbar.classList.remove('sb--run');
+    void snackbar.offsetWidth;
+    snackbar.classList.add('sb--run');
+    clearTimeout(sbTimer);
+    sbTimer = setTimeout(function () { snackbar.hidden = true; snackbar.classList.remove('sb--run'); }, 5000);
+  }
+
+  /* ── ревью: шаги S5 (list), экран ВМ (base), S8 (element); отдельного шага версии больше нет ── */
+  window.DSReviewState = function (id) {
+    reviewState = id;
+    if (id === 'list') {
+      VIEW = 'list';
+      showView();
+      return;
+    }
+    VIEW = 'menu';
+    if (id === 'version' || id === 'element') {
+      var m = menuById(sel.menu);
+      var nonBase = (m.versions || []).filter(function (v) { return !v.base; })[0];
+      sel.version = nonBase ? nonBase.id : sel.version;
+      showView();
+      if (id === 'element') setTimeout(function () { openElementPanel(sel.menu, sel.version, '3010'); }, 100);
+      return;
+    }
+    showView();
+  };
+
+  /* вкладки раздела — переход между табами */
+  qsa('[data-go]').forEach(function (t) {
+    t.addEventListener('click', function () { location.href = t.getAttribute('data-go'); });
+  });
+
+  /* начальное состояние из URL (прямой переход на шаг панели ревью):
+     S7/S8 открываются с конкретной версией (не базовой) */
+  if (Q.state === 'element') {
+    var mm0 = menuById(sel.menu);
+    var nb0 = (mm0.versions || []).filter(function (v) { return !v.base; })[0];
+    sel.version = nb0 ? nb0.id : sel.version;
+    showView();
+    setTimeout(function () { openElementPanel(sel.menu, sel.version, '3010'); }, 100);
+  } else if (Q.state === 'version') {
+    var m2 = menuById(sel.menu);
+    var nb2 = (m2.versions || []).filter(function (v) { return !v.base; })[0];
+    sel.version = nb2 ? nb2.id : sel.version;
+    showView();
+  } else {
+    showView();
+  }
+})();
+</script>
+</body>
+</html>

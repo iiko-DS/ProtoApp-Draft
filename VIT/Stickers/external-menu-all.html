@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Киоски · Стикеры — внешнее меню (один экран, экспандеры)</title>
+<!--
+  ЭКРАН «Внешнее меню · всё» — соединение двух экранов в ОДИН:
+    • S5 «Внешнее меню · список» (external-menu.html?state=list) и
+    • S6/S7 «Внешнее меню · таблица» (external-menu.html?state=base)
+  Каждое внешнее меню — панель Expansion panel ДС (название + счётчик элементов);
+  внутри панели — таблица элементов этого меню (версия = первая, как при переходе из списка).
+
+  Компоненты ДС: Expansion panel (ds-expansion), Table (ds-table-*), Tabs, Search,
+  Divider, Icon size, Text UI, Button (ссылка названия — Text/UI Link).
+  Разметка и поведение — из существующих экранов (external-menu.html), новых компонентов нет.
+-->
+<script src="sidenav-menu.js"></script>
+<script>window.DSR_NO_CHROME = true;</script>
+<script src="../../../Design-System/connect.js" defer></script>
+<script src="../../../Design-System/components-web/ds-patterns.js"></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
+<script src="../../../Design-System/organisms/app-header-content/header-content.js?v=1" defer></script>
+<style>
+  html, body { margin: 0; font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+  .apph__store, .apph__tabs, .apph__pill, .apph__cal, .apph__search, .apph__mpill, .apph__mright { display: none !important; }
+  .material-icons { font-family: 'Material Icons Outlined'; }
+  :root { color-scheme: light; }
+
+  /* ── раскладка (вне ДС) ── */
+  .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
+  @media (max-width: 1160px) { .frame { padding: var(--ds-space-5x, 20px) var(--ds-space-4x, 16px) var(--ds-space-6x, 24px); } }
+  .page { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  /* вид экрана — как .vm-view на остальных экранах раздела: шапка → табы → контент, зазор 16 */
+  #viewAll { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  .page [hidden] { display: none !important; }
+  .sec-tabs { margin: 0; }
+
+  /* поиск в шапке — механика организма header-content: Search XS раскрывается в поле Search S */
+  #viewAll .hc__right { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); }
+  .hc__search { cursor: pointer; }
+  .hc__search.ds-search--xs { background: var(--ds-color-search-default-background-xs, #f0f5ff); border: 0; justify-content: center; }
+  .hc__search.ds-search--xs:hover { background: var(--ds-color-search-hover-background-xs, #e8f0ff); border: 0; }
+  .hc-search[hidden] { display: none; }
+  .hc-search__input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0; font: inherit; color: var(--ds-color-search-focusvalue-text-color, #333333); }
+  .hc-search__input::placeholder { color: var(--ds-color-search-focus-text-color, #d6d6d6); opacity: 1; }
+  .hc-search:focus-within { border-color: var(--ds-color-search-focus-border-color, #448aff); }
+  .hc-search .ds-search__right-icon { align-self: stretch; }
+  .hc-search .ds-search__right-icon > .ds-divider { width: 1px; height: 100%; flex: 0 0 auto; }
+
+  /* ── полоса фильтров — как на экране «Внешнее меню · таблица» ── */
+  .tha { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-2x, 8px);
+    box-sizing: border-box; min-height: 36px; padding: 4px 0; }
+  /* как на экране «Внешнее меню · таблица»: от полосы до панелей — 8px */
+  /* полоса фильтров — 4 поля в одну строку; на узкой ширине полоса переносится, а не вылезает */
+  #allFilters { margin-bottom: calc(-1 * var(--ds-space-2x, 8px)); flex-wrap: wrap; row-gap: var(--ds-space-2x, 8px); }
+  .vm-selects { flex-wrap: wrap; row-gap: var(--ds-space-2x, 8px); }
+  .tha__left { display: flex; align-items: center; gap: var(--ds-space-4x, 16px); min-width: 0; }
+  .tha__title { font-size: var(--ds-font-body-m-16-normal-medium-size, 16px); line-height: var(--ds-font-body-m-16-normal-medium-line, 24px);
+    letter-spacing: var(--ds-font-body-m-16-normal-medium-spacing, 0); font-weight: var(--ds-font-body-m-16-normal-medium-weight, 500);
+    color: var(--ds-color-text-primary, #333333); white-space: nowrap; }
+  .vm-selects { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); min-width: 0; }
+  .vm-selects .field-anchor { width: auto; }
+  .vm-selects .ds-input--xs .ds-input__frame {
+    border: 0;
+    border-bottom: var(--ds-form-field-border-size, 1px) solid var(--ds-color-stroke-default, #e0e0e0);
+    border-radius: var(--ds-radius-0);
+    background: none;
+  }
+  .field-anchor { position: relative; display: block; min-width: 0; align-self: start; }
+  .fsel { cursor: pointer; }
+  .fsel .ds-input__field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fsel.is-open .ds-input__frame { border-bottom-color: var(--ds-color-form-field-filled-focus-border-color, #448aff); }
+  .fpop { position: absolute; top: calc(100% + 2px); left: 0; z-index: 40; width: 100%; min-height: 0; }
+  .fpop__wrap { display: flex; flex-direction: row; align-items: flex-start; width: 100%; min-height: 0; }
+  .fpop__scroll { flex: 1 1 auto; min-width: 0; max-height: 320px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; padding-bottom: var(--ds-space-2x, 8px); }
+  .fpop__scroll::-webkit-scrollbar { display: none; }
+  /* Divider внутри прокручиваемого списка: список — flex-колонка с overflow, и разделитель
+     со flex-shrink:1 схлопывался в 0 px, когда пунктов больше max-height (не было видно линии) */
+  .fpop__scroll > .ds-divider { flex: none; min-height: 1px; }
+  .fpop .fscroll { flex: none; align-self: stretch; }
+  .fpop__title { font-size: var(--ds-font-body-s-14-normal-regular-size); line-height: var(--ds-font-body-s-14-normal-regular-line);
+    letter-spacing: var(--ds-font-body-s-14-normal-regular-spacing); font-weight: var(--ds-font-body-s-14-normal-medium-weight);
+    color: var(--ds-color-text-primary, #333333); }
+  .fpop .ds-select-item { width: 100%; cursor: pointer; align-items: flex-start; }
+  .fpop .ds-select-item__content { flex: 1 1 auto; min-width: 0; }
+  .fpop .ds-select-item__element-left,
+  .fpop .ds-select-item__element-right { flex: none; align-self: center; }
+  .fpop .ds-select-item__element-right { margin-left: auto; }
+
+  /* ── экспандеры внешних меню ── */
+  .vm-acc { display: flex; flex-direction: column; gap: var(--ds-space-2x, 8px); }
+  .vm-acc .ds-expansion { width: 100%; }
+  /* рамка панели: в fixes.css она сделана inset-тенью, а белые строки таблицы её закрывают —
+     поэтому та же линия рисуется поверх контента (пробел ДС, как на экране «Внешнее меню · таблица») */
+  .vm-acc .ds-expansion { position: relative; }
+  .vm-acc .ds-expansion::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .acc-title { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); min-width: 0; }
+  .acc-name, .acc-count { font: inherit; color: inherit; }
+  .acc-count { color: var(--ds-color-text-secondary, #616161); }
+
+  /* ── таблица элементов внутри панели ── */
+  .tbl { display: flex; flex-direction: column; overflow-x: auto; min-width: 0; }
+  .tbl .ds-table-header-row, .tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; min-width: 0; }
+  .tbl .ds-table-content-cell { align-items: flex-start; }
+  .t-c-dish { flex: 1 1 240px; min-width: 240px; }
+  /* ховер ячейки — только у действенных: в колонке «Название для внеш. меню» ссылка на S8
+     (слой ДС: фон Neutral/100 #EBEBEB; журнал ДС №176/№197) */
+  .tbl .ds-table-content-row:not(.group-row) .ds-table-content-cell.t-c-dish:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
+  .t-c-sys { flex: 1 1 180px; min-width: 180px; }
+  /* «Артикул» — ширина по шапке: текст 57 + зазор 8 + иконка сортировки 20 + паддинги 16 = 101
+     (было 96 — иконка сортировки налезала на паддинг, правило ширин таблиц) */
+  .t-c-sku { width: 101px; flex: none; }
+  .t-c-st { width: 204px; flex: none; }
+  .t-c-dish .ds-text-ui, .t-c-sys .ds-text-ui, .t-c-sku .ds-text-ui { min-width: 0; width: 100%; }
+  .t-c-dish .ds-text-ui__list-item, .t-c-sys .ds-text-ui__list-item { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* отступ текста первой колонки — как в «Баннерах» (v2, аккордеон): 28 px до текста, чтобы шапка,
+     строки данных и название категории (36 px = паддинг 8 + шеврон 20 + зазор 8) стояли на одной линии */
+  .tbl .t-c-dish .ds-text-ui__content { padding-left: 28px; }
+  .vm-link { border: 0; background: none; padding: 0; text-align: left; font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-ui-link-text-color, #448aff); cursor: pointer; }
+  .tbl .ds-table-content-row:hover { background: var(--ds-color-table-row-content-hover-background, #f5f5f5); }
+
+  /* ── строка-категория внутри панели (эталон — список баннеров):
+     шеврон Icon size 5x поворачивается на 90°, название Body S medium, счётчик — Secondary ── */
+  .tbl .ds-table-content-row.group-row { cursor: pointer; }
+  .group-row .ds-table-content-cell__element { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); }
+  .group-row .grp-arrow { display: inline-flex; color: var(--ds-color-icon-primary, #616161); transition: transform .15s ease; }
+  .group-row.is-open .grp-arrow { transform: rotate(90deg); }
+  .group-row .grp-name { font: var(--ds-font-caption-l-12-normal-medium); color: var(--ds-color-text-primary, #000000); }
+  .group-row .grp-count { font: var(--ds-font-caption-l-12-normal-medium); color: var(--ds-color-text-secondary, #616161); }
+  /* дополнительные показатели строки группировки — шрифтом подписи из списка баннеров
+     (.grp-type / ds-text-ui__label-down: 12/16 regular, Text/Secondary #616161) */
+  .cnt-extra { font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-secondary, #616161); }
+  .acc-title .cnt-extra { font: var(--ds-font-caption-l-12-normal-regular); }
+  .grp-count, .acc-count { display: inline-flex; align-items: baseline; gap: var(--ds-space-2x, 8px); }
+
+  /* сортировка — как на стенде Table (№177) и на экране «Внешнее меню · таблица»:
+     шапка кликабельна, стрелка Icon/Primary, у активной колонки — Accent, направление — поворотом */
+  .ds-table-header-cell[data-sort] { cursor: pointer; }
+  .ds-table-header-cell[data-sort] .ds-icon-size { color: var(--ds-color-icon-primary, #616161); }
+  .ds-table-header-cell[data-sort] svg { position: relative; transition: transform .15s ease; }
+  .ds-table-header-cell[data-dir="asc"] svg { transform: rotate(180deg); }
+  .ds-table-header-cell.th-active .ds-text-ui__element-right .ds-icon-size { color: var(--ds-color-icon-accent, #448aff); }
+
+  /* миниатюры стикеров — заглушки контента (как на остальных экранах) */
+  .st-cell { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); flex-wrap: wrap; min-height: 28px; }
+  /* миниатюра + бейдж-статус «на итоговой картинке комбо» в правом верхнем углу
+     (Badge Positive 18×18, паддинг 1, radius circular — размеры компонента Counter; внутри Icon size 4x) */
+  .st-thumb-wrap { position: relative; display: inline-flex; }
+  .st-badge { position: absolute; top: calc(-1 * var(--ds-size-1x, 4px)); right: calc(-1 * var(--ds-size-1x, 4px));
+    width: 18px; height: 18px; min-width: 18px; padding: var(--ds-size-0-25x, 1px); }
+  .st-badge .ds-icon-size { color: var(--ds-color-text-inversive, #ffffff); }
+  .st-thumb { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    min-width: 44px; height: 28px; padding: 0 var(--ds-space-2x, 8px);
+    border-radius: var(--ds-radius-1-5x, 6px);
+    background: var(--st-c, #e0e0e0); color: var(--st-t, #ffffff);
+    font: var(--ds-font-caption-l-12-normal-medium); letter-spacing: var(--ds-font-caption-l-12-normal-medium-spacing);
+    white-space: nowrap; }
+  .st-thumb--icon { background: var(--ds-color-surface-default, #ffffff);
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0); color: var(--ds-color-icon-secondary, #9e9e9e); }
+
+  /* пустое состояние */
+  .t-empty { display: flex; flex-direction: column; align-items: center; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-space-8x, 32px) var(--ds-space-4x, 16px) var(--ds-space-10x, 40px); }
+  .t-empty .ds-icon-size { color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .t-empty__title { font: var(--ds-font-body-m-16-normal-medium); color: var(--ds-color-text-primary, #333333); }
+  .t-empty__text { font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-secondary, #616161); text-align: center; }
+
+  /* ══ S8: панель «Управление стикерами на элементе» — открывается ссылкой в названии ══ */
+  .dlg-dim { position: fixed; inset: 0; z-index: 100; opacity: .15; }
+  .dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 110;
+    min-height: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow: hidden; }
+  .dlg[hidden], .dlg-dim[hidden] { display: none !important; }
+  .el-dlg { width: 1080px; max-width: calc(100vw - 32px); }
+  .el-dlg .ds-dialog-header { position: relative; width: 100%; gap: var(--ds-dialog-header-gap, 8px);
+    padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px)
+             var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
+  /* шапка: заголовок забирает свободное место, крестик — штатный слот Dialog header
+     (ds-dialog-header__icon, Icon size 6x, Icon/Primary) */
+  .el-dlg .ds-dialog-header__label { white-space: normal; flex: 1 0 0; min-width: 1px; }
+  .el-dlg .ds-dialog-header__description { background: none; }
+  .el-dlg .ds-dialog-header__icon { cursor: pointer; color: var(--ds-color-icon-primary, #616161); }
+  .el-dlg .ds-dialog-view__footer { padding: 0; }
+  .el-dlg .ds-dialog-view__action { height: auto; flex-direction: row; justify-content: flex-end; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-dialog-footer-pad-top, 16px) var(--ds-dialog-footer-pad-right, 24px) var(--ds-dialog-footer-pad-bottom, 16px) var(--ds-dialog-footer-pad-left, 24px);
+    border-top: 0; }
+  /* Разделители шапки и подвала диалога — ОТ КРАЯ ДО КРАЯ диалога (замечание 06.11.2026: линия не доходила
+     до краёв, т.к. висела на action, у которого боковые паддинги 24) и ТОЛЬКО когда контент прокручивается.
+     Линия — inset-тень у контейнеров (у футера и шапки без боковых паддингов), геометрия не меняется */
+  .el-dlg .ds-dialog-view__footer { box-shadow: inset 0 1px 0 var(--ds-color-stroke-default, #e0e0e0); }
+  .el-dlg .ds-dialog-header { box-shadow: inset 0 -1px 0 var(--ds-color-stroke-default, #e0e0e0); }
+  .el-dlg:not(.is-scroll) .ds-dialog-view__footer,
+  .el-dlg:not(.is-scroll) .ds-dialog-header { box-shadow: none; }
+  /* тело панели — слот Dialog content: контент + колонка Scroll справа (как в demo Dialog) */
+  .el-dlg .ds-dialog-content { width: 100%; display: flex; flex-direction: row; align-items: stretch; min-height: 0; box-sizing: border-box; padding: 0; }
+  /* контент: паддинги 8/24 компонента; СИСТЕМНУЮ полосу скрываем — по ДС скролл показывает компонент Scroll */
+  .el-body { flex: 1 1 auto; min-width: 0; box-sizing: border-box;
+    padding: var(--ds-space-2x, 8px) var(--ds-dialog-header-pad-right, 24px) 0 var(--ds-dialog-header-pad-left, 24px);
+    max-height: calc(100vh - 64px - 120px); overflow-y: auto; scrollbar-width: none; }
+  .el-body::-webkit-scrollbar { display: none; }
+  /* колонка скролла — компонент Scroll (12); нет прокрутки — DSPatterns её скрывает */
+  .el-dlg .el-scroll { flex: none; align-self: stretch; width: var(--ds-size-3x, 12px); box-sizing: border-box; }
+  .el-sec { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: var(--ds-space-4x, 16px);
+    padding-bottom: var(--ds-space-4x, 16px); }
+  .el-sec + .el-sec { border-top: 1px solid var(--ds-color-stroke-default, #e0e0e0); padding-top: var(--ds-space-4x, 16px); }
+  .el-sec__cap { font: var(--ds-font-body-s-14-normal-medium); color: var(--ds-color-text-primary, #333333);
+    grid-column: 1 / -1; margin-bottom: var(--ds-space-2x, 8px); }
+  .el-tbl { display: flex; flex-direction: column; }
+  .el-tbl .ds-table-header-row, .el-tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
+  .el-tbl .ds-table-content-cell { align-items: flex-start; }
+  .e-c-angle { flex: 1 1 220px; min-width: 220px; }
+  .e-c-st { width: 280px; flex: none; }
+  .e-c-combo { width: 129px; flex: none; position: relative; }
+  .el-tbl .ds-table-content-cell.e-c-combo { align-items: center; justify-content: center; }
+  .e-c-combo .ds-table-content-cell__element { width: 100%; display: flex; align-items: center; justify-content: center; }
+  .e-c-combo .ds-slide-toggle { display: flex; align-items: center; }
+  .e-c-combo .e-hint-ic { color: var(--ds-color-icon-primary, #616161); cursor: pointer; }
+  .e-hint { position: fixed; z-index: 220; width: max-content; }
+  .e-hint__arrow { display: block; flex-shrink: 0; width: 8px; height: 4px; fill: var(--ds-color-hint-background-color, #424242); }
+  .e-hint__body { display: flex; flex-direction: column; width: 100%; min-width: 0;
+    background: var(--ds-color-hint-background-color, #424242);
+    border-radius: var(--ds-hint-border-radius, 8px); overflow: hidden; }
+  .e-hint[hidden] { display: none !important; }
+  .e-c-st .ds-table-content-cell__element { width: 100%; }
+  .e-anchor { position: relative; display: block; width: 100%; }
+  .e-c-st .fsel { width: 100%; background: transparent; }
+  /* Состояния — ИЗ КОМПОНЕНТА Form-Field-Input_DS/input.css (ничего своего не добавляем):
+     Hover  — фон #F5F5F5 + рамка #9E9E9E (`.ds-input__frame:hover`)
+     Focus  — фон #F8F9FC + рамка #448AFF (`.ds-input__frame:focus-within`)
+     Отличие только в покое: фон прозрачный (указание заказчика 06.11.2026 —
+     селект в ячейке читается как текст, а не как поле ввода) */
+  .e-c-st .fsel .ds-input__frame:not(:hover):not(:focus-within) { background: transparent; }
+  /* открытый список — это состояние Focus компонента: те же фон и рамка */
+  .e-c-st .fsel.is-open .ds-input__frame {
+    background: var(--ds-color-shapes-default-variant, #f8f9fc);
+    border-color: var(--ds-color-stroke-accent, #448aff);
+  }
+  /* стрелка поворачивается только у СЕБЯ (крестик очистки не трогаем) */
+  .e-c-st .fsel.is-open .ds-input__icon .ds-icon-group__icon:last-child .material-icons { transform: rotate(180deg); }
+  .e-anchor .fpop { width: 100%; }
+  .e-anchor .fpop .fpop__scroll { max-height: 320px; }
+  /* слой попапов вне диалога (portal): сам не ловит клики, попап — ловит */
+  #elPopLayer { position: fixed; inset: 0; pointer-events: none; z-index: 240; }
+  #elPopLayer .fpop { position: fixed; top: 0; left: 0; right: auto; bottom: auto; width: auto; pointer-events: auto; }
+  .el-prev { display: flex; flex-direction: column; gap: var(--ds-space-2x, 8px); }
+  .el-prev__box { position: relative; width: 200px; height: 200px; align-self: center; overflow: hidden;
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0); border-radius: var(--ds-radius-2x, 8px);
+    background: var(--ds-color-form-field-input-filled-background, #f8f9fc);
+    display: flex; align-items: center; justify-content: center; color: var(--ds-color-icon-disable, #9e9e9e); }
+  .el-prev__box .material-icons { font-size: 56px; line-height: 56px; }
+  .el-prev__st { position: absolute; display: inline-flex; }
+  .el-prev__st--tl { top: var(--ds-space-2x, 8px); left: var(--ds-space-2x, 8px); }
+  .el-prev__st--tr { top: var(--ds-space-2x, 8px); right: var(--ds-space-2x, 8px); }
+  .el-prev__st--bl { bottom: var(--ds-space-2x, 8px); left: var(--ds-space-2x, 8px); }
+  .el-prev__st--br { bottom: var(--ds-space-2x, 8px); right: var(--ds-space-2x, 8px); }
+  .el-prev__cap { text-align: center; font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-secondary, #616161); }
+</style>
+<style>
+  /* Разделитель строк таблицы: у ПОСЛЕДНЕЙ строки линии нет (правило заказчика 06.11.2026).
+     :has(~ …:not([hidden])) — именно последняя ВИДИМАЯ: учтены строки, скрытые поиском/фильтром.
+     Заголовки групп аккордеона (.group-row) — не строки данных, их линия остаётся всегда. */
+  .ds-table-content-row:not(.group-row):not([hidden]):not(:has(~ .ds-table-content-row:not([hidden]))) { border-bottom: 0; }
+</style>
+</head>
+<body>
+
+<!-- Спрайт иконки сортировки (стрелка) — как на экране «Внешнее меню · таблица» -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sort" viewBox="0 0 20 20"><path transform="translate(5 4.58333)" d="M5 10.8333L0 5.83333L1.16667 4.66667L4.16667 7.66667V0H5.83333V7.66667L8.83333 4.66667L10 5.83333L5 10.8333Z"/></symbol>
+</svg>
+<style>/* спрайтовые иконки: fill ставится на сам svg */
+.ds-icon-size svg { fill: currentColor; }</style>
+
+<div class="page">
+  <div id="viewAll">
+
+    <!-- Шапка — организм header-content: заголовок раздела + поиск -->
+    <header class="hc">
+      <div class="hc__left">
+        <div class="ds-text-ui hc__title">
+          <span class="ds-text-ui__content"><span class="ds-text-ui__list-item hc__heading">Стикеры</span></span>
+        </div>
+      </div>
+      <div class="hc__right">
+        <span class="ds-search ds-search--xs hc__search" role="button" tabindex="0" aria-label="Поиск по названию и артикулу" id="allSearchBtn">
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+        </span>
+        <span class="ds-search ds-search--s hc-search" id="allSearchField" hidden>
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+          <input class="ds-search__label hc-search__input" type="text" id="allSearch" placeholder="Поиск по названию и артикулу" aria-label="Поиск по названию и артикулу" autocomplete="off">
+          <span class="ds-search__right-icon"><span class="ds-divider"></span><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state" role="button" tabindex="0" aria-label="Закрыть поиск" id="allSearchOff"><span class="material-icons" aria-hidden="true">search_off</span></span></span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Вкладки раздела -->
+    <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
+      <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="stickers.html">Стикеры</button>
+      <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Внешнее меню</button>
+    </div>
+
+    <!-- Полоса фильтров — как на экране «Внешнее меню · таблица» -->
+    <div class="tha" id="allFilters">
+      <div class="tha__left">
+        <span class="tha__title">Фильтр:</span>
+        <span class="vm-selects">
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--menu" id="selMenuField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Внешнее меню">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content"><span class="ds-input__field" id="selMenuValue"></span></div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selMenuPop" role="listbox" aria-label="Внешнее меню" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Внешнее меню</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selMenuItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>
+              </div>
+            </div>
+          </span>
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--ver" id="selVerField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Версии меню">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content"><span class="ds-input__field" id="selVerValue"></span></div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selVerPop" role="listbox" aria-label="Версии меню" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Версии меню</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selVerItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>
+              </div>
+            </div>
+          </span>
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--type" id="selTypeField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Тип элементов">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content"><span class="ds-input__field" id="selTypeValue"></span></div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selTypePop" role="listbox" aria-label="Тип элементов" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Тип элементов</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selTypeItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>
+              </div>
+            </div>
+          </span>
+          <span class="field-anchor">
+            <div class="ds-select-form ds-select-form--xs ds-select-form--populated fsel fsel--stickers" id="selStickersField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Стикеры">
+              <div class="ds-input ds-input--xs">
+                <div class="ds-input__frame">
+                  <div class="ds-input__content"><span class="ds-input__field" id="selStickersValue"></span></div>
+                  <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="ds-select-container fpop" id="selStickersPop" role="listbox" aria-label="Стикеры" hidden>
+              <div class="ds-select-container__title"><span class="fpop__title">Стикеры</span></div>
+              <div class="ds-divider"></div>
+              <div class="fpop__wrap">
+                <div class="ds-select-container__content fpop__scroll" id="selStickersItems"></div>
+                <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>
+              </div>
+            </div>
+          </span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Один экран: каждое внешнее меню — панель Expansion panel, внутри — таблица элементов -->
+    <div class="vm-acc" id="allAcc"></div>
+
+    <div class="t-empty" id="allEmpty" hidden>
+      <span class="ds-icon-size ds-icon-size--6x"><span class="material-icons" aria-hidden="true">search_off</span></span>
+      <span class="t-empty__title">Ничего не найдено</span>
+      <span class="t-empty__text">Измените условия поиска.</span>
+    </div>
+  </div>
+</div>
+
+<!-- S8: панель «Управление стикерами на элементе» — открывается ссылкой в названии -->
+<div class="ds-backdrop dlg-dim" id="elDim" hidden></div>
+<div class="ds-dialog-view dlg el-dlg" id="elDlg" role="dialog" aria-modal="true" aria-labelledby="elTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container">
+      <span class="ds-dialog-header__label" id="elTitle"></span>
+      <span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="elClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
+    </div>
+    <span class="ds-dialog-header__description" id="elDesc"></span>
+  </div>
+  <div class="ds-dialog-content">
+    <div class="el-body" id="elBody"></div>
+    <div class="ds-scroll ds-scroll--v el-scroll" id="elScroll" aria-hidden="true"><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="elCancel"><span class="ds-btn__label">Отмена</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="elSave"><span class="ds-btn__label">Сохранить</span></button>
+    </div>
+  </div>
+</div>
+<div class="ds-hint-container ds-hint-container--up e-hint" id="elHint" role="tooltip" hidden>
+  <svg class="e-hint__arrow" width="8" height="4" viewBox="0 0 8 4" aria-hidden="true"><path d="M0 4L4 0L8 4H0Z"></path></svg>
+  <div class="e-hint__body">
+    <div class="ds-hint-container__content"><span class="ds-hint-content__label">Отображать на итоговой картинке комбо</span></div>
+  </div>
+</div>
+
+<!-- слой попапов панели: попап селекта живёт ВНЕ диалога (у .dlg transform — fixed внутри него считается от диалога) -->
+<div id="elPopLayer"></div>
+
+<script>
+(function () {
+  'use strict';
+  var qs = function (s, r) { return (r || document).querySelector(s); };
+  var qsa = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* данные прототипа — тот же ключ, что на остальных экранах раздела */
+  var KEY = 'vitStickersData';
+  var raw = null;
+  try { raw = sessionStorage.getItem(KEY); } catch (e) {}
+  if (!raw) { try { raw = localStorage.getItem(KEY); } catch (e) {} }
+  var data = null;
+  if (raw) { try { data = JSON.parse(raw); } catch (e) {} }
+  if (!data || !data.menus) { location.href = 'stickers.html'; return; }
+
+  var placements = data.placements || [];
+  var stickers = data.stickers || [];
+  function stickerById(id) { return stickers.filter(function (s) { return s.id === id; })[0] || null; }
+  function thumbHtml(id, combo) {
+    var st = stickerById(id);
+    var inner = st
+      ? '<span class="st-thumb" style="--st-c:' + esc(st.color || '#e0e0e0') + ';--st-t:' + esc(st.textColor || '#ffffff') + '">' + esc(st.label || st.name || '') + '</span>'
+      : '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>';
+    if (!combo) return inner;
+    /* бейдж-статус «Отображать на итоговой картинке комбо»: Badge Positive + Icon size 4x (check).
+       В ДС бейджа с иконкой нет — пробел ДС №271 (собран из компонентов: Badge 18×18 + Icon size) */
+    return '<span class="st-thumb-wrap">' + inner +
+      '<span class="ds-badge ds-badge--counter ds-badge--positive st-badge" role="img" aria-label="Отображается на итоговой картинке комбо">' +
+        '<span class="ds-icon-size ds-icon-size--4x"><span class="material-icons" aria-hidden="true">check</span></span>' +
+      '</span></span>';
+  }
+  /* у стикера есть размещение с включённым тумблером «Отображать… комбо» */
+  function comboOf(menuId, versionId, code, stickerId) {
+    return placements.some(function (p) {
+      return p.menu === menuId && p.version === versionId && p.code === code && p.sticker === stickerId && !!p.combo;
+    });
+  }
+  /* стикеры элемента в версии (без дублей по размерам) — как колонка «Стикеры» на экране таблицы */
+  function stickersOf(menuId, versionId, code) {
+    var seen = {}, out = [];
+    placements.forEach(function (p) {
+      if (p.menu !== menuId || p.version !== versionId || p.code !== code) return;
+      if (seen[p.sticker]) return;
+      seen[p.sticker] = true;
+      out.push(p.sticker);
+    });
+    return out;
+  }
+  /* фильтры полосы: внешнее меню / версия / тип элементов / наличие стикеров */
+  var flt = { menu: 'all', version: '', types: { list: true, mod: true }, stickers: 'all' };
+  /* сортировка таблицы элементов (D-03): пустой ключ = порядок из данных */
+  var sortState = { key: '', dir: 'asc' };
+  /* версия для панели: выбранная в фильтре (если есть у этого меню), иначе первая */
+  function versionIdOf(menu) {
+    var vs = menu.versions || [];
+    if (flt.version) { for (var i = 0; i < vs.length; i++) if (vs[i].id === flt.version) return flt.version; }
+    return (vs[0] || { id: 'base' }).id;
+  }
+  function itemsOf(menu) {
+    var vid = versionIdOf(menu);
+    var v = (menu.versions || []).filter(function (x) { return x.id === vid; })[0] || { id: vid, name: vid };
+    var groups = data.catalog[menu.id + '|' + vid] || [];
+    /* группы каталога (Соусы / Комбо / Блюда / Напитки) — сохраняем, чтобы показать их подзаголовками */
+    return { version: v, groups: groups.map(function (g) { return { name: g.name, items: (g.items || []).slice() }; }) };
+  }
+
+  function rowHtml(menu, version, it, groupName, open) {
+    var st = stickersOf(menu.id, version.id, it.code);
+    var hasCombo = st.some(function (id) { return comboOf(menu.id, version.id, it.code, id); });
+    var stHtml = st.length ? st.map(function (id) { return thumbHtml(id, comboOf(menu.id, version.id, it.code, id)); }).join('') : '<span class="ds-text-ui__list-item">—</span>';
+    return '<div class="ds-table-content-row"' + (open ? '' : ' hidden') + ' data-row="' + esc(it.code) + '" data-type="' + esc(it.type || '') + '" data-has-st="' + (st.length ? '1' : '0') + '" data-combo="' + (hasCombo ? '1' : '0') + '"' + (groupName ? ' data-group-row="' + esc(groupName) + '"' : '') + '>' +
+      '<div class="ds-table-content-cell t-c-dish"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><button type="button" class="vm-link" data-open="' + esc(it.code) + '">' + esc(it.name) + '</button></div></div></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-sku"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.code) + '</span></div></div></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-sys"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.sys || '') + '</span></div></div></div></div></div>' +
+      '<div class="ds-table-content-cell t-c-st"><div class="ds-table-content-cell__element"><div class="st-cell">' + stHtml + '</div></div></div>' +
+    '</div>';
+  }
+
+  /* шапка колонки со стрелкой сортировки (D-03: сортировка по столбцам) — как на экране «Внешнее меню · таблица» */
+  function hdrCell(label, key, cls) {
+    var active = sortState.key === key;
+    return '<div class="ds-table-header-cell ' + cls + (active ? ' th-active' : '') + '" data-sort="' + key + '"' + (active ? ' data-dir="' + sortState.dir + '"' : '') + '>' +
+      '<div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + label + '</span></div>' +
+      '<span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state th-sort"><svg width="20" height="20" aria-hidden="true"><use href="#i-sort"/></svg></span></span></div></div></div>';
+  }
+
+  /* счётчики: в строке категории — только количество; «Стикер N» и «Отображено N» — только в заголовке меню */
+  function countsHtml(total, st, on, isGroup) {
+    if (isGroup) return '<span class="cnt-total">' + total + '</span>';
+    return '<span class="cnt-total">' + total + '</span>' +
+      '<span class="cnt-extra">Стикер ' + st + '</span>' +
+      (on > 0 ? '<span class="cnt-extra">Отображено ' + on + '</span>' : '');
+  }
+  function paintCounts(el, total, st, on, isGroup) {
+    if (el) el.innerHTML = countsHtml(total, st, on, isGroup);
+  }
+
+  function panelHtml(menu) {
+    var info = itemsOf(menu);
+    var total = 0;
+    var body = '';
+    info.groups.forEach(function (g) {
+      /* сортировка по колонкам — внутри каждой категории */
+      var items = g.items;
+      if (sortState.key) {
+        items = items.slice().sort(function (a, b) {
+          var av = sortState.key === 'name' ? a.name : (sortState.key === 'sys' ? (a.sys || '') : a.code);
+          var bv = sortState.key === 'name' ? b.name : (sortState.key === 'sys' ? (b.sys || '') : b.code);
+          var r = String(av).localeCompare(String(bv), 'ru', { numeric: true, sensitivity: 'base' });
+          return sortState.dir === 'asc' ? r : -r;
+        });
+      }
+      total += items.length;
+      var gkey = menu.id + '|' + g.name;
+      var open = openedGroups.hasOwnProperty(gkey) ? openedGroups[gkey] : true;
+      /* строка-заголовок категории (эталон — список баннеров): шеврон + название + счётчик */
+      body += '<div class="ds-table-content-row group-row' + (open ? ' is-open' : '') + '" data-group="' + esc(g.name) + '" role="button" tabindex="0" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+          '<div class="ds-table-content-cell t-c-dish"><div class="ds-table-content-cell__element">' +
+            '<span class="grp-arrow"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">chevron_right</span></span></span>' +
+            '<span class="grp-name">' + esc(g.name) + '</span>' +
+            '<span class="grp-count">' + countsHtml(items.length, items.filter(function (it) { return stickersOf(menu.id, info.version.id, it.code).length > 0; }).length, items.filter(function (it) { var ids = stickersOf(menu.id, info.version.id, it.code); return ids.some(function (id) { return comboOf(menu.id, info.version.id, it.code, id); }); }).length, true) + '</span>' +
+          '</div></div>' +
+          '<div class="ds-table-content-cell t-c-sku"></div>' +
+          '<div class="ds-table-content-cell t-c-sys"></div>' +
+          '<div class="ds-table-content-cell t-c-st"></div>' +
+        '</div>';
+      body += items.map(function (it) { return rowHtml(menu, info.version, it, g.name, open); }).join('');
+    });
+    return '<div class="ds-expansion" data-menu="' + esc(menu.id) + '">' +
+      '<div class="ds-expansion__header" role="button" tabindex="0" aria-expanded="false">' +
+        '<span class="ds-expansion__arrow"><span class="material-icons" aria-hidden="true">keyboard_arrow_down</span></span>' +
+        '<span class="ds-expansion__title"><span class="acc-title"><span class="acc-name">' + esc(menu.name) + '</span><span class="acc-count">' + countsHtml(total, 0, 0) + '</span></span></span>' +
+      '</div>' +
+      '<div class="ds-expansion__content ds-expansion__content--no-padding">' +
+        '<div class="tbl">' +
+          '<div class="ds-table-header-row">' +
+            hdrCell('Название для внеш. меню', 'name', 't-c-dish') +
+            hdrCell('Артикул', 'sku', 't-c-sku') +
+            hdrCell('Название в системе', 'sys', 't-c-sys') +
+            '<div class="ds-table-header-cell t-c-st"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Стикеры</span></div></div></div></div>' +
+          '</div>' +
+          '<div class="rows">' + body + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var acc = qs('#allAcc');
+  var opened = {};
+  /* раскрытость категорий внутри панелей (ключ menuId|категория) */
+  var openedGroups = {};
+  function visibleMenus() {
+    return data.menus.filter(function (m) { return flt.menu === 'all' || m.id === flt.menu; });
+  }
+  function renderAll() {
+    acc.innerHTML = visibleMenus().map(panelHtml).join('');
+    qsa('.ds-expansion', acc).forEach(function (p) {
+      if (opened[p.getAttribute('data-menu')]) {
+        p.classList.add('ds-expansion--open');
+        p.querySelector('.ds-expansion__header').setAttribute('aria-expanded', 'true');
+      }
+    });
+    applyFilters();
+  }
+
+  /* раскрытие/сворачивание панели, категории + сортировка по шапке колонки */
+  acc.addEventListener('click', function (e) {
+    /* строка-категория: раскрыть/свернуть свои строки */
+    var gr = e.target.closest('.group-row');
+    if (gr) {
+      var panelG = gr.closest('.ds-expansion');
+      var menuG = panelG ? panelG.getAttribute('data-menu') : '';
+      var gName = gr.getAttribute('data-group');
+      var nowOpen = !gr.classList.contains('is-open');
+      gr.classList.toggle('is-open', nowOpen);
+      gr.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+      openedGroups[menuG + '|' + gName] = nowOpen;
+      var qg = searchInput.value.trim().toLowerCase();
+      qsa('.ds-table-content-row[data-group-row]', panelG).forEach(function (r) {
+        if (r.getAttribute('data-group-row') === gName) r.hidden = !nowOpen || !rowPass(r, qg);
+      });
+      return;
+    }
+    /* сортировка (D-03): первый клик — по возрастанию, повторный по той же колонке — по убыванию */
+    var th = e.target.closest('[data-sort]');
+    if (th) {
+      var key = th.getAttribute('data-sort');
+      sortState.dir = (sortState.key === key && sortState.dir === 'asc') ? 'desc' : 'asc';
+      sortState.key = key;
+      renderAll();
+      return;
+    }
+    var head = e.target.closest('.ds-expansion__header');
+    if (head) {
+      var panel = head.closest('.ds-expansion');
+      var open = panel.classList.toggle('ds-expansion--open');
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+      opened[panel.getAttribute('data-menu')] = open;
+      return;
+    }
+    /* название элемента — панель «Управление стикерами на элементе» (S8) прямо на этом экране */
+    var link = e.target.closest('[data-open]');
+    if (link) {
+      var p = link.closest('.ds-expansion');
+      var menuId = p.getAttribute('data-menu');
+      var m = data.menus.filter(function (x) { return x.id === menuId; })[0];
+      openElementPanel(menuId, m ? versionIdOf(m) : 'base', link.getAttribute('data-open'));
+    }
+  });
+  acc.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('ds-expansion__header')) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  /* поиск + фильтры: скрывают строки, панели без совпадений — скрываются */
+  var searchInput = qs('#allSearch');
+  function rowPass(row, q) {
+    var isMod = row.getAttribute('data-type') === 'modifier';
+    if (isMod ? !flt.types.mod : !flt.types.list) return false;
+    if (flt.stickers !== 'all') {
+      var has = row.getAttribute('data-has-st') === '1';
+      if (flt.stickers === 'yes' && !has) return false;
+      if (flt.stickers === 'no' && has) return false;
+    }
+    if (!q) return true;
+    return row.textContent.toLowerCase().indexOf(q) >= 0;
+  }
+  function applyFilters() {
+    var q = searchInput.value.trim().toLowerCase();
+    var expand = q !== '' || !(flt.types.list && flt.types.mod) || flt.stickers !== 'all';
+    var hits = 0;
+    qsa('.ds-expansion', acc).forEach(function (panel) {
+      var menuId = panel.getAttribute('data-menu');
+      var count = 0;
+      var pTotal = 0, pSt = 0, pOn = 0;
+      qsa('.ds-table-content-row.group-row', panel).forEach(function (gr) {
+        var gName = gr.getAttribute('data-group');
+        var gkey = menuId + '|' + gName;
+        var rows = qsa('.ds-table-content-row[data-group-row]', panel).filter(function (r) {
+          return r.getAttribute('data-group-row') === gName;
+        });
+        var passCount = 0, gSt = 0, gOn = 0;
+        rows.forEach(function (r) {
+          if (!rowPass(r, q)) return;
+          passCount++;
+          if (r.getAttribute('data-has-st') === '1') gSt++;
+          if (r.getAttribute('data-combo') === '1') gOn++;
+        });
+        paintCounts(gr.querySelector('.grp-count'), passCount, gSt, gOn, true);
+        pTotal += passCount;
+        pSt += gSt;
+        pOn += gOn;
+        /* активный фильтр/поиск — категории раскрыты, чтобы результат был виден */
+        if (expand) {
+          gr.classList.add('is-open');
+          gr.setAttribute('aria-expanded', 'true');
+          openedGroups[gkey] = true;
+        }
+        var open = gr.classList.contains('is-open');
+        gr.hidden = passCount === 0;
+        rows.forEach(function (r) { r.hidden = !rowPass(r, q) || !open; });
+        count += passCount;
+      });
+      paintCounts(panel.querySelector('.acc-count'), pTotal, pSt, pOn);
+      var empty = count === 0;
+      panel.hidden = empty;
+      if (expand && !empty) {
+        panel.classList.add('ds-expansion--open');
+        panel.querySelector('.ds-expansion__header').setAttribute('aria-expanded', 'true');
+      }
+      hits += count;
+    });
+    qs('#allEmpty').hidden = hits !== 0;
+  }
+  searchInput.addEventListener('input', applyFilters);
+
+  var searchBtn = qs('#allSearchBtn'), searchField = qs('#allSearchField');
+  function openSearch() { searchBtn.hidden = true; searchField.hidden = false; searchInput.focus(); }
+  function closeSearch() { searchField.hidden = true; searchBtn.hidden = false; searchInput.value = ''; applyFilters(); }
+  searchBtn.addEventListener('click', openSearch);
+  searchBtn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSearch(); } });
+  qs('#allSearchOff').addEventListener('click', closeSearch);
+  qs('#allSearchOff').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeSearch(); } });
+  document.addEventListener('click', function (e) {
+    if (searchField.hidden) return;
+    if (searchField.contains(e.target) || searchBtn.contains(e.target)) return;
+    closeSearch();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSearch(); });
+
+  /* ── фильтры полосы: внешнее меню / версии меню / тип элементов / наличие стикеров ── */
+  var selMenuField = qs('#selMenuField'), selMenuPop = qs('#selMenuPop'), selMenuItems = qs('#selMenuItems'), selMenuValue = qs('#selMenuValue');
+  var selVerField = qs('#selVerField'), selVerPop = qs('#selVerPop'), selVerItems = qs('#selVerItems'), selVerValue = qs('#selVerValue');
+  var selTypeField = qs('#selTypeField'), selTypePop = qs('#selTypePop'), selTypeItems = qs('#selTypeItems'), selTypeValue = qs('#selTypeValue');
+  var selStField = qs('#selStickersField'), selStPop = qs('#selStickersPop'), selStItems = qs('#selStickersItems'), selStValue = qs('#selStickersValue');
+  var TYPE_OPTS = [{ id: 'list', name: 'Список блюд' }, { id: 'mod', name: 'Модификаторы' }];
+  var ST_OPTS = [{ id: 'all', name: 'Все' }, { id: 'yes', name: 'Со стикерами' }, { id: 'no', name: 'Без стикеров' }];
+
+  function menuName(id) { var m = data.menus.filter(function (x) { return x.id === id; })[0]; return m ? m.name : id; }
+  function versionsForFilter() {
+    if (flt.menu === 'all') {
+      var seen = { base: true }, out = [{ id: 'base', name: 'Базовая' }];
+      data.menus.forEach(function (m) { (m.versions || []).forEach(function (v) { if (!seen[v.id]) { seen[v.id] = true; out.push(v); } }); });
+      return out;
+    }
+    var m = data.menus.filter(function (x) { return x.id === flt.menu; })[0];
+    return (m && m.versions) || [{ id: 'base', name: 'Базовая' }];
+  }
+  function updateFilterValues() {
+    selMenuValue.textContent = 'Внешнее меню: ' + (flt.menu === 'all' ? 'Все' : menuName(flt.menu));
+    var vs = versionsForFilter();
+    var v = vs.filter(function (x) { return x.id === (flt.version || 'base'); })[0] || vs[0];
+    flt.version = v.id;
+    selVerValue.textContent = 'Версии меню: ' + (v.name || v.id);
+    var names = TYPE_OPTS.filter(function (t) { return flt.types[t.id]; }).map(function (t) { return t.name; });
+    selTypeValue.textContent = 'Тип элементов: ' + (names.length === TYPE_OPTS.length ? 'Все' : (names.join(', ') || 'Все'));
+    var stOpt = ST_OPTS.filter(function (s) { return s.id === flt.stickers; })[0] || ST_OPTS[0];
+    selStValue.textContent = 'Стикеры: ' + stOpt.name;
+    [selMenuValue, selVerValue, selTypeValue, selStValue].forEach(function (el) { el.title = el.textContent; });
+  }
+  function closePops() {
+    [selMenuPop, selVerPop, selTypePop, selStPop].forEach(function (p) { p.hidden = true; });
+    [selMenuField, selVerField, selTypeField, selStField].forEach(function (f) { f.classList.remove('is-open'); f.setAttribute('aria-expanded', 'false'); });
+  }
+  function openPop(field, pop) {
+    var was = !pop.hidden;
+    closePops();
+    if (was) return;
+    pop.hidden = false;
+    field.classList.add('is-open');
+    field.setAttribute('aria-expanded', 'true');
+  }
+  function pickItem(label, selected, onPick) {
+    var it = document.createElement('div');
+    /* состояние пункта — классами ДС: --false (базовый пункт) + --selected (отмечен;
+       в Select_DS/demo.html оба класса стоят одновременно). Без --false пункт получает
+       паддинги sub-варианта (12/16/6/16 → высота 38 вместо 36) */
+    it.className = 'ds-select-item ds-select-item--false' + (selected ? ' ds-select-item--selected' : '');
+    it.innerHTML = '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div><span class="ds-select-item__element-right"' + (selected ? '' : ' hidden') + '><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">check</span></span></span>';
+    it.querySelector('.ds-select-item__label').textContent = label;
+    it.addEventListener('click', function (e) { e.stopPropagation(); onPick(); });
+    return it;
+  }
+  function checkItem(label, checked, onToggle) {
+    var it = document.createElement('div');
+    it.className = 'ds-select-item ds-select-item--false';
+    it.innerHTML = '<span class="ds-select-item__element-left"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" tabindex="-1"' + (checked ? ' checked' : '') + '><span class="ds-checkbox__box"></span></label></span><div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>';
+    it.querySelector('.ds-select-item__label').textContent = label;
+    var input = it.querySelector('.ds-checkbox__input');
+    input.addEventListener('change', function () { onToggle(input.checked); });
+    it.addEventListener('click', function (e) {
+      if (e.target.closest('.ds-checkbox')) { e.stopPropagation(); return; }
+      e.stopPropagation();
+      input.checked = !input.checked;
+      onToggle(input.checked);
+    });
+    return it;
+  }
+  function buildMenuList() {
+    selMenuItems.innerHTML = '';
+    selMenuItems.appendChild(pickItem('Все внешние меню', flt.menu === 'all', function () {
+      flt.menu = 'all'; closePops(); updateFilterValues(); renderAll();
+    }));
+    /* общий пункт «Все» всегда отделяется Divider от остальных (правило заказчика 06.11.2026) */
+    var sep = document.createElement('div');
+    sep.className = 'ds-divider';
+    selMenuItems.appendChild(sep);
+    data.menus.forEach(function (m) {
+      selMenuItems.appendChild(pickItem(m.name, flt.menu === m.id, function () {
+        flt.menu = m.id; closePops(); updateFilterValues(); renderAll();
+      }));
+    });
+  }
+  function buildVerList() {
+    selVerItems.innerHTML = '';
+    versionsForFilter().forEach(function (v) {
+      selVerItems.appendChild(pickItem(v.name || v.id, (flt.version || 'base') === v.id, function () {
+        flt.version = v.id; closePops(); updateFilterValues(); renderAll();
+      }));
+    });
+  }
+  function buildTypeList() {
+    selTypeItems.innerHTML = '';
+    var all = flt.types.list && flt.types.mod;
+    var none = !flt.types.list && !flt.types.mod;
+    var allItem = checkItem('Все', all, function (on) {
+      flt.types.list = on; flt.types.mod = on;
+      closePops(); updateFilterValues(); applyFilters();
+    });
+    if (!all && !none) allItem.querySelector('.ds-checkbox__input').indeterminate = true;
+    selTypeItems.appendChild(allItem);
+    var div = document.createElement('div');
+    div.className = 'ds-divider';
+    selTypeItems.appendChild(div);
+    TYPE_OPTS.forEach(function (t) {
+      selTypeItems.appendChild(checkItem(t.name, flt.types[t.id], function (on) {
+        flt.types[t.id] = on;
+        if (!flt.types.list && !flt.types.mod) flt.types[t.id] = true;   /* пустой набор невозможен */
+        buildTypeList(); updateFilterValues(); applyFilters();
+      }));
+    });
+  }
+  /* фильтр по наличию стикеров: Все / Со стикерами / Без стикеров (общий пункт «Все» — с Divider) */
+  function buildStickersList() {
+    selStItems.innerHTML = '';
+    selStItems.appendChild(pickItem('Все', flt.stickers === 'all', function () {
+      flt.stickers = 'all'; closePops(); updateFilterValues(); applyFilters();
+    }));
+    var sep = document.createElement('div');
+    sep.className = 'ds-divider';
+    selStItems.appendChild(sep);
+    ST_OPTS.filter(function (s) { return s.id !== 'all'; }).forEach(function (s) {
+      selStItems.appendChild(pickItem(s.name, flt.stickers === s.id, function () {
+        flt.stickers = s.id; closePops(); updateFilterValues(); applyFilters();
+      }));
+    });
+  }
+  selMenuField.addEventListener('click', function (e) { e.stopPropagation(); buildMenuList(); openPop(selMenuField, selMenuPop); });
+  selVerField.addEventListener('click', function (e) { e.stopPropagation(); buildVerList(); openPop(selVerField, selVerPop); });
+  selTypeField.addEventListener('click', function (e) { e.stopPropagation(); buildTypeList(); openPop(selTypeField, selTypePop); });
+  selStField.addEventListener('click', function (e) { e.stopPropagation(); buildStickersList(); openPop(selStField, selStPop); });
+  [selMenuPop, selVerPop, selTypePop, selStPop].forEach(function (p) { p.addEventListener('click', function (e) { e.stopPropagation(); }); });
+  document.addEventListener('click', closePops);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePops(); });
+
+  updateFilterValues();
+  renderAll();
+
+  /* ══════════ S8: панель «Управление стикерами на элементе» ══════════
+     Открывается ссылкой в названии элемента (сценарий D-07) — попапом на этом же экране. */
+  var ANGLES = [
+    { id: 'TOP_LEFT', name: 'Левый верхний угол' },
+    { id: 'BOTTOM_LEFT', name: 'Левый нижний угол' },
+    { id: 'TOP_RIGHT', name: 'Правый верхний угол' },
+    { id: 'BOTTOM_RIGHT', name: 'Правый нижний угол' }
+  ];
+  var elDim = qs('#elDim'), elDlg = qs('#elDlg'), elBody = qs('#elBody'), elScroll = qs('#elScroll');
+  var elPopLayer = qs('#elPopLayer');
+  /* полоса прокрутки контента — компонент Scroll: слушатель ставим один раз, дальше — scrollSync */
+  if (window.DSPatterns && DSPatterns.initScroll) DSPatterns.initScroll(elBody, elScroll);
+  var elState = null;   /* { menu, version, code, item, rows: {size: [{angle, sticker, combo}]} } */
+  var elPop = null;      /* открытый попап селекта (живёт в #elPopLayer) */
+  var elPopAnchor = null; /* поле, к которому привязан попап */
+
+  /* закрыть попап селекта и вернуть его разметку в поле (поле перерисовывается целиком) */
+  function closeElPop() {
+    if (!elPop) return;
+    var p = elPop, a = elPopAnchor;
+    elPop = null;
+    elPopAnchor = null;
+    p.hidden = true;
+    if (a) {
+      if (p.parentElement !== a) a.appendChild(p);
+      var f = a.querySelector('.fsel');
+      if (f) f.classList.remove('is-open');
+    } else if (p.parentElement === elPopLayer) {
+      elPopLayer.removeChild(p);
+    }
+  }
+
+  function itemByCode(menu, version, code) {
+    var groups = data.catalog[menu + '|' + version] || [];
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].items.length; j++) {
+        if (groups[i].items[j].code === code) return groups[i].items[j];
+      }
+    }
+    return null;
+  }
+  function angleName(id) { var a = ANGLES.filter(function (x) { return x.id === id; })[0]; return a ? a.name : ''; }
+
+  function openElementPanel(menu, version, code) {
+    var it = itemByCode(menu, version, code);
+    if (!it) return;
+    var sizes = it.sizes && it.sizes.length ? it.sizes : [null];
+    var rows = {};
+    sizes.forEach(function (sz) {
+      rows[sz] = ANGLES.map(function (a) {
+        var pl = placements.filter(function (x) {
+          return x.menu === menu && x.version === version && x.code === code && (x.size || null) === sz && x.angle === a.id;
+        })[0];
+        return { angle: a.id, sticker: pl ? pl.sticker : '', combo: pl ? !!pl.combo : false };
+      });
+    });
+    elState = { menu: menu, version: version, code: code, item: it, rows: rows };
+    elDim.hidden = false;
+    elDlg.hidden = false;
+    renderElementPanel();
+  }
+  function closeElementPanel() {
+    elDim.hidden = true;
+    elDlg.hidden = true;
+    closeElPop();
+    var h = qs('#elHint'); if (h) h.hidden = true;
+    elState = null;
+  }
+
+  function elSelectHtml(sz, r, val) {
+    var st = stickerById(val);
+    return '<div class="e-anchor" data-anchor="' + esc(sz == null ? '' : sz) + '|' + r.angle + '">' +
+      '<div class="ds-select-form ds-select-form--s ds-select-form--' + (val ? 'populated' : 'empty') + ' fsel" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Стикер">' +
+        '<div class="ds-input ds-input--s ds-input--' + (val ? 'populated' : 'empty') + '">' +
+          '<div class="ds-input__frame">' +
+            '<div class="ds-input__content"><span class="ds-input__field">' + (st ? esc(st.name) : 'Выберите стикер') + '</span></div>' +
+            '<span class="ds-input__icon ds-icon-group">' +
+              '<span class="ds-icon-group__icon" data-el-clear="' + esc(sz == null ? '' : sz) + '|' + r.angle + '" role="button" tabindex="0" aria-label="Очистить"' + (val ? '' : ' hidden') + '><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>' +
+              '<span class="ds-icon-group__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ds-select-container fpop" hidden>' +
+        '<div class="ds-select-container__title"><span class="fpop__title">Выберите стикер</span></div>' +
+        '<div class="ds-divider"></div>' +
+        '<div class="fpop__wrap"><div class="ds-select-container__content fpop__scroll"></div>' +
+          '<div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden><div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderElementPanel() {
+    if (!elState) return;
+    qs('#elTitle').textContent = elState.item.name;
+    qs('#elDesc').textContent = 'Артикул: ' + elState.item.code;
+    elBody.innerHTML = '';
+    var sizes = elState.item.sizes && elState.item.sizes.length ? elState.item.sizes : [null];
+    sizes.forEach(function (sz) {
+      var sec = document.createElement('div');
+      sec.className = 'el-sec';
+      var preview = '<div class="el-prev">' +
+        '<div class="el-prev__box"><span class="material-icons" aria-hidden="true">image</span>' +
+          elState.rows[sz].map(function (rr) {
+            var s = stickerById(rr.sticker);
+            /* превью — ВСЕ размещённые стикеры (D-07); тумблер «Отображать… комбо» на превью не влияет */
+            if (!s) return '';
+            var cls = { TOP_LEFT: 'tl', TOP_RIGHT: 'tr', BOTTOM_LEFT: 'bl', BOTTOM_RIGHT: 'br' }[rr.angle];
+            return '<span class="el-prev__st el-prev__st--' + cls + '">' + thumbHtml(s.id) + '</span>';
+          }).join('') +
+        '</div>' +
+        '<span class="el-prev__cap">Превью</span>' +
+      '</div>';
+      var rowsHtml = elState.rows[sz].map(function (r) {
+        return '<div class="ds-table-content-row">' +
+          '<div class="ds-table-content-cell e-c-angle"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(angleName(r.angle)) + '</span></div></div></div></div>' +
+          '<div class="ds-table-content-cell e-c-st"><div class="ds-table-content-cell__element">' + elSelectHtml(sz, r, r.sticker) + '</div></div>' +
+          '<div class="ds-table-content-cell e-c-combo"><div class="ds-table-content-cell__element">' +
+            '<label class="ds-slide-toggle"><span class="ds-slide-toggle__row">' +
+              '<input class="ds-slide-toggle__input" type="checkbox" aria-label="Отображать на итоговой картинке комбо" data-el-toggle="' + esc(sz == null ? '' : sz) + '|' + r.angle + '"' + (r.combo ? ' checked' : '') + (r.sticker ? '' : ' disabled') + '>' +
+              '<span class="ds-slide-toggle__track"></span>' +
+            '</span></label>' +
+          '</div></div>' +
+        '</div>';
+      }).join('');
+      sec.innerHTML = (sz ? '<div class="el-sec__cap">Размер: ' + esc(sz) + '</div>' : '') +
+        '<div class="el-tbl"><div class="ds-table-header-row">' +
+          '<div class="ds-table-header-cell e-c-angle"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Расположение стикера</span></div></div></div></div>' +
+          '<div class="ds-table-header-cell e-c-st"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Стикер</span></div></div></div></div>' +
+          '<div class="ds-table-header-cell e-c-combo">' +
+            '<div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui">' +
+              '<div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Отображать</span></div>' +
+              '<span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state e-hint-ic" role="button" tabindex="0" aria-label="Отображать на итоговой картинке комбо"><span class="material-icons" aria-hidden="true">info</span></span></span>' +
+            '</div></div>' +
+          '</div>' +
+        '</div>' + rowsHtml + '</div>' + preview;
+      elBody.appendChild(sec);
+    });
+    syncDlgScroll();
+  }
+
+  /* разделители шапки/подвала диалога — по факту прокрутки тела (скролла нет — линии нет) */
+  function syncDlgScroll() {
+    var can = elBody.scrollHeight > elBody.clientHeight + 1;
+    elDlg.classList.toggle('is-scroll', can);
+    /* полоса — компонентом Scroll (сама прячется, если прокрутки нет) */
+    if (window.DSPatterns && DSPatterns.scrollSync) DSPatterns.scrollSync(elBody, elScroll);
+  }
+  window.addEventListener('resize', function () { if (elState) syncDlgScroll(); });
+  /* панель ревью/окно меняют размер кадра без события resize — следим за самим телом */
+  if (window.ResizeObserver) new ResizeObserver(function () { if (elState) syncDlgScroll(); }).observe(elBody);
+
+  /* список стикеров в поле — пункты ДС (--false + --selected) */
+  function buildElPop(pop, anchor, sz, angle) {
+    var host = pop.querySelector('.fpop__scroll');
+    host.innerHTML = '';
+    var cur = elState.rows[sz].filter(function (r) { return r.angle === angle; })[0].sticker;
+    data.stickers.forEach(function (st) {
+      var item = document.createElement('div');
+      item.className = 'ds-select-item ds-select-item--false' + (cur === st.id ? ' ds-select-item--selected' : '');
+      item.innerHTML = '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>' +
+        '<span class="ds-select-item__element-right"' + (cur === st.id ? '' : ' hidden') + '><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">check</span></span></span>';
+      item.querySelector('.ds-select-item__label').textContent = st.name;
+      item.addEventListener('click', function () {
+        var row = elState.rows[sz].filter(function (r) { return r.angle === angle; })[0];
+        row.sticker = st.id;
+        closeElPop();
+        renderElementPanel();
+      });
+      host.appendChild(item);
+    });
+  }
+
+  /* подсказка к иконке «info» — компонент Hint, один элемент на страницу (position: fixed) */
+  function showElHint(target, on) {
+    var ic = target.closest ? target.closest('.e-hint-ic') : null;
+    var hint = qs('#elHint');
+    if (!ic || !hint) return;
+    hint.hidden = !on;
+    if (!on) return;
+    var r = ic.getBoundingClientRect();
+    hint.style.left = '0px';
+    /* тултип не перекрывает шапку таблицы: ниже её нижней границы (но не ближе 8 к иконке) */
+    var row = ic.closest('.ds-table-header-row');
+    var top = r.bottom + 8;
+    if (row) top = Math.max(top, row.getBoundingClientRect().bottom + 4);
+    hint.style.top = Math.round(top) + 'px';
+    var hr = hint.getBoundingClientRect();
+    /* центрируем по иконке — хвостик указывает точно на неё; у края экрана — зажим,
+       а хвостик доворачиваем, чтобы он остался под иконкой */
+    var cx = r.left + r.width / 2;
+    var left = Math.max(8, Math.min(window.innerWidth - hr.width - 8, Math.round(cx - hr.width / 2)));
+    hint.style.left = left + 'px';
+    var arrow = hint.querySelector('.e-hint__arrow');
+    if (arrow) {
+      var aw = arrow.getBoundingClientRect().width || 8;
+      var shift = Math.round(cx - (left + hr.width / 2));
+      var maxShift = Math.round(hr.width / 2 - aw / 2 - 4);
+      shift = Math.max(-maxShift, Math.min(maxShift, shift));
+      arrow.style.transform = shift ? 'translateX(' + shift + 'px)' : '';
+    }
+  }
+
+  elBody.addEventListener('click', function (e) {
+    /* клик по полю селекта не должен доходить до document — иначе попап закроется тем же кликом */
+    if (e.target.closest('.e-anchor')) e.stopPropagation();
+    var clr = e.target.closest('[data-el-clear]');
+    if (clr) {
+      var key = clr.getAttribute('data-el-clear').split('|');
+      var sz = key[0] === '' ? null : key[0];
+      var row = elState.rows[sz].filter(function (r) { return r.angle === key[1]; })[0];
+      row.sticker = '';
+      row.combo = false;
+      closeElPop();
+      renderElementPanel();
+      return;
+    }
+    var anchor = e.target.closest('.e-anchor');
+    if (!anchor) return;
+    var pop = anchor.querySelector('.fpop');
+    if (!pop) return;
+    if (elPop === pop && !pop.hidden) { closeElPop(); return; }
+    closeElPop();
+    var k = anchor.getAttribute('data-anchor').split('|');
+    var szA = k[0] === '' ? null : k[0];
+    var angleA = k[1];
+    /* попап — во вьюпорте (portal, fixed): измеряем полную высоту, потом решаем вниз/вверх
+       и сколько места отдать списку: элементов немного — попап виден целиком */
+    var ar = anchor.getBoundingClientRect();
+    var GAP = 2, EDGE = 8;
+    elPopLayer.appendChild(pop);
+    pop.style.width = Math.round(ar.width) + 'px';
+    pop.style.left = Math.round(ar.left) + 'px';
+    pop.style.top = Math.round(ar.bottom + GAP) + 'px';
+    pop.classList.remove('is-up');
+    pop.hidden = false;
+    elPop = pop;
+    elPopAnchor = anchor;
+    buildElPop(pop, anchor, szA, angleA);
+    var list = pop.querySelector('.fpop__scroll');
+    if (list) {
+      list.style.maxHeight = '';
+      var natural = pop.offsetHeight;
+      var chrome = Math.max(0, natural - list.offsetHeight);
+      var below = window.innerHeight - EDGE - (ar.bottom + GAP);
+      var above = ar.top - GAP - EDGE;
+      var goUp = natural > below && above > below;
+      pop.classList.toggle('is-up', goUp);
+      var avail = (goUp ? above : below) - chrome;
+      list.style.maxHeight = Math.max(44, Math.min(320, avail, list.scrollHeight)) + 'px';
+      var h = pop.offsetHeight;
+      pop.style.top = Math.round(goUp ? Math.max(EDGE, ar.top - GAP - h) : ar.bottom + GAP) + 'px';
+      if (window.DSPatterns) DSPatterns.scrollSync(list, pop.querySelector('.fscroll'));
+    }
+    anchor.querySelector('.fsel').classList.add('is-open');
+  });
+  /* прокрутка тела/страницы — попап перестаёт «прилипать» к полю: закрываем (как тултип) */
+  elBody.addEventListener('scroll', function () { closeElPop(); });
+  document.addEventListener('click', function (e) {
+    if (elPop && !elPop.contains(e.target)) closeElPop();
+  });
+  elBody.addEventListener('change', function (e) {
+    var tg = e.target.closest && e.target.closest('[data-el-toggle]');
+    if (!tg) return;
+    var key = tg.getAttribute('data-el-toggle').split('|');
+    var sz = key[0] === '' ? null : key[0];
+    var row = elState.rows[sz].filter(function (r) { return r.angle === key[1]; })[0];
+    row.combo = tg.checked;
+  });
+  elBody.addEventListener('mouseover', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, true); });
+  elBody.addEventListener('mouseout', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, false); });
+  elBody.addEventListener('focusin', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, true); });
+  elBody.addEventListener('focusout', function (e) { if (e.target.closest && e.target.closest('.e-hint-ic')) showElHint(e.target, false); });
+  elBody.addEventListener('scroll', function () { var h = qs('#elHint'); if (h) h.hidden = true; });
+
+  qs('#elClose').addEventListener('click', closeElementPanel);
+  qs('#elCancel').addEventListener('click', closeElementPanel);
+  elDim.addEventListener('click', closeElementPanel);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (elPop) { closeElPop(); return; }
+      if (!elDlg.hidden) closeElementPanel();
+    }
+  });
+  qs('#elSave').addEventListener('click', function () {
+    if (!elState) return;
+    /* заменяем привязки элемента в выбранной версии (D-07: «Сохранить»); другие элементы не трогаем */
+    data.placements = placements.filter(function (p) {
+      return !(p.menu === elState.menu && p.version === elState.version && p.code === elState.code);
+    });
+    Object.keys(elState.rows).forEach(function (szKey) {
+      var sz = szKey === 'null' ? null : szKey;
+      elState.rows[szKey].forEach(function (r) {
+        if (!r.sticker) return;
+        data.placements.push({ sticker: r.sticker, menu: elState.menu, version: elState.version, code: elState.code, size: sz, angle: r.angle, combo: r.combo });
+      });
+    });
+    placements = data.placements;
+    try { sessionStorage.setItem(KEY, JSON.stringify(data)); } catch (err) {}
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (err) {}
+    closeElementPanel();
+    renderAll();
+  });
+
+  /* табы раздела */
+  qsa('[data-go]').forEach(function (b) { b.addEventListener('click', function () { location.href = b.getAttribute('data-go'); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1478 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Киоски · Стикеры — карточка стикера, прототип на ДС</title>
+<!--
+  ЭКРАНЫ S2/S3 (карточка стикера: создание/редактирование), S4 (диалоги), S9 (снэкбар по кодам).
+  ОТКУДА ЧТО ВЗЯТО:
+    • постановка — вики VIT 181778772 «Управление стикерами», сценарии C-01…C-16, E-01…E-10, F-1…F-4;
+      подписи в разметке — дословно из постановки: «Новый стикер», «Наименование», «Описание»,
+      «Изображение стикера», «Размещение на блюдах», «Внешнее меню и версия», «Блюда», «Угол»,
+      «Отображать на итоговой картинке комбо», «Назад», «Обновить», «Удалить», «Сохранить»,
+      «Удалить стикер», «Отменить», «Заменить», «Подтвердить», «Добавить блюда по кодам»,
+      «Введите коды блюд через "+", "пробел" или "|"», «Коды блюд*», «Добавить», «Внимание!»;
+    • каркас — по образцу раздела «Баннеры» (banner-new.html / groups.html): подключение одной строкой,
+      статичная разметка, свой скрипт на клики;
+    • плашка ревью, шапка и боковое меню — из `../../Design-System/connect.js`; организмы header-content
+      (шапка: стрелка назад + заголовок карточки) — вручную по readme;
+    • компоненты ДС: Tabs, Card, Form field Input (M), Textarea (поле «Описание» и диалог кодов), Select form +
+      Select container (одиночный и multiple — как mat-select: значения текстом в поле, чекбоксы в списке,
+      «Все» отдельным пунктом), Checkbox, Button + Button group, Button icon group (изменить/удалить
+      изображение), Slide toggle, Dialog + Backdrop, Snackbar, Search,
+      Scroll (в списках), Divider, Icon size, Text UI;
+    • иконки — Material Icons лигатурой (правило), кроме глифов набора организма header-content
+      (arrow-back, search и т. п. — data-hc-icon, точные SVG);
+    • миниатюры/превью стикеров — заглушки контента (.st-thumb), как на списке S1;
+    • поведение: «Сохранить» — disabled + тултип «Не заполнено: …» до заполнения обязательных
+      («Наименование» и «Изображение стикера»); блок размещения применяется на «Сохранить»: валидация
+      (⚠️ C-14: «Заполните поле „Блюда“» / «Заполните поле „Угол“»), конфликт угла — диалог
+      «заменить/отменить» на каждое конфликтующее блюдо (⚠️ C-15), затем сохранение и закрытие карточки
+      (⚠️ решение C-05); «Назад»/«Обновить» с несохранёнными изменениями — предупреждение
+      (C-06, ⚠️ C-07); очистки полей — каскадом (C-13);
+      «+ Добавить по кодам» — диалог с Textarea; код не из ВМ — снэкбар с кодом (E-03/S9);
+      загрузка изображения: PNG/JPG/SVG, ≤200 кБ, ошибки под зоной загрузки (C-03).
+    • вне ДС — только раскладка (классы .page/.frm/.frm-main/.frm-side/.frm-card/.frm-group/.frm-grid/
+      .field-anchor/.fpop/.up-*/.st-thumb/.codes-*), помечено в <style>.
+-->
+<script src="sidenav-menu.js"></script>
+<script>window.DSR_NO_CHROME = true;</script>
+<script src="../../../Design-System/connect.js" defer></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
+<script src="../../../Design-System/organisms/app-header-content/header-content.js?v=1" defer></script>
+<style>
+  html, body { margin: 0; font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+  .apph__store, .apph__tabs, .apph__pill, .apph__cal, .apph__search, .apph__mpill, .apph__mright { display: none !important; }
+  .material-icons { font-family: 'Material Icons Outlined'; }
+
+  /* ── раскладка (вне ДС) ── */
+  .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
+  @media (max-width: 1160px) { .frame { padding: var(--ds-space-5x, 20px) var(--ds-space-4x, 16px) var(--ds-space-6x, 24px); } }
+  .page { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  .sec-tabs { margin: 0; }
+
+  /* в шапке карточки рядом стоят две группы действий: кнопки-иконки и кнопки;
+     у организма зазор 29 рассчитан на пару «поиск ↔ кнопки» — на этой странице
+     между группами 8, как между кнопками Button group (обвязка, 03.11.2026) */
+  .hc__right { gap: var(--ds-space-2x, 8px); }
+  /* пробел ДС №263: у Button icon состояние Disable НЕ перекрывает цвет Style —
+     `.ds-btn-icon:disabled` и `.ds-btn-icon--negative.ds-btn-icon--text` равной специфичности (0,2,0),
+     правило стиля идёт позже → недоступная «Удалить» оставалась красной и выглядела активной.
+     Здесь гасим цвет/фон токенами Disable (селектор специфичнее за счёт `.hc`). */
+  .hc .ds-btn-icon:disabled,
+  .hc .ds-btn-icon.ds-btn-icon--disabled { color: var(--ds-color-button-icon-disable-icon-color, #9e9e9e); }
+  .hc .ds-btn-icon--text:disabled,
+  .hc .ds-btn-icon--text.ds-btn-icon--disabled { background: var(--ds-color-button-icon-disable-background-text); }
+
+  /* форма — как в баннерах (правило 20.10): одна карточка на всю ширину контента слева,
+     внутри — группы по смыслу («Основная информация», «Размещение на блюдах»),
+     справа — карточка «Изображение стикера» */
+  .frm { display: grid; grid-template-columns: minmax(0, 1fr) 384px; gap: var(--ds-space-6x, 24px); align-items: start; }
+  @media (max-width: 1100px) { .frm { grid-template-columns: 1fr; } }
+  .frm-main { min-width: 0; display: flex; flex-direction: column; }
+  .frm-side { min-width: 0; display: flex; flex-direction: column; }
+  .frm-card { box-sizing: border-box; }
+  .frm-groups { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  .frm-group__title { font: var(--ds-font-body-s-14-normal-medium); letter-spacing: var(--ds-font-body-s-14-normal-medium-spacing);
+    color: var(--ds-color-text-primary, #333333); margin: 0 0 var(--ds-space-2x, 8px); }
+  .frm-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--ds-space-4x, 16px); }
+  /* «Основная информация» — поля в 2 строки, каждое на всю ширину (заказчик 03.11.2026: «сделать в 2 строчки») */
+  .frm-grid .field-anchor[data-field="name"],
+  .frm-grid .field-anchor[data-field="desc"] { grid-column: 1 / -1; }
+  /* широкие мультиселекты — на всю ширину сетки (как в форме баннера, 20.10) */
+  .frm-grid .field-anchor[data-field="menu"],
+  .frm-grid .field-anchor[data-field="dish"] { grid-column: 1 / -1; }
+  /* «Угол» остался единственным полем в ряду — на всю ширину сетки (правило «одно поле в блоке»,
+     заказчик 03.11.2026: «На всю ширину....было блядь такое правило») */
+  .frm-grid .field-anchor[data-field="angle"] { grid-column: 1 / -1; }
+
+  /* тумблер группы — после заголовка; зазор 8 до полей (как от заголовка до полей) */
+  .frm-group [data-field="combo"] { margin-bottom: var(--ds-space-2x, 8px); }
+
+  /* поле-обёртка: якорь выпадающего списка; поле — по ширине колонки (общее правило растяжения) */
+  .field-anchor { position: relative; display: block; min-width: 0; align-self: start; }
+  .fsel { width: 100%; cursor: pointer; }
+  .fsel .ds-input__field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fsel.is-open .ds-input__frame { border-color: var(--ds-color-form-field-filled-focus-border-color, #448aff); }
+  .fsel.is-open .ds-input__label { color: var(--ds-color-form-field-filled-focus-label-text-color, #448aff); }
+  .fsel.is-open.ds-select-form--empty .ds-input__field { color: var(--ds-color-form-field-filled-focus-input-text-placeholder-color, #d6d6d6); }
+  .fsel.is-open .ds-input__icon .material-icons { transform: rotate(180deg); }
+  .fsel.ds-select-form--empty .ds-input__field { color: var(--ds-color-form-field-input-label-text-color, #616161); }
+  .fsel.is-error .ds-input__frame { border-color: var(--ds-color-stroke-negative, #ff5252); }  .fsel.is-error .ds-input__field { color: var(--ds-color-text-negative, #ff5252); }
+  .fsel.is-error.ds-select-form--empty .ds-input__field { color: var(--ds-color-text-negative, #ff5252); }
+  .ds-input__support[hidden] { display: none; }
+
+  /* выпадающий список — Select container: по ширине поля, зазор 2; ширину можно расширить
+     по содержимому (правило 19.10) */
+  .fpop { position: absolute; top: calc(100% + 2px); left: 0; z-index: 40; width: 100%; min-height: 0; }
+  .fpop .ds-select-item { width: 100%; cursor: pointer; align-items: flex-start; }
+  .fpop .ds-select-item__label { white-space: normal; }
+  .fpop .ds-select-item__content { flex: 1 1 auto; min-width: 0; }
+  .fpop .ds-select-item__element-left,
+  .fpop .ds-select-item__element-right { flex: none; align-self: flex-start; }
+  .fpop .ds-select-item__element-right { margin-left: auto; }
+  .fpop__wrap { display: flex; flex-direction: row; align-items: flex-start; width: 100%; min-height: 0; }
+  .fpop .ds-select-container__search .fpop__sfield { width: 100%; }
+  .fpop .ds-select-container__search { padding: var(--ds-space-2x, 8px); }
+  .fpop__scroll { flex: 1 1 auto; min-width: 0; max-height: 320px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; padding-bottom: var(--ds-space-2x, 8px); }
+  .fpop__scroll > .ds-divider { flex: none; }
+  .fpop__scroll::-webkit-scrollbar { display: none; }
+  .fpop .fscroll { flex: none; align-self: stretch; }
+  /* заголовки типов в списке блюд (H-1.1: «Блюда» / «Комбо» / «Модификаторы») — строки-подписи,
+     не пункты выбора */
+  .fpop__grp { display: flex; align-items: center; width: 100%; padding: var(--ds-space-2x, 8px) var(--ds-space-4x, 16px) 0;
+    font: var(--ds-font-caption-l-12-normal-medium); letter-spacing: var(--ds-font-caption-l-12-normal-medium-spacing);
+    color: var(--ds-color-text-secondary, #616161); cursor: default; }
+  .fpop__grp:first-child { padding-top: var(--ds-space-2x, 8px); }
+  /* «Добавить по кодам» — действие списка в слоте Button group контейнера Select (Button, Text Accent) */
+  #dishPop .ds-select-container__button-group { display: flex; justify-content: flex-start; }
+
+  /* ошибка поля — состояние Error компонента Input: рамка/значение красные, Support text под полем */
+  .fld-note { margin-top: var(--ds-space-2x, 8px); font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-secondary, #616161); }
+  .fld-note[hidden] { display: none !important; }
+  /* счётчик символов поля — как подпись 12/16, справа (как «0/256» в макете 02) */
+  .fld-count { display: block; text-align: right; margin-top: var(--ds-space-0-5x, 2px);
+    font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-secondary, #616161); }
+
+  /* Textarea (поле «Описание»): ширина по колонке (у компонента фикс 250). Анатомия по компоненту:
+     подпись 12/16 (обвязка — пробел выгрузки №125), значение 16/24, инстанс Scroll 8×64 внутри кадра
+     у правого края (как в Figma); класса поля ввода в ДС нет — рабочий textarea обвязкой (№125) */
+  .fld-ta { width: 100%; min-width: 0; min-height: 0; }
+  /* как в живом примере стенда Textarea: рамка растёт по тексту (min 76), поле 24→96 (1–4 строки),
+     дальше — скролл внутри и полоса Scroll справа */
+  .fld-ta .ds-textarea__input-frame { width: 100%; box-sizing: border-box; position: relative; height: auto; min-height: 76px; }
+  .fld-ta .ds-textarea__input-content { flex: 1 1 auto; min-width: 0; padding-right: var(--ds-space-3x, 12px); }
+  .fld-ta__caption { font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-form-field-filled-default-label-text-color, #616161); }
+  .fld-ta__field { display: block; width: 100%; min-width: 0; min-height: var(--ds-size-6x, 24px); max-height: 96px;
+    border: 0; outline: 0; background: transparent; resize: none; overflow-y: auto; scrollbar-width: none;
+    font: var(--ds-font-body-m-16-normal-regular); color: var(--ds-color-form-field-filled-default-input-text-color, #333333); }
+  .fld-ta__field::-webkit-scrollbar { display: none; }
+  .fld-ta__field::placeholder { color: var(--ds-color-form-field-input-label-text-color, #616161); opacity: 1; }
+  .fld-ta .ds-textarea__input-frame:focus-within { border-color: var(--ds-color-form-field-filled-focus-border-color, #448aff); }
+  .fld-ta:focus-within .fld-ta__caption { color: var(--ds-color-form-field-filled-focus-label-text-color, #448aff); }
+  /* инстанс Scroll внутри кадра: 8 px у правого края, дорожка в рост кадра, ползунок 24 (как на стенде) */
+  .fld-ta__scroll { position: absolute; top: 5px; bottom: 6px; right: 0; width: var(--ds-size-2x, 8px); }
+  .fld-ta__scroll .ds-scroll__background { flex: 1 1 auto; }
+  .fld-ta__scroll .ds-scroll__knob { height: var(--ds-size-6x, 24px); }
+  /* поддержка — слотами компонента; у поля «Описание» видна только при ошибке */
+  .fld-ta .ds-textarea__support { display: flex; }
+  .fld-ta .ds-textarea__support[hidden] { display: none; }
+  .fld-ta .ds-textarea__text { flex: 1 1 0; }
+  .fld-ta__support-text { font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-negative, #ff5252); }
+
+  /* ── загрузка изображения (вне ДС; компонента выгрузки в ДС нет — как в баннерах) ── */
+  .up-body { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); width: 100%; }
+  .up-box { position: relative; width: 100%; height: 208px; box-sizing: border-box; border: 1px solid var(--ds-color-stroke-default, #e0e0e0);
+    border-radius: var(--ds-radius-2x, 8px); display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--ds-space-2x, 8px); cursor: pointer; overflow: hidden; background: var(--ds-color-brand-neutral-default, #ffffff); }
+  .up-box.is-drag { border-color: var(--ds-color-stroke-accent, #448aff); background: var(--ds-color-status-accent-filled-background, #f5f9ff); }
+  .up-box:focus-visible { outline: 2px solid var(--ds-color-stroke-accent, #448aff); outline-offset: 2px; }
+  .up-ic { position: relative; z-index: 1; font-size: 48px; line-height: 48px; color: var(--ds-color-icon-disable, #9e9e9e); }
+  .up-cap { position: relative; z-index: 1; font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-icon-disable, #9e9e9e); }
+  .up-box img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--ds-color-brand-neutral-default, #ffffff); }
+  .up-file { width: 100%; display: flex; align-items: center; gap: var(--ds-space-2x, 8px); }
+  .up-file__name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-primary, #333333); }
+  .up-err { width: 100%; font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-text-negative, #ff5252); }
+  .up-err[hidden] { display: none !important; }
+  .up-card.is-error { border-color: var(--ds-color-stroke-negative, #ff5252); }
+
+  /* ── миниатюры/превью стикеров (заглушки контента, как на S1) ── */
+  .st-thumb { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    min-width: 44px; height: 28px; padding: 0 var(--ds-space-2x, 8px);
+    border-radius: var(--ds-radius-1-5x, 6px);
+    background: var(--st-c, #e0e0e0); color: var(--st-t, #ffffff);
+    font: var(--ds-font-caption-l-12-normal-medium); letter-spacing: var(--ds-font-caption-l-12-normal-medium-spacing);
+    white-space: nowrap; }
+  .st-thumb--icon { background: var(--ds-color-surface-default, #ffffff);
+    border: 1px solid var(--ds-color-stroke-default, #e0e0e0); color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .st-thumb--icon .material-icons { font-size: var(--ds-size-5x, 20px); line-height: var(--ds-size-5x, 20px); }
+
+  /* ── «Сохранить» в шапке: кнопка disabled не ловит hover — тултип на обёртке;
+     содержимое (что осталось заполнить) обновляет скрипт по валидации (как в баннерах) ── */
+  .save-wrap { position: relative; }
+  .save-tip { position: absolute; top: calc(100% + var(--ds-space-2x, 8px)); right: 0; z-index: 70;
+    width: max-content; max-width: 340px; padding: var(--ds-space-2x, 8px) var(--ds-space-3x, 12px);
+    border-radius: var(--ds-radius-2x, 8px); background: #333333; color: #ffffff;
+    font: var(--ds-font-caption-l-12-normal-regular); line-height: 16px;
+    visibility: hidden; opacity: 0; transition: opacity .15s ease; }
+  .save-wrap:hover .save-tip { visibility: visible; opacity: 1; }
+
+  /* ── диалоги — компонент Dialog ДС + Backdrop (анатомия токенами ДС) ── */
+  .dlg-dim { position: fixed; inset: 0; z-index: 100; opacity: .15; }
+  .dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 110;
+    min-height: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow: hidden; }
+  .dlg[hidden], .dlg-dim[hidden] { display: none !important; }
+  .dlg .ds-dialog-header { width: 100%; gap: var(--ds-dialog-header-gap, 8px);
+    padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px)
+             var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
+  .dlg .ds-dialog-header__label { white-space: normal; }
+  .dlg .ds-dialog-header__description { background: none; white-space: normal; }
+  /* контент диалога — слот Dialog content компонента (ширина 100%, паддинги 8/24 — как в баннерах):
+     блок контента живёт МЕЖДУ шапкой и подвалом, а не внутри подвала */
+  .dlg .ds-dialog-content { width: 100%; display: block; min-height: 0;
+    padding: var(--ds-space-2x, 8px) var(--ds-space-6x, 24px); box-sizing: border-box; }
+  .dlg .ds-dialog-view__action { height: auto; flex-direction: row; justify-content: flex-end; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-dialog-footer-pad-top, 16px) var(--ds-dialog-footer-pad-right, 24px)
+             var(--ds-dialog-footer-pad-bottom, 16px) var(--ds-dialog-footer-pad-left, 24px); }
+
+  /* диалог кодов: Textarea ДС — анатомия компонента + живое поле (как Search на страницах) */
+  .codes-ta { width: 100%; min-width: 0; }
+  .codes-ta .ds-textarea__input-content { flex: 1 1 auto; min-width: 0; }
+  .codes-ta__caption,
+  .codes-ta__hint { font: var(--ds-font-caption-l-12-normal-regular); color: var(--ds-color-form-field-filled-default-label-text-color, #616161); }
+  .codes-ta .ds-textarea__text,
+  .codes-ta .ds-textarea__hint { flex: 1 1 auto; min-width: 0; height: auto; min-height: var(--ds-size-4x, 16px); }
+  .codes-ta__field { flex: 1 1 auto; min-width: 0; width: 100%; box-sizing: border-box; border: 0; outline: 0; resize: none; background: transparent;
+    font: var(--ds-font-body-m-16-normal-regular); color: var(--ds-color-form-field-filled-default-input-text-color, #333333); }
+  .codes-ta__field::placeholder { color: var(--ds-color-form-field-input-label-text-color, #616161); opacity: 1; }
+  /* состояние Focus — как в живом примере стенда Textarea_DS/demo.html (в css компонента Focus не выгружен, журнал №125) */
+  .codes-ta .ds-textarea__input-frame:focus-within { border-color: var(--ds-color-form-field-filled-focus-border-color, #448aff); }
+  .codes-ta:focus-within .codes-ta__caption { color: var(--ds-color-form-field-filled-focus-label-text-color, #448aff); }
+  .codes-ta.is-error .ds-textarea__input-frame { border-color: var(--ds-color-stroke-negative, #ff5252); }
+  .codes-ta.is-error .ds-textarea__label { color: var(--ds-color-text-negative, #ff5252); }
+  .codes-ta.is-error .ds-textarea__support { color: var(--ds-color-text-negative, #ff5252); }
+  .ds-textarea__support { font: var(--ds-font-caption-l-12-normal-regular); }
+  .codes-ta .ds-textarea__text { color: var(--ds-color-text-negative, #ff5252); }
+  .codes-ta .ds-textarea__hint { color: var(--ds-color-form-field-filled-default-label-text-color, #616161); }
+
+  /* тост — Snackbar (компонент ДС, Single Dark) */
+  .sb { position: fixed; left: 50%; bottom: var(--ds-space-6x, 24px); transform: translateX(-50%); z-index: 130; max-width: 560px; }
+  .sb[hidden] { display: none !important; }
+  .sb [hidden] { display: none !important; }
+  .sb .ds-snackbar__icon { color: #ffffff; }
+  .sb--negative .ds-snackbar__icon { color: var(--ds-color-icon-negative, #ff5252); }
+  .sb--positive .ds-snackbar__icon { color: var(--ds-color-icon-positive, #14b456); }
+  .sb--warning .ds-snackbar__icon { color: var(--ds-color-icon-warning, #ffc107); }
+  .sb .ds-snackbar__icon .material-icons { font-size: var(--ds-size-5x, 20px); line-height: var(--ds-size-5x, 20px); }
+  .sb .ds-snackbar__progress { transform-origin: right center; }
+  .sb--run .ds-snackbar__progress { animation: sb-count 5s linear forwards; }
+  @keyframes sb-count { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+  .page [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Шапка — организм header-content: стрелка назад + заголовок карточки.
+       Справа по ДС: Button icon group — «Удалить» (Button icon M Negative Text — удаление
+       и необратимое; в создании недоступна) и «Обновить» (Button icon M Neutral Text);
+       правее — Button group с главным действием «Сохранить» (Button M Accent Filled,
+       включается по обязательным полям, C-05), как «Создать» в форме баннера.
+       Порядок справа: удалить → обновить → сохранить (заказчик 03.11.2026).
+       C-01: создание — «Новый стикер» до первого сохранения; редактирование — из поля «Наименование».
+       Заголовок с кнопками — ВЫШЕ табов раздела (макет 04-tab-vm: шапка сверху, табы под ней). -->
+  <header class="hc" id="hdr">
+    <div class="hc__left">
+      <div class="ds-text-ui hc__title">
+        <span class="ds-text-ui__element-left hc__back" role="button" tabindex="0" aria-label="Назад" id="backBtn">
+          <span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><img data-hc-icon="arrow-back" width="24" height="24" alt=""></span>
+        </span>
+        <span class="ds-text-ui__content">
+          <span class="ds-text-ui__list-item hc__heading" id="cardTitle">Новый стикер</span>
+        </span>
+      </div>
+    </div>
+    <div class="hc__right">
+      <div class="ds-btn-icon-group hc__icons">
+        <button type="button" class="ds-btn-icon ds-btn-icon--m ds-btn-icon--negative ds-btn-icon--text" id="delBtn" aria-label="Удалить стикер" title="Удалить" disabled><span class="ds-btn-icon__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">delete</span></span></span></button>
+        <button type="button" class="ds-btn-icon ds-btn-icon--m ds-btn-icon--neutral ds-btn-icon--text" id="refreshBtn" aria-label="Обновить" title="Обновить"><span class="ds-btn-icon__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">refresh</span></span></span></button>
+      </div>
+      <div class="ds-btn-group ds-btn-group--horizontal hc__actions">
+        <div class="save-wrap" id="saveWrap">
+          <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="saveBtn" disabled><span class="ds-btn__label">Сохранить</span></button>
+          <div class="save-tip" id="saveTip" role="tooltip" hidden></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Вкладки раздела (ТЗ: два таба) — под заголовком (макет 04) -->
+  <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
+    <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true" data-go="stickers.html">Стикеры</button>
+    <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="external-menu.html?state=list">Внешнее меню</button>
+  </div>
+
+  <!-- Форма — одна карточка на всю ширину с группами по смыслу («Основная информация»,
+       «Размещение на блюдах»), справа — карточка «Изображение стикера» (правило 20.10) -->
+  <div class="frm">
+    <div class="frm-main">
+      <div class="frm-card ds-card ds-card--outlined ds-card--custom">
+        <div class="frm-groups">
+          <!-- Основная информация -->
+          <section class="frm-group">
+            <div class="frm-group__title">Основная информация</div>
+            <div class="frm-grid">
+              <!-- Наименование* — Input (M), до 50 символов (C-02); в создании поле ПУСТОЕ
+                   (обязательное, F-1) — «Новый стикер» показывается только в заголовке карточки (C-01) -->
+              <div class="field-anchor" data-field="name">
+                <div class="ds-input ds-input--m ds-input--empty" id="nameWrap">
+                  <div class="ds-input__frame">
+                    <div class="ds-input__content">
+                      <span class="ds-input__label" id="nameLabel" hidden>Наименование *</span>
+                      <input class="ds-input__field" type="text" id="nameInput" maxlength="50" placeholder="Наименование *" aria-label="Наименование">
+                    </div>
+                  </div>
+                  <span class="ds-input__support" id="nameErr" hidden></span>
+                </div>
+              </div>
+              <!-- Описание — Textarea (M), до 256 символов, необязательное (C-04); счётчик под полем.
+                   Анатомия по компоненту (fixes №125): кадр 76 (пад 4/12/12/12) с подписью 12/16
+                   (обвязка — пробел выгрузки), значением 16/24, инстансом Scroll 8×64 внутри кадра
+                   у правого края; поддержка слотами __text/__hint; класса поля ввода в ДС нет (№125) -->
+              <div class="field-anchor" data-field="desc">
+                <div class="ds-textarea ds-textarea--empty fld-ta" id="descWrap">
+                  <div class="ds-textarea__input-frame">
+                    <div class="ds-textarea__input-content">
+                      <span class="fld-ta__caption" id="descLabel" hidden>Описание</span>
+                      <textarea class="fld-ta__field" id="descInput" maxlength="256" placeholder="Описание" aria-label="Описание"></textarea>
+                    </div>
+                    <div class="ds-scroll ds-scroll--s fld-ta__scroll" id="descScroll" aria-hidden="true">
+                      <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+                    </div>
+                  </div>
+                  <div class="ds-textarea__support" hidden>
+                    <div class="ds-textarea__text"><span class="fld-ta__support-text" id="descErr" hidden></span></div>
+                  </div>
+                </div>
+                <span class="fld-count"><span id="descCount">0</span>/256</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Размещение на блюдах (C-09…C-15): группа той же карточки формы (правило 20.10);
+               применение — на «Сохранить», отдельной кнопки «Применить» нет (ДС обязательна) -->
+          <section class="frm-group" data-group="place">
+            <div class="frm-group__title">Размещение на блюдах</div>
+            <!-- Слайд-тугл группы — идёт после заголовка (правило: ко всему блоку — первый,
+                 к группе — после заголовка); признак блока размещения (C-12) -->
+            <div class="field-anchor fld-combo" data-field="combo">
+              <label class="ds-slide-toggle" for="comboToggle">
+                <span class="ds-slide-toggle__row">
+                  <input class="ds-slide-toggle__input" type="checkbox" id="comboToggle">
+                  <span class="ds-slide-toggle__track"></span>
+                  <span class="ds-slide-toggle__title">Отображать на итоговой картинке комбо</span>
+                </span>
+              </label>
+            </div>
+            <div class="frm-grid">
+              <!-- Внешнее меню и версия — составное поле (⚠️ C-09): Select multiple, значения текстом
+                   в поле, у меню в подписи версия; очистка каскадом: ВМ+версия+Блюда+Угол (C-13) -->
+              <div class="field-anchor" data-field="menu">
+                <div class="ds-select-form ds-select-form--m ds-select-form--empty fsel" id="menuField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Внешнее меню и версия">
+                  <div class="ds-input ds-input--m ds-input--empty">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label" id="menuLabel" hidden>Внешнее меню и версия</span>
+                        <span class="ds-input__field" id="menuValue">Внешнее меню и версия</span>
+                      </div>
+                      <span class="ds-input__icon ds-icon-group">
+                        <span class="ds-icon-group__icon" id="menuClear" role="button" tabindex="0" aria-label="Очистить поле" hidden><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
+                        <span class="ds-icon-group__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                      </span>
+                    </div>
+                  </div>
+                  <span class="ds-input__support" id="menuErr" hidden></span>
+                </div>
+                <div class="ds-select-container fpop fpop--menu" id="menuPop" role="listbox" aria-multiselectable="true" aria-label="Выберите внешнее меню и версию" hidden>
+                  <div class="fpop__wrap">
+                    <div class="ds-select-container__content fpop__scroll" id="menuItems"></div>
+                    <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden>
+                      <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Блюда — Select multiple: «Все» сверху, иерархия «Блюда/Комбо/Модификаторы» (H-1.1),
+                   «+ Добавить по кодам» внизу; очистка — только «Блюда» (C-13) -->
+              <div class="field-anchor" data-field="dish">
+                <div class="ds-select-form ds-select-form--m ds-select-form--empty fsel" id="dishField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Блюда">
+                  <div class="ds-input ds-input--m ds-input--empty">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label" id="dishLabel" hidden>Блюда</span>
+                        <span class="ds-input__field" id="dishValue">Выберите блюда</span>
+                      </div>
+                      <span class="ds-input__icon ds-icon-group">
+                        <span class="ds-icon-group__icon" id="dishClear" role="button" tabindex="0" aria-label="Очистить поле" hidden><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
+                        <span class="ds-icon-group__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                      </span>
+                    </div>
+                  </div>
+                  <span class="ds-input__support" id="dishErr" hidden></span>
+                </div>
+                <div class="ds-select-container fpop fpop--dish" id="dishPop" role="listbox" aria-multiselectable="true" aria-label="Выберите блюда" hidden>
+                  <div class="ds-select-container__search" id="dishSearchSlot" hidden>
+                    <span class="ds-search ds-search--s fpop__sfield">
+                      <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+                      <input class="ds-search__label" type="text" id="dishSearch" placeholder="Поиск по блюдам" aria-label="Поиск по блюдам">
+                    </span>
+                  </div>
+                  <div class="ds-divider" id="dishSearchDiv" hidden></div>
+                  <div class="fpop__wrap">
+                    <div class="ds-select-container__content fpop__scroll" id="dishItems"></div>
+                    <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden>
+                      <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+                    </div>
+                  </div>
+                  <div class="ds-divider"></div>
+                  <div class="ds-select-container__button-group">
+                    <button type="button" class="ds-btn ds-btn--s ds-btn--accent ds-btn--text" id="dishCodesBtn">
+                      <span class="ds-btn__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">add</span></span></span>
+                      <span class="ds-btn__label">Добавить по кодам</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Угол — одиночный выбор, 4 значения (C-11) -->
+              <div class="field-anchor" data-field="angle">
+                <div class="ds-select-form ds-select-form--m ds-select-form--empty fsel" id="angleField" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-label="Угол">
+                  <div class="ds-input ds-input--m ds-input--empty">
+                    <div class="ds-input__frame">
+                      <div class="ds-input__content">
+                        <span class="ds-input__label" id="angleLabel" hidden>Угол</span>
+                        <span class="ds-input__field" id="angleValue">Угол</span>
+                      </div>
+                      <span class="ds-input__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">arrow_drop_down</span></span></span>
+                    </div>
+                  </div>
+                  <span class="ds-input__support" id="angleErr" hidden></span>
+                </div>
+                <div class="ds-select-container fpop" id="anglePop" role="listbox" aria-label="Выберите угол" hidden>
+                  <div class="ds-select-container__content fpop__scroll" id="angleItems"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Изображение стикера* — PNG/JPG/SVG, ≤200 кБ (C-03); зона загрузки «НЕТ ФОТО» (макет 02),
+         после загрузки — превью, имя файла и иконки изменить/удалить (кнопки-иконки группой) -->
+    <div class="frm-side">
+      <div class="up-card ds-card ds-card--outlined ds-card--custom" id="upCard">
+        <div class="frm-group__title">Изображение стикера *</div>
+        <div class="up-body">
+          <div class="up-box" id="upBox" role="button" tabindex="0" aria-label="Загрузить изображение стикера">
+            <span class="material-icons up-ic" aria-hidden="true" id="upIcon">photo_camera</span>
+            <span class="up-cap" id="upCap">НЕТ ФОТО</span>
+            <img id="upPreview" alt="" hidden>
+          </div>
+          <div class="up-file" id="upFile" hidden>
+            <span class="up-file__name" id="upFileName"></span>
+            <div class="ds-btn-icon-group">
+              <button type="button" class="ds-btn-icon ds-btn-icon--s ds-btn-icon--neutral ds-btn-icon--text" id="upEdit" aria-label="Редактировать изображение" title="Изменить изображение"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">edit</span></span></button>
+              <button type="button" class="ds-btn-icon ds-btn-icon--s ds-btn-icon--neutral ds-btn-icon--text" id="upDel" aria-label="Удалить изображение" title="Удалить изображение"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">delete</span></span></button>
+            </div>
+          </div>
+          <span class="up-err" id="upErr" hidden></span>
+          <input type="file" id="upInput" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" hidden>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Подвала в карточке нет: «Удалить» — иконкой в шапке рядом с «Обновить» (заказчик 03.11.2026);
+       раньше кнопка была в подвале организма app-page-footer — убрана вместе с подвалом. -->
+</div>
+
+<!-- S4/C-06: подтверждение закрытия без сохранения (макет 11) -->
+<div class="ds-backdrop dlg-dim" id="exitDim" hidden></div>
+<div class="ds-dialog-view dlg" id="exitDlg" role="dialog" aria-modal="true" aria-labelledby="exitTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="exitTitle">Внимание!</span></div>
+    <span class="ds-dialog-header__description">У Вас есть несохраненные изменения. Вы уверены, что хотите продолжить? В случае подтверждения все изменения будут потеряны.</span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="exitCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="exitConfirm"><span class="ds-btn__label">Подтвердить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- S4/C-08: подтверждение удаления стикера (макет 12) -->
+<div class="ds-backdrop dlg-dim" id="delDim" hidden></div>
+<div class="ds-dialog-view dlg" id="delDlg" role="dialog" aria-modal="true" aria-labelledby="delTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="delTitle">Удалить стикер</span></div>
+    <span class="ds-dialog-header__description" id="delText"></span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="delCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--negative ds-btn--filled" id="delConfirm"><span class="ds-btn__label">Удалить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- S4/C-15: «место размещения занято» — на каждое конфликтующее блюдо (⚠️ решение дизайнера) -->
+<div class="ds-backdrop dlg-dim" id="confDim" hidden></div>
+<div class="ds-dialog-view dlg" id="confDlg" role="dialog" aria-modal="true" aria-labelledby="confTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="confTitle">Место размещения занято</span></div>
+    <span class="ds-dialog-header__description" id="confText"></span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="confCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="confReplace"><span class="ds-btn__label">Заменить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- S9/E-03: «Добавить блюда по кодам» (макет 08) — Textarea «Коды блюд*»; несуществующий код → снэкбар -->
+<div class="ds-backdrop dlg-dim" id="codesDim" hidden></div>
+<div class="ds-dialog-view dlg" id="codesDlg" role="dialog" aria-modal="true" aria-labelledby="codesTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="codesTitle">Добавить блюда по кодам</span></div>
+    <span class="ds-dialog-header__description">Введите коды блюд через "+", "пробел" или "|"</span>
+  </div>
+  <div class="ds-dialog-content">
+    <div class="ds-textarea ds-textarea--populated codes-ta" id="codesTa">
+      <div class="ds-textarea__input-frame">
+        <div class="ds-textarea__input-content">
+          <span class="codes-ta__caption">Коды блюд *</span>
+          <textarea class="codes-ta__field" id="codesInput" rows="3" placeholder="Например: 2000 + 3010 | 3112" aria-label="Коды блюд"></textarea>
+        </div>
+      </div>
+      <div class="ds-textarea__support">
+        <div class="ds-textarea__text"><span id="codesErr" hidden></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="codesCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="codesAdd" disabled><span class="ds-btn__label">Добавить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- S4/⚠️ C-07: «Обновить» с несохранёнными изменениями — предупреждение -->
+<div class="ds-backdrop dlg-dim" id="refDim" hidden></div>
+<div class="ds-dialog-view dlg" id="refDlg" role="dialog" aria-modal="true" aria-labelledby="refTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="refTitle">Обновить карточку?</span></div>
+    <span class="ds-dialog-header__description">У Вас есть несохранённые изменения. Они будут потеряны.</span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="refCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="refConfirm"><span class="ds-btn__label">Обновить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Тост — Snackbar (компонент ДС, Single Dark) -->
+<div class="ds-snackbar ds-snackbar--single ds-snackbar--dark sb sb--neutral" id="snackbar" role="status" aria-live="polite" hidden>
+  <div class="ds-snackbar__body">
+    <span class="ds-snackbar__icon"><span class="material-icons" aria-hidden="true">info</span></span>
+    <div class="ds-snackbar__content"><span class="ds-snackbar__label" id="sbLabel"></span></div>
+  </div>
+  <div class="ds-snackbar__progress"></div>
+</div>
+
+<script src="../../../Design-System/components-web/ds-patterns.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* Демо-данные в sessionStorage: одинаковое состояние во всех окнах и на всех адресах */
+  var __store = (function () {
+    try { window.sessionStorage.setItem('__t', '1'); window.sessionStorage.removeItem('__t'); return window.sessionStorage; }
+    catch (e) { return window.localStorage; }
+  })();
+
+  var qs = function (s, r) { return (r || document).querySelector(s); };
+  var qsa = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* ── данные ── */
+  var KEY = 'vitStickersData';
+  var JUST_KEY = 'vitStickerJustSaved';
+  var ANGLES = [
+    { id: 'TOP_LEFT', name: 'Левый верхний угол' },
+    { id: 'BOTTOM_LEFT', name: 'Левый нижний угол' },
+    { id: 'TOP_RIGHT', name: 'Правый верхний угол' },
+    { id: 'BOTTOM_RIGHT', name: 'Правый нижний угол' }
+  ];
+  var TYPE_ORDER = [{ key: 'dish', title: 'Блюда' }, { key: 'combo', title: 'Комбо' }, { key: 'modifier', title: 'Модификаторы' }];
+
+  function loadData() {
+    var raw = null;
+    try { raw = __store.getItem(KEY); } catch (e) {}
+    if (raw) {
+      try {
+        var d = JSON.parse(raw);
+        if (d && d.stickers && d.menus) return d;
+      } catch (e) {}
+    }
+    return null;   /* сид живёт на списке; если его нет — перенаправим на список */
+  }
+  var data = loadData();
+  if (!data) { location.href = 'stickers.html'; return; }
+  function saveData() { try { __store.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+  function menuById(id) { return data.menus.filter(function (m) { return m.id === id; })[0] || null; }
+  function stickerById(id) { return data.stickers.filter(function (s) { return s.id === id; })[0] || null; }
+  function versionName(mId, vId) { var m = menuById(mId); if (!m) return ''; var v = (m.versions || []).filter(function (x) { return x.id === vId; })[0]; return v ? v.name : ''; }
+  function itemByCode(code, mId, vId) {
+    var groups = data.catalog[mId + '|' + vId] || [];
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].items.length; j++) {
+        if (groups[i].items[j].code === code) return groups[i].items[j];
+      }
+    }
+    return null;
+  }
+  /* объединение множеств выбранных версий (E-05/C-10): блюда из всех выбранных ВМ+версий */
+  function unionItems() {
+    var out = [], seen = {};
+    state.menus.forEach(function (mv) {
+      var groups = data.catalog[mv] || [];
+      groups.forEach(function (g) {
+        g.items.forEach(function (it) {
+          if (seen[it.code]) return;
+          seen[it.code] = true;
+          out.push({ menu: mv.split('|')[0], version: mv.split('|')[1], item: it });
+        });
+      });
+    });
+    return out;
+  }
+  function angleName(id) { var a = ANGLES.filter(function (x) { return x.id === id; })[0]; return a ? a.name : ''; }
+
+  /* ── режим и состояние ── */
+  var Q = {};
+  (location.search.replace(/^\?/, '') || '').split('&').forEach(function (p) {
+    var i = p.indexOf('=');
+    if (i < 0) return;
+    try { Q[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1)); } catch (e) {}
+  });
+  var EDIT_ID = Q.edit || '';
+  var isEdit = !!EDIT_ID;
+
+  var state = {
+    id: '', name: '', desc: '',
+    image: { fileName: '', fileType: '', fileData: '' },
+    menus: [],      /* «menuId|versionId» */
+    dishes: [],     /* коды */
+    angle: '',
+    combo: false,
+    placements: []  /* применённые: {menu, version, code, size, angle, combo, dishName} */
+  };
+  var dirty = false;
+  var placementDirty = false;   /* меняли блок размещения (тогда «Сохранить» применяет его) */
+  var savePending = false;
+
+  function markDirty() {
+    dirty = true;
+    updateSaveBtn();
+  }
+  function markPlacementDirty() {
+    placementDirty = true;
+    markDirty();
+  }
+  function cardTitleText() {
+    if (!isEdit) return 'Новый стикер';   /* C-01: до первого сохранения — всегда «Новый стикер» */
+    return state.name || 'Новый стикер';
+  }
+
+  /* ── поля карточки ── */
+  var nameInput = qs('#nameInput');
+  var descInput = qs('#descInput');
+  var nameWrap = qs('#nameWrap');
+  var cardTitle = qs('#cardTitle');
+  var saveBtn = qs('#saveBtn');
+  var saveTip = qs('#saveTip');
+  var delBtn = qs('#delBtn');
+
+  function missingList() {
+    var out = [];
+    if (!state.name.trim()) out.push('«Наименование»');
+    if (!state.image.fileName) out.push('«Изображение стикера»');
+    return out;
+  }
+  function updateSaveBtn() {
+    var miss = missingList();
+    saveBtn.disabled = miss.length > 0;
+    saveTip.textContent = miss.length ? 'Не заполнено: ' + miss.join(', ') : '';
+    saveTip.hidden = miss.length === 0;
+  }
+  function updateTitle() {
+    cardTitle.textContent = cardTitleText();
+    nameInput.placeholder = isEdit ? 'Наименование *' : 'Наименование *';
+  }
+
+  nameInput.addEventListener('input', function () {
+    state.name = nameInput.value;
+    /* подпись/плейсхолдер ведёт общий паттерн ДС — DSPatterns.initFloatLabel (ds-patterns.js):
+       подпись вверх, если есть текст ИЛИ поле в фокусе (как у Textarea); здесь — только данные */
+    qs('#nameErr').hidden = true;
+    updateTitle();
+    markDirty();
+  });
+  /* Textarea «Описание» — как живой пример стенда: подпись 12/16 по фокусу/вводу,
+     высота поля растёт по тексту (24→96), дальше — скролл; полоса Scroll — ds-patterns.js */
+  function descAutosize() {
+    descInput.style.height = '24px';
+    descInput.style.height = Math.max(24, Math.min(96, descInput.scrollHeight)) + 'px';
+    if (descSync) descSync();
+  }
+  function descSyncState() {
+    var up = descInput.value.length > 0 || document.activeElement === descInput;
+    var w = qs('#descWrap');
+    w.classList.toggle('ds-textarea--empty', !up);
+    w.classList.toggle('ds-textarea--populated', up);
+    qs('#descLabel').hidden = !up;
+  }
+  descInput.addEventListener('input', function () {
+    state.desc = descInput.value;
+    qs('#descCount').textContent = descInput.value.length;
+    descSyncState();
+    descAutosize();
+    markDirty();
+  });
+  descInput.addEventListener('focus', descSyncState);
+  descInput.addEventListener('blur', descSyncState);
+
+  /* инстанс Scroll в кадре Textarea «Описание» — механика ds-patterns.js (дорожка, ползунок, перетаскивание) */
+  var descSync = DSPatterns.initScroll(descInput, qs('#descScroll'));
+
+  /* ── изображение (C-03): PNG/JPG/SVG, ≤200 кБ; механика как в карточке блюда ВМ ── */
+  var upBox = qs('#upBox');
+  var upInput = qs('#upInput');
+  var upErr = qs('#upErr');
+  var ALLOWED = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/svg+xml': 'svg' };
+
+  function renderImage() {
+    var preview = qs('#upPreview');
+    var has = !!state.image.fileName;
+    preview.hidden = !has;
+    if (has && state.image.fileData) preview.src = state.image.fileData;
+    if (!has) preview.removeAttribute('src');
+    qs('#upIcon').hidden = has;
+    qs('#upCap').hidden = has;
+    qs('#upFileName').textContent = state.image.fileName || '';
+    qs('#upFile').hidden = !has;
+    qs('#upCard').classList.toggle('is-error', !has && imageTouched);
+  }
+  var imageTouched = false;
+  function pickFile() {
+    upErr.hidden = true;
+    imageTouched = true;
+    qs('#upCard').classList.remove('is-error');
+    upInput.value = '';
+    upInput.click();
+  }
+  upBox.addEventListener('click', pickFile);
+  upBox.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickFile(); } });
+  qs('#upEdit').addEventListener('click', function (e) { e.stopPropagation(); pickFile(); });
+  qs('#upDel').addEventListener('click', function (e) {
+    e.stopPropagation();
+    state.image = { fileName: '', fileType: '', fileData: '' };
+    upErr.hidden = true;
+    renderImage();
+    markDirty();
+  });
+  upInput.addEventListener('change', function () {
+    var f = upInput.files && upInput.files[0];
+    if (!f) return;
+    if (!ALLOWED[f.type]) {
+      showUpError('Неподдерживаемый формат. Разрешены PNG, JPG, SVG.');
+      renderImage();
+      return;
+    }
+    if (f.size > 200 * 1024) {
+      showUpError('Файл слишком большой. Максимальный размер — 200 кБ.');
+      renderImage();
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      state.image = { fileName: f.name, fileType: ALLOWED[f.type], fileData: String(reader.result) };
+      upErr.hidden = true;
+      qs('#upCard').classList.remove('is-error');
+      renderImage();
+      markDirty();
+    };
+    reader.readAsDataURL(f);
+  });
+  function showUpError(text) {
+    upErr.textContent = text;
+    upErr.hidden = false;
+    qs('#upCard').classList.add('is-error');
+  }
+
+  /* ── выпадающие списки: общая механика (один открыт, Esc/клик мимо закрывают) ── */
+  var openPop = null;
+  function closePops() {
+    [menuField, dishField, angleField].forEach(function (f) {
+      f.classList.remove('is-open');
+      f.setAttribute('aria-expanded', 'false');
+    });
+    menuPop.hidden = dishPop.hidden = anglePop.hidden = true;
+    openPop = null;
+  }
+  function togglePop(field, pop, rebuild) {
+    var was = !pop.hidden;
+    closePops();
+    if (was) return;
+    pop.hidden = false;
+    field.classList.add('is-open');
+    field.setAttribute('aria-expanded', 'true');
+    openPop = pop;
+    rebuild();
+    syncPopScroll(pop);
+  }
+  function syncPopScroll(pop) {
+    DSPatterns.scrollSync(pop.querySelector('.fpop__scroll'), pop.querySelector('.fscroll'));
+  }
+  /* привязка скроллов — ниже, после объявления menuPop/dishPop/anglePop */
+  document.addEventListener('click', function (e) { if (openPop && !openPop.contains(e.target)) closePops(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePops(); });
+  window.addEventListener('resize', closePops);
+
+  function selectItem(list, cfg) {
+    /* cfg: { value, label, labelDown, checkbox, checked, onChange } */
+    var item = document.createElement('div');
+    item.className = 'ds-select-item ds-select-item--false';
+    item.setAttribute('data-value', cfg.value);
+    if (cfg.checkbox) {
+      item.innerHTML = '<span class="ds-select-item__element-left"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" tabindex="-1"' + (cfg.checked ? ' checked' : '') + '><span class="ds-checkbox__box"></span></label></span><div class="ds-select-item__content"><span class="ds-select-item__label"></span><span class="ds-select-item__label-down"></span></div>';
+      item.querySelector('.ds-select-item__label').textContent = cfg.label;
+      var down = item.querySelector('.ds-select-item__label-down');
+      if (cfg.labelDown) down.textContent = cfg.labelDown; else down.remove();
+      var input = item.querySelector('.ds-checkbox__input');
+      input.addEventListener('change', function () { cfg.onChange(input.checked); });
+      item.addEventListener('click', function (e) {
+        if (e.target.closest('.ds-checkbox')) return;
+        input.checked = !input.checked;
+        cfg.onChange(input.checked);
+      });
+    } else {
+      item.innerHTML = '<div class="ds-select-item__content"><span class="ds-select-item__label"></span></div>';
+      item.querySelector('.ds-select-item__label').textContent = cfg.label;
+      if (cfg.selected) { item.classList.add('ds-select-item--selected'); item.classList.remove('ds-select-item--false'); }
+      item.addEventListener('click', function () { cfg.onChange(); });
+    }
+    list.appendChild(item);
+    return item;
+  }
+
+  /* ── поле «Внешнее меню и версия» (multiple; C-09/C-13) ── */
+  var menuField = qs('#menuField');
+  var menuPop = qs('#menuPop');
+  var menuItems = qs('#menuItems');
+  var menuValue = qs('#menuValue');
+  var menuErr = qs('#menuErr');
+  var menuClear = qs('#menuClear');
+
+  function menuLabel(mv) {
+    var m = menuById(mv.split('|')[0]);
+    var v = versionName(mv.split('|')[0], mv.split('|')[1]);
+    return (m ? m.name : mv) + (v ? ' · ' + v : '');
+  }
+  function renderMenuField() {
+    var text = state.menus.map(menuLabel).join(', ');
+    menuValue.textContent = text || 'Внешнее меню и версия';
+    menuField.classList.toggle('ds-select-form--empty', !state.menus.length);
+    menuField.classList.toggle('ds-select-form--populated', state.menus.length > 0);
+    menuClear.hidden = state.menus.length === 0;
+    menuErr.hidden = true;
+  }
+  function buildMenuList() {
+    menuItems.innerHTML = '';
+    var values = [];
+    data.menus.forEach(function (m) {
+      (m.versions || []).forEach(function (v) {
+        var key = m.id + '|' + v.id;
+        selectItem(menuItems, {
+          value: key,
+          label: m.name,
+          labelDown: v.name,
+          checkbox: true,
+          checked: state.menus.indexOf(key) >= 0,
+          onChange: function (on) {
+            if (on && state.menus.indexOf(key) < 0) state.menus.push(key);
+            if (!on) state.menus = state.menus.filter(function (x) { return x !== key; });
+            /* состав ВМ изменился — в «Блюдах» остаются только коды из объединения версий (E-05) */
+            var valid = {};
+            unionItems().forEach(function (x) { valid[x.item.code] = true; });
+            state.dishes = state.dishes.filter(function (c) { return valid[c]; });
+            renderDishField();
+            renderMenuField();
+            markPlacementDirty();
+          }
+        });
+      });
+    });
+  }
+  menuField.addEventListener('click', function (e) { e.stopPropagation(); togglePop(menuField, menuPop, buildMenuList); });
+  menuPop.addEventListener('click', function (e) { e.stopPropagation(); });
+  menuClear.addEventListener('click', function (e) {
+    e.stopPropagation();
+    state.menus = [];       /* C-13: очистка ВМ очищает ВМ, версию, «Блюда» и «Угол» */
+    state.dishes = [];
+    state.angle = '';
+    renderMenuField();
+    renderDishField();
+    renderAngleField();
+    markPlacementDirty();
+  });
+
+  /* ── поле «Блюда» (multiple; C-10: объединение версий, «Все», иерархия по типу, «+ по кодам») ── */
+  var dishField = qs('#dishField');
+  var dishPop = qs('#dishPop');
+  var dishItems = qs('#dishItems');
+  var dishValue = qs('#dishValue');
+  var dishErr = qs('#dishErr');
+  var dishClear = qs('#dishClear');
+  var dishSearch = qs('#dishSearch');
+  var dishSearchSlot = qs('#dishSearchSlot');
+  var dishSearchDiv = qs('#dishSearchDiv');
+
+  function dishNameOf(code) {
+    var un = unionItems();
+    for (var i = 0; i < un.length; i++) if (un[i].item.code === code) return un[i].item.name;
+    return code;
+  }
+  function renderDishField() {
+    var text = state.dishes.map(dishNameOf).join(', ');
+    dishValue.textContent = text || 'Выберите блюда';
+    dishField.classList.toggle('ds-select-form--empty', !state.dishes.length);
+    dishField.classList.toggle('ds-select-form--populated', state.dishes.length > 0);
+    dishClear.hidden = state.dishes.length === 0;
+    dishErr.hidden = true;
+  }
+  function buildDishList() {
+    dishItems.innerHTML = '';
+    var un = unionItems();
+    /* правило ДС (шаг 3б): поиск в контейнере — только если значений больше 12 */
+    dishSearchSlot.hidden = un.length <= 12;
+    dishSearchDiv.hidden = un.length <= 12;
+    if (un.length) {
+      /* «Все» — отдельным пунктом сверху (C-10), под ним разделитель */
+      selectItem(dishItems, {
+        value: 'ALL', label: 'Все', checkbox: true,
+        checked: un.every(function (x) { return state.dishes.indexOf(x.item.code) >= 0; }),
+        onChange: function (on) {
+          un.forEach(function (x) {
+            if (on && state.dishes.indexOf(x.item.code) < 0) state.dishes.push(x.item.code);
+            if (!on) state.dishes = state.dishes.filter(function (c) { return c !== x.item.code; });
+          });
+          renderDishField();
+          buildDishList();
+          markPlacementDirty();
+        }
+      });
+      var div = document.createElement('div');
+      div.className = 'ds-divider';
+      dishItems.appendChild(div);
+      /* иерархия H-1.1: заголовки «Блюда» / «Комбо» / «Модификаторы» */
+      TYPE_ORDER.forEach(function (t) {
+        var items = un.filter(function (x) { return x.item.type === t.key; });
+        if (!items.length) return;
+        var head = document.createElement('div');
+        head.className = 'fpop__grp';
+        head.textContent = t.title;
+        dishItems.appendChild(head);
+        items.forEach(function (x) {
+          selectItem(dishItems, {
+            value: x.item.code,
+            label: x.item.name,
+            checkbox: true,
+            checked: state.dishes.indexOf(x.item.code) >= 0,
+            onChange: function (on) {
+              if (on && state.dishes.indexOf(x.item.code) < 0) state.dishes.push(x.item.code);
+              if (!on) state.dishes = state.dishes.filter(function (c) { return c !== x.item.code; });
+              renderDishField();
+              buildDishList();
+              markPlacementDirty();
+            }
+          });
+        });
+      });
+    } else {
+      var empty = document.createElement('div');
+      empty.className = 'fpop__grp';
+      empty.textContent = 'Сначала выберите внешнее меню и версию';
+      dishItems.appendChild(empty);
+    }
+    applyDishQuery();
+  }
+  dishField.addEventListener('click', function (e) { e.stopPropagation(); togglePop(dishField, dishPop, buildDishList); });
+  dishPop.addEventListener('click', function (e) { e.stopPropagation(); });
+  dishClear.addEventListener('click', function (e) {
+    e.stopPropagation();
+    state.dishes = [];   /* C-13: очистка в поле «Блюда» очищает «Блюда» */
+    renderDishField();
+    markPlacementDirty();
+  });
+  function applyDishQuery() {
+    var qv = dishSearch.value.trim().toLowerCase();
+    qsa('.ds-select-item', dishItems).forEach(function (it) {
+      var v = it.getAttribute('data-value');
+      it.hidden = v !== 'ALL' && qv !== '' && it.textContent.toLowerCase().indexOf(qv) < 0;
+    });
+    qsa('.fpop__grp', dishItems).forEach(function (g) { g.hidden = false; });
+  }
+  dishSearch.addEventListener('input', applyDishQuery);
+
+  /* ── поле «Угол» (одиночный; C-11) ── */
+  var angleField = qs('#angleField');
+  var anglePop = qs('#anglePop');
+  var angleItems = qs('#angleItems');
+  var angleValue = qs('#angleValue');
+  var angleErr = qs('#angleErr');
+
+  function renderAngleField() {
+    angleValue.textContent = angleName(state.angle) || 'Угол';
+    angleField.classList.toggle('ds-select-form--empty', !state.angle);
+    angleField.classList.toggle('ds-select-form--populated', !!state.angle);
+    angleErr.hidden = true;
+  }
+  function buildAngleList() {
+    angleItems.innerHTML = '';
+    ANGLES.forEach(function (a) {
+      selectItem(angleItems, {
+        value: a.id, label: a.name,
+        selected: state.angle === a.id,
+        onChange: function () {
+          state.angle = a.id;
+          renderAngleField();
+          buildAngleList();
+          closePops();
+          markPlacementDirty();
+        }
+      });
+    });
+  }
+  angleField.addEventListener('click', function (e) { e.stopPropagation(); togglePop(angleField, anglePop, buildAngleList); });
+  anglePop.addEventListener('click', function (e) { e.stopPropagation(); });
+
+  /* скролл списков — компонент Scroll (механика ds-patterns.js) */
+  [menuPop, dishPop, anglePop].forEach(function (pop) {
+    var sc = pop.querySelector('.fpop__scroll');
+    if (sc) sc.addEventListener('scroll', function () { syncPopScroll(pop); });
+  });
+
+  /* ── тоггл комбо (C-12) ── */
+  var comboToggle = qs('#comboToggle');
+  comboToggle.addEventListener('change', function () { state.combo = comboToggle.checked; markPlacementDirty(); });
+
+  /* ── размещение (C-14/C-15): применение на «Сохранить» ── */
+  function showFieldError(wrapId, errId, text) {
+    qs(errId).textContent = text;
+    qs(errId).hidden = false;
+    qs(wrapId).classList.add('is-error');
+  }
+  function clearErrors() {
+    menuErr.hidden = dishErr.hidden = angleErr.hidden = true;
+    menuField.classList.remove('is-error');
+    dishField.classList.remove('is-error');
+    angleField.classList.remove('is-error');
+  }
+  /* конфликт: тот же ВМ+версия+код+размер+угол уже занят ДРУГИМ стикером (C-15) */
+  function currentKey() { return state.id || 'draft'; }
+  function conflictFor(mv, code, size) {
+    var mId = mv.split('|')[0], vId = mv.split('|')[1];
+    for (var i = 0; i < data.placements.length; i++) {
+      var p = data.placements[i];
+      if (p.menu === mId && p.version === vId && p.code === code && (p.size || null) === (size || null) && p.angle === state.angle && p.sticker !== currentKey()) {
+        return p;
+      }
+    }
+    return null;
+  }
+  function applyPlacement(targets) {
+    /* targets: [{ mv, code, size, dishName }] */
+    var cur = currentKey();
+    targets.forEach(function (t) {
+      var mId = t.mv.split('|')[0], vId = t.mv.split('|')[1];
+      data.placements = data.placements.filter(function (p) {
+        return !(p.menu === mId && p.version === vId && p.code === t.code && (p.size || null) === (t.size || null) && p.angle === state.angle);
+      });
+      data.placements.push({ sticker: cur, menu: mId, version: vId, code: t.code, size: t.size || null, angle: state.angle, combo: state.combo });
+      /* в сессии — без дублей (повторное применение того же места заменяет запись, C-14) */
+      state.placements = state.placements.filter(function (p) {
+        return !(p.menu === mId && p.version === vId && p.code === t.code && (p.size || null) === (t.size || null) && p.angle === state.angle);
+      });
+      state.placements.push({ menu: mId, version: vId, code: t.code, size: t.size || null, angle: state.angle, combo: state.combo, dishName: t.dishName });
+    });
+    saveData();
+    /* если это конфликтная замена — старый стикер в этом углу снят, поставлен новый (C-15) */
+    return targets.length;
+  }
+
+  var conflictQueue = [];
+  function applyFlow(fromSave) {
+    clearErrors();
+    /* валидация блока размещения — на «Сохранить» (C-14) */
+    if (!state.menus.length) { showFieldError('#menuField', '#menuErr', 'Заполните поле «Внешнее меню и версия»'); return; }
+    if (!state.dishes.length) { showFieldError('#dishField', '#dishErr', 'Заполните поле «Блюда»'); return; }
+    if (!state.angle) { showFieldError('#angleField', '#angleErr', 'Заполните поле «Угол»'); return; }
+    /* цели: блюдо × все размеры (E-06: стикер добавляется ко ВСЕМ размерам) × все выбранные ВМ+версии */
+    var targets = [];
+    var un = unionItems();
+    state.menus.forEach(function (mv) {
+      state.dishes.forEach(function (code) {
+        var found = un.filter(function (x) { return x.item.code === code; });
+        var item = found.length ? found[0].item : itemByCode(code, mv.split('|')[0], mv.split('|')[1]);
+        if (!item) return;
+        var sizes = item.sizes && item.sizes.length ? item.sizes : [null];
+        sizes.forEach(function (sz) { targets.push({ mv: mv, code: code, size: sz, dishName: item.name }); });
+      });
+    });
+    if (!targets.length) return;
+    /* конфликты — диалог на каждое конфликтующее блюдо (C-15) */
+    var clean = [], conflicts = [];
+    targets.forEach(function (t) {
+      if (conflictFor(t.mv, t.code, t.size)) conflicts.push(t); else clean.push(t);
+    });
+    if (conflicts.length) {
+      /* свободные места применяем сразу — иначе теряются при разрешении конфликтов (C-14/C-15) */
+      if (clean.length) applyPlacement(clean);
+      conflictQueue = conflicts;
+      if (fromSave) savePending = true;
+      showNextConflict();
+      return;
+    }
+    var n = applyPlacement(clean);
+    if (n) showToast('Размещение применено', 'positive');
+    if (fromSave) doSave();
+  }
+  function showNextConflict() {
+    var t = conflictQueue[0];
+    if (!t) {
+      if (savePending) { savePending = false; doSave(); }
+      return;
+    }
+    qs('#confText').textContent = 'Для блюда «' + t.dishName + '» место размещения занято. Хотите заменить или отменить?';
+    qs('#confDim').hidden = false;
+    qs('#confDlg').hidden = false;
+  }
+  qs('#confReplace').addEventListener('click', function () {
+    var t = conflictQueue.shift();
+    if (t) applyPlacement([t]);
+    qs('#confDim').hidden = true;
+    qs('#confDlg').hidden = true;
+    if (conflictQueue.length) showNextConflict();
+    else {
+      showToast('Размещение применено', 'positive');
+      if (savePending) { savePending = false; doSave(); }
+    }
+  });
+  qs('#confCancel').addEventListener('click', function () {
+    conflictQueue.shift();   /* C-15: «Отменить» — для этого блюда стикер не применяется */
+    qs('#confDim').hidden = true;
+    qs('#confDlg').hidden = true;
+    if (conflictQueue.length) showNextConflict();
+    else if (savePending) { savePending = false; doSave(); }
+  });
+  qs('#confDim').addEventListener('click', function () { /* затемнение не закрывает диалог конфликта — выбор обязателен */ });
+
+  /* ── «Сохранить» (C-05/C-02): обязательные поля; применяет размещение и сохраняет (⚠️ C-05) ── */
+  function doSave() {
+    if (missingList().length) return;
+    var name = state.name.trim();
+    var isNew = !isEdit;
+    var target;
+    if (isEdit) {
+      target = stickerById(EDIT_ID);
+      if (!target) { target = { id: EDIT_ID, name: '', desc: '', label: '', color: '', textColor: '' }; data.stickers.push(target); }
+    } else {
+      var sid = 'st' + Date.now().toString(36);
+      target = { id: sid, name: '', desc: '', label: '', color: '', textColor: '' };
+      data.stickers.push(target);
+    }
+    target.name = name;
+    target.desc = state.desc.trim();
+    target.image = { fileName: state.image.fileName, fileType: state.image.fileType };
+    /* привязки этого стикера = применённые в сессии (полная замена; данные других стикеров не трогаем) */
+    data.placements = data.placements.filter(function (p) { return p.sticker !== EDIT_ID && p.sticker !== 'draft'; });
+    var cur = target.id;
+    state.placements.forEach(function (p) {
+      data.placements.push({ sticker: cur, menu: p.menu, version: p.version, code: p.code, size: p.size, angle: p.angle, combo: p.combo });
+    });
+    saveData();
+    try { __store.setItem(JUST_KEY, isNew ? 'Стикер «' + name + '» создан' : 'Стикер «' + name + '» сохранён'); } catch (e) {}
+    location.href = 'stickers.html';
+  }
+  saveBtn.addEventListener('click', function () {
+    if (missingList().length) return;
+    /* ⚠️ C-05: если блок размещения меняли и он заполнен — «Сохранить» применяет размещение и сохраняет */
+    if (placementDirty && (state.menus.length || state.dishes.length || state.angle)) {
+      var miss = [];
+      if (state.menus.length && !state.dishes.length) miss.push('Блюда');
+      if (state.dishes.length && !state.angle) miss.push('Угол');
+      if (miss.length) {
+        applyFlow(true);   /* валидация покажет ошибки — сохранение не выполнится */
+        return;
+      }
+      applyFlow(true);     /* применит (с конфликтами — диалогами), затем сохранит */
+      return;
+    }
+    doSave();
+  });
+
+  /* ── «Назад» (C-06): стрелка в шапке ── */
+  function goBack() {
+    if (!dirty) { location.href = 'stickers.html'; return; }
+    qs('#exitDim').hidden = false;
+    qs('#exitDlg').hidden = false;
+  }
+  qs('#backBtn').addEventListener('click', goBack);
+  qs('#exitCancel').addEventListener('click', function () { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; });
+  qs('#exitDim').addEventListener('click', function () { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; });
+  qs('#exitConfirm').addEventListener('click', function () { location.href = 'stickers.html'; });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#exitDlg').hidden) { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; } });
+
+  /* ── «Обновить» (C-07): данные перечитываются с сервера (в прототипе — из хранилища);
+       с несохранёнными изменениями — предупреждение (⚠️ C-07) ── */
+  qs('#refreshBtn').addEventListener('click', function () {
+    if (!dirty) { loadFromData(); return; }
+    qs('#refDim').hidden = false;
+    qs('#refDlg').hidden = false;
+  });
+  qs('#refCancel').addEventListener('click', function () { qs('#refDim').hidden = true; qs('#refDlg').hidden = true; });
+  qs('#refDim').addEventListener('click', function () { qs('#refDim').hidden = true; qs('#refDlg').hidden = true; });
+  qs('#refConfirm').addEventListener('click', function () {
+    qs('#refDim').hidden = true;
+    qs('#refDlg').hidden = true;
+    loadFromData();
+  });
+  /* Esc закрывает предупреждение «Обновить»; в диалоге конфликта — как «Отменить» (пропустить блюдо) */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (!qs('#refDlg').hidden) {
+      qs('#refDim').hidden = true;
+      qs('#refDlg').hidden = true;
+    } else if (!qs('#confDlg').hidden) {
+      qs('#confCancel').click();
+    }
+  });
+
+  /* ── «Удалить» в карточке (C-08, как B-06): модалка; удаляется из справочника и со всех продуктов ── */
+  function openDelDialog() {
+    qs('#delText').textContent = 'Вы уверены, что хотите удалить стикер «' + (state.name || cardTitleText()) + '»? Он будет снят со всех продуктов, на которые был размещён.';
+    qs('#delDim').hidden = false;
+    qs('#delDlg').hidden = false;
+  }
+  delBtn.addEventListener('click', function () { if (!delBtn.disabled) openDelDialog(); });
+  qs('#delCancel').addEventListener('click', function () { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; });
+  qs('#delDim').addEventListener('click', function () { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; });
+  qs('#delConfirm').addEventListener('click', function () {
+    var id = EDIT_ID;
+    qs('#delDim').hidden = true;
+    qs('#delDlg').hidden = true;
+    data.stickers = data.stickers.filter(function (s) { return s.id !== id; });
+    data.placements = data.placements.filter(function (p) { return p.sticker !== id; });
+    saveData();
+    try { __store.setItem(JUST_KEY, 'Стикер «' + (state.name || cardTitleText()) + '» удалён'); } catch (e) {}
+    location.href = 'stickers.html';
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#delDlg').hidden) { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; } });
+
+  /* ── «Добавить по кодам» (S9/E-03) ── */
+  var codesInput = qs('#codesInput');
+  var codesTa = qs('#codesTa');
+  var codesErr = qs('#codesErr');
+  function openCodesDialog() {
+    codesInput.value = '';
+    codesErr.hidden = true;
+    codesTa.classList.remove('is-error');
+    qs('#codesAdd').disabled = true;
+    qs('#codesDim').hidden = false;
+    qs('#codesDlg').hidden = false;
+    setTimeout(function () { codesInput.focus(); }, 0);
+  }
+  function closeCodesDialog() { qs('#codesDim').hidden = true; qs('#codesDlg').hidden = true; }
+  qs('#dishCodesBtn').addEventListener('click', function (e) { e.stopPropagation(); closePops(); openCodesDialog(); });
+  qs('#codesCancel').addEventListener('click', closeCodesDialog);
+  qs('#codesDim').addEventListener('click', closeCodesDialog);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#codesDlg').hidden) closeCodesDialog(); });
+  codesInput.addEventListener('input', function () {
+    qs('#codesAdd').disabled = !codesInput.value.trim();
+    codesErr.hidden = true;
+    codesTa.classList.remove('is-error');
+  });
+  qs('#codesAdd').addEventListener('click', function () {
+    if (!state.menus.length) {
+      codesErr.textContent = 'Сначала выберите внешнее меню и версию';
+      codesErr.hidden = false;
+      codesTa.classList.add('is-error');
+      return;
+    }
+    var codes = codesInput.value.split(/[+\s|]+/).map(function (x) { return x.trim(); }).filter(Boolean);
+    if (!codes.length) {
+      codesErr.textContent = 'Введите коды блюд';
+      codesErr.hidden = false;
+      codesTa.classList.add('is-error');
+      return;
+    }
+    var known = {}, invalid = [];
+    unionItems().forEach(function (x) { known[x.item.code] = x.item.name; });
+    var added = [];
+    codes.forEach(function (c) {
+      if (known[c]) {
+        if (state.dishes.indexOf(c) < 0) state.dishes.push(c);
+        added.push(c);
+      } else {
+        invalid.push(c);
+      }
+    });
+    renderDishField();
+    if (invalid.length) {
+      /* E-03: код, не входящий во внешнее меню, не вносится — снэкбар с кодом и информацией */
+      showToast('Блюдо с кодом ' + invalid.join(', ') + ' отсутствует во внешнем меню', 'negative');
+    }
+    if (added.length) {
+      closeCodesDialog();
+      markPlacementDirty();
+      if (!invalid.length) showToast('Блюда добавлены: ' + added.length, 'positive');
+    }
+  });
+
+  /* ── тост — Snackbar (компонент ДС, Single Dark) ── */
+  var snackbar = qs('#snackbar');
+  var sbLabel = qs('#sbLabel');
+  var sbTimer = null;
+  var SB_ICONS = { neutral: 'info', positive: 'check_circle', negative: 'error', warning: 'warning' };
+  function showToast(text, status) {
+    status = SB_ICONS[status] ? status : 'neutral';
+    snackbar.classList.remove('sb--neutral', 'sb--positive', 'sb--negative', 'sb--warning');
+    snackbar.classList.add('sb--' + status);
+    snackbar.querySelector('.ds-snackbar__icon .material-icons').textContent = SB_ICONS[status];
+    sbLabel.textContent = text;
+    snackbar.hidden = false;
+    snackbar.classList.remove('sb--run');
+    void snackbar.offsetWidth;
+    snackbar.classList.add('sb--run');
+    clearTimeout(sbTimer);
+    sbTimer = setTimeout(function () { snackbar.hidden = true; snackbar.classList.remove('sb--run'); }, 5000);
+  }
+
+  /* ── загрузка из данных (создание/редактирование/«Обновить») ── */
+  function loadFromData() {
+    state.name = '';
+    state.desc = '';
+    state.image = { fileName: '', fileType: '', fileData: '' };
+    state.menus = [];
+    state.dishes = [];
+    state.angle = '';
+    state.combo = false;
+    state.placements = [];
+    dirty = false;
+    placementDirty = false;
+    imageTouched = false;
+    var st = isEdit ? stickerById(EDIT_ID) : null;
+    state.id = st ? st.id : '';
+    if (st) {
+      state.name = st.name;
+      state.desc = st.desc || '';
+      if (st.image) {
+        state.image.fileName = st.image.fileName || '';
+        state.image.fileType = st.image.fileType || '';
+        /* изображение-заглушка: реальных байтов в прототипе нет — превью из сохранённого имени */
+        state.image.fileData = state.image.fileName ? makeStickerPlaceholder(st) : '';
+      }
+      /* блок размещения заполнен (S3): показываем первое применение */
+      var own = data.placements.filter(function (p) { return p.sticker === EDIT_ID; });
+      if (own.length) {
+        state.placements = own.map(function (p) {
+          var it = itemByCode(p.code, p.menu, p.version);
+          return { menu: p.menu, version: p.version, code: p.code, size: p.size, angle: p.angle, combo: p.combo, dishName: it ? it.name : p.code };
+        });
+        /* S3: поля блока показывают первое применение (первое ВМ+версия, блюдо, угол, тумблер) */
+        state.menus = [own[0].menu + '|' + own[0].version];
+        state.dishes = [own[0].code];
+        state.angle = own[0].angle;
+        state.combo = !!own[0].combo;
+      }
+      delBtn.disabled = false;
+    } else {
+      /* создание: «Новый стикер» — это ЗАГОЛОВОК карточки до первого сохранения (C-01);
+         само поле «Наименование» — обязательное и ПУСТОЕ (F-1), на сохранении требует ввода */
+      state.name = '';
+      delBtn.disabled = true;
+    }
+    nameInput.value = state.name;
+    descInput.value = state.desc;
+    qs('#descCount').textContent = state.desc.length;
+    descAutosize();
+    descSyncState();
+    /* классы/подпись поля — общий паттерн ДС (ds-patterns.js): свою логику не дублируем */
+    if (window.DSPatterns && DSPatterns.syncFloatLabel) DSPatterns.syncFloatLabel(nameWrap);
+    comboToggle.checked = state.combo;
+    renderImage();
+    renderMenuField();
+    renderDishField();
+    renderAngleField();
+    clearErrors();
+    updateTitle();
+    updateSaveBtn();
+  }
+  /* превью изображения стикера-заглушки (SVG data-URL по подписи/цвету стикера) */
+  function makeStickerPlaceholder(st) {
+    try {
+      var color = st.color || '#e0e0e0';
+      var label = (st.label || st.name || ' ').replace(/[<>&"']/g, '');
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" rx="16" fill="' + color + '"/>' +
+        '<text x="60" y="66" font-family="Roboto,Arial" font-size="16" font-weight="500" fill="#ffffff" text-anchor="middle">' + label + '</text></svg>');
+    } catch (e) { return ''; }
+  }
+
+  /* ── ревью: шаги S2 (new), S3 (edit), S4 (del), S9 (codes) ── */
+  window.DSReviewState = function (id) {
+    if (id === 'new') {
+      if (location.search.indexOf('edit=') >= 0) {
+        var url = new URL(location.href);
+        url.searchParams.delete('edit');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+        location.reload();
+        return;
+      }
+      if (EDIT_ID) { /* на шаг S2 из S3 — перезагрузиться без edit */ location.href = 'sticker-card.html'; return; }
+      loadFromData();
+    } else if (id === 'edit') {
+      if (!EDIT_ID) { location.href = 'sticker-card.html?edit=novinka'; return; }
+      loadFromData();
+    } else if (id === 'del') {
+      if (!EDIT_ID) { location.href = 'sticker-card.html?edit=novinka&state=del'; return; }
+      loadFromData();
+      setTimeout(openDelDialog, 100);
+    } else if (id === 'codes') {
+      loadFromData();
+      setTimeout(openCodesDialog, 100);
+    }
+  };
+
+  /* вкладки раздела — переход между табами */
+  qsa('[data-go]').forEach(function (t) {
+    t.addEventListener('click', function () { location.href = t.getAttribute('data-go'); });
+  });
+
+  loadFromData();
+
+  /* начальное состояние из URL (прямой переход на шаг панели ревью):
+     S4 — сразу модалка удаления, S9 — сразу диалог «Добавить по кодам», S3 — с данными стикера */
+  var INIT_STATE = Q.state || '';
+  if (INIT_STATE === 'del') {
+    if (EDIT_ID) setTimeout(openDelDialog, 100);
+  } else if (INIT_STATE === 'codes') {
+    setTimeout(openCodesDialog, 100);
+  } else if (INIT_STATE === 'edit' && !EDIT_ID) {
+    location.href = 'sticker-card.html?edit=novinka&state=edit';
+  }
+})();
+</script>
+</body>
+</html>

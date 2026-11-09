@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Киоски · Стикеры — внешнее меню (в2, фильтр), прототип на ДС</title>
+<!--
+  ЭКРАН S5-в2 «Внешнее меню · список» — ВАРИАНТ С ФИЛЬТРОМ (для сравнения с текущим S5 в
+  external-menu.html, где выбор строк чекбоксами + тумблер «Показать выбранные»).
+
+  Отличие варианта 2: строки таблицы НЕ выбираются — остаются ссылками (открывают базовую версию ВМ).
+  Сужать список можно двумя явными способами: поиск по названию в шапке раздела и фильтр по внешнему
+  меню в полосе таблицы (кнопка «Фильтр» → компонент ДС Menu/Select container: «Все», Divider, пункты
+  с чекбоксами, футер [Сбросить | Применить]; при активном фильтре на иконке — точка Badge).
+
+  ОТКУДА ЧТО ВЗЯТО:
+    • постановка — вики VIT 181778772 (сценарии D-01…D-08), подписи: «Внешнее меню»,
+      «Поиск по названию» (в макете — «Фильтр по названию», переименовано 06.11.2026, чтобы не путать
+      с фильтром), «Название для внеш. меню», «Сбросить», «Применить»;
+    • каркас и поведение фильтра — как в списках баннеров (banners-spisok-v2: Select container
+      fpop + ds-select-item с чекбоксами + ds-select-container__button-group), правило ДС
+      «фильтр таблицы — в полосе таблицы, слева у настроек отображения» (16.10.2026);
+    • правило ДС: поиск внутри Select container добавляется только при >12 значениях — здесь меню 11,
+      поэтому в попапе фильтра поиска нет (на странице поиск есть отдельно, в шапке);
+    • компоненты ДС: Tabs, Table, Button + Button group, Badge (точка), Select container (Menu),
+      Checkbox, Search, Divider, Icon size, Scroll, Text UI;
+    • вне ДС — только раскладка (.page/.vm-*/.tbl/.t-c*/.fpop*/.t-empty), помечено в <style>.
+-->
+<script src="sidenav-menu.js"></script>
+<script>window.DSR_NO_CHROME = true;</script>
+<script src="../../../Design-System/connect.js" defer></script>
+<link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
+<script src="../../../Design-System/organisms/app-header-content/header-content.js?v=1" defer></script>
+<script src="layouts.js"></script>
+<style>
+  html, body { margin: 0; font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+  .apph__store, .apph__tabs, .apph__pill, .apph__cal, .apph__search, .apph__mpill, .apph__mright { display: none !important; }
+  .material-icons { font-family: 'Material Icons Outlined'; }
+
+  /* ── раскладка (вне ДС) ── */
+  .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
+  @media (max-width: 1160px) { .frame { padding: var(--ds-space-5x, 20px) var(--ds-space-4x, 16px) var(--ds-space-6x, 24px); } }
+  .page { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+  .sec-tabs { margin: 0; }
+  /* внутри экрана блоки — с шагом 16 (полосы над таблицей нет: фильтр — в шапке колонки) */
+  .vm-view { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
+
+  /* косяк выгрузки ДС: полосы таблиц — артбордной ширины; разворачиваем в строку по контейнеру */
+  /* ячейки тянутся на всю высоту строки (stretch, как в эталоне «Баннеры»); контент внутри — к верху */
+  .tbl .ds-table-header-row, .tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
+  .tbl .ds-table-content-cell { align-items: flex-start; }
+  .tbl .ds-table-content-cell:hover { border: none; }
+  .tbl .ds-table-content-cell:focus, .tbl .ds-table-content-cell:focus-within { box-shadow: none; }
+
+  /* ── S5-в2: строка ВМ — ссылка (сразу #448AFF, без подчёркивания на ховере — 06.11.2026) ── */
+  .vm-link { border: 0; background: none; padding: 0; text-align: left; cursor: pointer;
+    font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-ui-link-text-color, #448aff); }
+  /* Ховер ячейки — у действенной (fixes.md №176/№197: «ховер у ячейки только там, где ячейка может
+     как-то редактироваться — или есть ссылки»): единственная колонка — название ВМ со ссылкой */
+  .tbl .ds-table-content-cell.t-c-vmname:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
+  .t-c-vmname { flex: 1 1 320px; min-width: 320px; }
+  #viewList .hc__right { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); }
+  /* поиск — механика организма header-content, ОДНА на всех страницах: Search XS (круглая иконка)
+     раскрывается в поле Search S; справа search-off очищает и сворачивает */
+  .hc__search { cursor: pointer; }
+  .hc__search.ds-search--xs { background: var(--ds-color-search-default-background-xs, #f0f5ff); border: 0; justify-content: center; }
+  .hc__search.ds-search--xs:hover { background: var(--ds-color-search-hover-background-xs, #e8f0ff); border: 0; }
+  .hc-search[hidden] { display: none; }
+  .hc-search__input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0; font: inherit; color: var(--ds-color-search-focusvalue-text-color, #333333); }
+  .hc-search__input::placeholder { color: var(--ds-color-search-focus-text-color, #d6d6d6); opacity: 1; }
+  .hc-search:focus-within { border-color: var(--ds-color-search-focus-border-color, #448aff); }
+  .hc-search .ds-search__right-icon { align-self: stretch; }
+  .hc-search .ds-search__right-icon > .ds-divider { width: 1px; height: 100%; flex: 0 0 auto; }
+
+  /* сортировка — как на стенде Table (№177) */
+  .ds-table-header-cell[data-sort] { cursor: pointer; }
+  /* акцент — ТОЛЬКО у стрелки сортировки (класс th-sort): иконка фильтра в том же слоте остаётся Icon/Primary */
+  .ds-table-header-cell[data-sort] .th-sort { color: var(--ds-color-icon-primary, #616161); }
+  .ds-table-header-cell[data-sort] svg { position: relative; transition: transform .15s ease; }
+  .ds-table-header-cell[data-dir="asc"] svg { transform: rotate(180deg); }
+  .ds-table-header-cell.th-active .th-sort { color: var(--ds-color-icon-accent, #448aff); }
+
+  /* ── фильтр — ПРОСТАЯ ИКОНКА в шапке колонки (макет 03-spisok-vm), попап — Menu под ней ── */
+  .filter-anchor { position: relative; display: inline-flex; align-items: center; }
+  .h-filter { position: relative; cursor: pointer; color: var(--ds-color-icon-primary, #616161); }
+  /* состояния иконки — как у Icon size State (подложка), цвет не меняем: активный фильтр виден точкой Badge */
+  .h-filter:hover, .h-filter.is-open { color: var(--ds-color-icon-primary, #616161); }
+  /* активный фильтр — точка Badge (8×8, Accent) на иконке */
+  .h-filter-dot { position: absolute; top: -2px; right: -2px; }
+  /* попап позиционируется скриптом под иконкой (fixed) */
+  .fpop { position: fixed; z-index: 60; width: 320px; min-width: 320px; min-height: 0; max-height: 480px; }
+  .fpop__title { font-size: var(--ds-font-body-s-14-normal-regular-size); line-height: var(--ds-font-body-s-14-normal-regular-line);
+    letter-spacing: var(--ds-font-body-s-14-normal-regular-spacing); font-weight: var(--ds-font-body-s-14-normal-medium-weight);
+    color: var(--ds-color-text-primary, #333333); }
+  .fpop__wrap { display: flex; flex-direction: row; align-items: flex-start; width: 100%; min-height: 0; }
+  .fpop__scroll { flex: 1 1 auto; min-width: 0; max-height: 320px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+    padding: 0 var(--ds-space-1x, 4px) var(--ds-space-2x, 8px); }
+  .fpop__scroll::-webkit-scrollbar { display: none; }
+  .fpop__scroll > .ds-divider { flex: none; }
+  .fpop .fscroll { flex: none; align-self: stretch; }
+  .fpop .ds-select-item { width: 100%; cursor: pointer; align-items: flex-start; }
+  .fpop .ds-select-item__label { white-space: normal; }
+  .fpop .ds-select-item__content { flex: 1 1 auto; min-width: 0; }
+  /* футер попапа: 2+ кнопки → Button group; второстепенная слева, главная справа, по правому краю */
+  .fpop .ds-select-container__button-group { justify-content: flex-end; }
+
+  /* пустое состояние (E1 памятки) */
+  .t-empty { display: flex; flex-direction: column; align-items: center; gap: var(--ds-space-2x, 8px);
+    padding: var(--ds-space-8x, 32px) var(--ds-space-4x, 16px) var(--ds-space-10x, 40px); }
+  .t-empty .ds-icon-size { color: var(--ds-color-icon-secondary, #9e9e9e); }
+  .t-empty__title { font: var(--ds-font-body-m-16-normal-medium); color: var(--ds-color-text-primary, #333333); }
+  .t-empty__text { font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-secondary, #616161); text-align: center; }
+
+  .page [hidden] { display: none !important; }
+</style>
+<style>
+  /* Разделитель строк таблицы: у ПОСЛЕДНЕЙ строки линии нет (правило заказчика 06.11.2026).
+     :has(~ …:not([hidden])) — именно последняя ВИДИМАЯ: учтены строки, скрытые поиском/фильтром.
+     Заголовки групп аккордеона (.group-row) — не строки данных, их линия остаётся всегда. */
+  .ds-table-content-row:not(.group-row):not([hidden]):not(:has(~ .ds-table-content-row:not([hidden]))) { border-bottom: 0; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sort" viewBox="0 0 20 20"><path transform="translate(5 4.58333)" d="M5 10.8333L0 5.833333L1.16667 4.66667L4.16667 7.66667V0H5.83333V7.66667L8.83333 4.66667L10 5.83333L5 10.8333Z"/></symbol>
+</svg>
+<style>/* спрайтовые иконки: fill ставится на сам svg */
+.ds-icon-size svg, .ds-btn__icon svg, .ds-btn-icon__icon svg { fill: currentColor; }</style>
+
+<div class="page">
+
+  <div id="viewList" class="vm-view">
+    <!-- Шапка — организм header-content: заголовок «Внешнее меню» слева, справа — поиск «Фильтр по названию» -->
+    <header class="hc">
+      <div class="hc__left">
+        <div class="ds-text-ui hc__title">
+          <span class="ds-text-ui__content"><span class="ds-text-ui__list-item hc__heading">Стикеры</span></span>
+        </div>
+      </div>
+      <div class="hc__right">
+        <span class="ds-search ds-search--xs hc__search" role="button" tabindex="0" aria-label="Поиск по названию">
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+        </span>
+        <span class="ds-search ds-search--s hc-search" id="hc-search" hidden>
+          <span class="ds-search__icon"><span class="ds-icon-size ds-icon-size--5x"><span class="material-icons" aria-hidden="true">search</span></span></span>
+          <input class="ds-search__label hc-search__input" type="text" id="vmSearch" placeholder="Поиск по названию" aria-label="Поиск по названию внешнего меню">
+          <span class="ds-search__right-icon"><span class="ds-divider"></span><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><span class="material-icons" aria-hidden="true">search_off</span></span></span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Вкладки раздела -->
+    <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
+      <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="stickers.html">Стикеры</button>
+      <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Внешнее меню</button>
+    </div>
+
+    <!-- Таблица: одна колонка «Название для внеш. меню» (сортировка), строки — ссылки в ВМ.
+         Фильтр по внешнему меню — ПРОСТО ИКОНКА в шапке колонки (как в макете 03-spisok-vm):
+         клик открывает Menu с чекбоксами, активный фильтр отмечается точкой Badge -->
+    <div class="tbl" id="vmTable">
+      <div class="ds-table-header-row">
+        <div class="ds-table-header-cell t-c-vmname" data-sort="name"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Название для внеш. меню</span></div><span class="ds-text-ui__element-right"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state th-sort"><svg width="20" height="20" aria-hidden="true"><use href="#i-sort"/></svg></span></span><span class="ds-text-ui__element-right"><span class="filter-anchor"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state h-filter" id="vmFilterBtn" role="button" tabindex="0" aria-label="Фильтр по внешнему меню" aria-haspopup="listbox" aria-expanded="false" aria-controls="vmFilterPop"><span class="material-icons" aria-hidden="true">filter_list</span><span class="ds-badge ds-badge--point ds-badge--accent h-filter-dot" id="vmFilterDot" hidden></span></span><div class="ds-select-container fpop" id="vmFilterPop" role="listbox" aria-label="Фильтр по внешнему меню" hidden>
+            <div class="ds-select-container__title"><span class="fpop__title">Выберите внешнее меню</span></div>
+            <div class="ds-divider"></div>
+            <div class="fpop__wrap">
+              <div class="ds-select-container__content fpop__scroll" id="vmFilterItems"></div>
+              <div class="ds-scroll ds-scroll--v ds-scroll--middle fscroll" aria-hidden="true" hidden>
+                <div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>
+              </div>
+            </div>
+            <div class="ds-divider"></div>
+            <div class="ds-select-container__button-group">
+              <div class="ds-btn-group ds-btn-group--horizontal">
+                <button class="ds-btn ds-btn--s ds-btn--neutral ds-btn--outlined" type="button" id="vmFilterReset"><span class="ds-btn__label">Сбросить</span></button>
+                <button class="ds-btn ds-btn--s ds-btn--accent ds-btn--filled" type="button" id="vmFilterApply"><span class="ds-btn__label">Применить</span></button>
+              </div>
+            </div>
+          </div></span></span></div></div></div>
+      </div>
+      <div id="vmRows"></div>
+    </div>
+
+    <!-- Пустое состояние: нет результатов поиска/фильтра -->
+    <div class="t-empty" id="vmEmpty" hidden>
+      <span class="ds-icon-size ds-icon-size--6x"><span class="material-icons" aria-hidden="true">search_off</span></span>
+      <span class="t-empty__title">Ничего не найдено</span>
+      <span class="t-empty__text">Измените условия поиска или сбросьте фильтр.</span>
+    </div>
+  </div>
+</div>
+
+<script src="../../../Design-System/components-web/ds-patterns.js"></script>
+<script>
+(function () {
+  'use strict';
+  /* настройки «под учёткой» (⚠️ D-02): localStorage — сохраняются между сеансами */
+  var __prefs = (function () {
+    try { window.localStorage.setItem('__t', '1'); window.localStorage.removeItem('__t'); return window.localStorage; }
+    catch (e) { return window.sessionStorage; }
+  })();
+
+  var qs = function (s, r) { return (r || document).querySelector(s); };
+  var qsa = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+
+  /* ── данные: внешние меню (те же, что в основном прототипе) ── */
+  var MENUS = [
+    { id: 'kiosk-main', name: 'Киоск: Основное меню' },
+    { id: 'kiosk-brk', name: 'Киоск: Завтрак' },
+    { id: 'kiosk-night', name: 'Киоск: Ночное меню' },
+    { id: 'adv-main', name: 'ADV: Основное меню' },
+    { id: 'adv-brk', name: 'ADV: Завтрак' },
+    { id: 'adv-night', name: 'ADV: Ночное меню' },
+    { id: 'del-main', name: 'Delivery: Основное меню' },
+    { id: 'del-brk', name: 'Delivery: Завтрак' },
+    { id: 'del-night', name: 'Delivery: Ночное меню' },
+    { id: 'test', name: 'Тест меню' },
+    { id: 'test-combo', name: 'Киоск: Основное меню (Тест Комбо в основной папке)' }
+  ];
+
+  /* параметры страницы (w — ширина кадра панели ревью) */
+  var Q = {};
+  (location.search.replace(/^\?/, '') || '').split('&').forEach(function (p) {
+    var i = p.indexOf('=');
+    if (i < 0) return;
+    try { Q[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1)); } catch (e) {}
+  });
+
+  /* ── состояние ── */
+  var FILTER_KEY = 'vitStickersVmFilter';
+  var vmFilter = null;   /* применённый фильтр: null = «Все»; массив id — выбранные меню (D-02) */
+  try {
+    var savedFilter = JSON.parse(__prefs.getItem(FILTER_KEY) || 'null');
+    if (Array.isArray(savedFilter) && savedFilter.length) vmFilter = savedFilter.filter(function (id) { return MENUS.some(function (m) { return m.id === id; }); });
+  } catch (e) {}
+  if (vmFilter && vmFilter.length === MENUS.length) vmFilter = null;   /* выбрано всё = фильтра нет */
+
+  var vmSortDir = '';    /* сортировка списка: '' | asc | desc */
+
+  var vmSearch = qs('#vmSearch');
+  var vmFilterBtn = qs('#vmFilterBtn');
+  var vmFilterPop = qs('#vmFilterPop');
+  var vmFilterItems = qs('#vmFilterItems');
+  var vmFilterDot = qs('#vmFilterDot');
+
+  function persistFilter() {
+    try { __prefs.setItem(FILTER_KEY, JSON.stringify(vmFilter)); } catch (e) {}
+  }
+  function passes(m) { return !vmFilter || vmFilter.indexOf(m.id) >= 0; }
+
+  /* ── список ── */
+  function renderList() {
+    var q = vmSearch.value.trim().toLowerCase();
+    var list = MENUS.slice();
+    if (vmSortDir) {
+      list.sort(function (a, b) {
+        var r = a.name.localeCompare(b.name, 'ru', { numeric: true, sensitivity: 'base' });
+        return vmSortDir === 'asc' ? r : -r;
+      });
+    }
+    var host = qs('#vmRows');
+    host.innerHTML = '';
+    var hits = 0;
+    list.forEach(function (m) {
+      if (q && m.name.toLowerCase().indexOf(q) < 0) return;
+      if (!passes(m)) return;
+      hits++;
+      host.insertAdjacentHTML('beforeend',
+        '<div class="ds-table-content-row" data-vm-row="' + esc(m.id) + '">' +
+          '<div class="ds-table-content-cell t-c-vmname"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item"><button type="button" class="vm-link" data-vm="' + esc(m.id) + '">' + esc(m.name) + '</button></span></div></div></div></div>' +
+        '</div>');
+    });
+    qs('#vmTable').hidden = hits === 0;
+    qs('#vmEmpty').hidden = hits !== 0;
+    /* индикатор активного фильтра — точка Badge на иконке кнопки */
+    var active = !!vmFilter;
+    vmFilterDot.hidden = !active;
+    vmFilterBtn.setAttribute('aria-label', active ? ('Фильтр: выбрано ' + vmFilter.length + ' из ' + MENUS.length) : 'Фильтр по внешнему меню');
+  }
+
+  /* ── попап фильтра (Menu): «Все» + Divider + пункты с чекбоксами ── */
+  function selectItemHtml(value, label, checked) {
+    return '<div class="ds-select-item ds-select-item--false" data-value="' + esc(value) + '">' +
+        '<span class="ds-select-item__element-left"><label class="ds-checkbox"><input class="ds-checkbox__input" type="checkbox" tabindex="-1"' + (checked ? ' checked' : '') + '><span class="ds-checkbox__box"></span></label></span>' +
+        '<div class="ds-select-item__content"><span class="ds-select-item__label">' + esc(label) + '</span></div>' +
+      '</div>';
+  }
+  function buildFilter() {
+    vmFilterItems.innerHTML = '';
+    var allChecked = !vmFilter;
+    vmFilterItems.insertAdjacentHTML('beforeend', selectItemHtml('ALL', 'Все', allChecked));
+    vmFilterItems.insertAdjacentHTML('beforeend', '<div class="ds-divider"></div>');
+    MENUS.forEach(function (m) {
+      vmFilterItems.insertAdjacentHTML('beforeend', selectItemHtml(m.id, m.name, !vmFilter || vmFilter.indexOf(m.id) >= 0));
+    });
+    syncAllBox();
+    DSPatterns.scrollSync(vmFilterItems, qs('#vmFilterPop .fscroll'));
+  }
+  function itemBoxes() { return qsa('#vmFilterItems .ds-select-item:not([data-value="ALL"]) .ds-checkbox__input'); }
+  function allBox() { return qs('#vmFilterItems .ds-select-item[data-value="ALL"] .ds-checkbox__input'); }
+  /* чекбокс «Все» — три состояния по видимым пунктам */
+  function syncAllBox() {
+    var boxes = itemBoxes();
+    var picked = boxes.filter(function (b) { return b.checked; }).length;
+    var all = allBox();
+    all.checked = boxes.length > 0 && picked === boxes.length;
+    all.indeterminate = picked > 0 && picked < boxes.length;
+  }
+  function pickedIds() {
+    var boxes = itemBoxes();
+    if (boxes.length && boxes.every(function (b) { return b.checked; })) return null;
+    return boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.closest('.ds-select-item').getAttribute('data-value'); });
+  }
+
+  /* клик по пункту — переключает чекбокс (кроме клика по самому чекбоксу и по «Все») */
+  vmFilterItems.addEventListener('click', function (e) {
+    var it = e.target.closest('.ds-select-item');
+    if (!it) return;
+    var box = it.querySelector('.ds-checkbox__input');
+    if (it.getAttribute('data-value') === 'ALL') {
+      /* «Все» — отметить/снять все пункты */
+      var on = !allBox().checked ? true : false;
+      itemBoxes().forEach(function (b) { b.checked = on; });
+      syncAllBox();
+      return;
+    }
+    if (e.target.closest('.ds-checkbox')) { syncAllBox(); return; }
+    box.checked = !box.checked;
+    syncAllBox();
+  });
+
+  /* открытие/закрытие попапа — под иконкой в шапке колонки (fixed, с зажимом по краям окна) */
+  function closePop() {
+    vmFilterPop.hidden = true;
+    vmFilterBtn.setAttribute('aria-expanded', 'false');
+    vmFilterBtn.classList.remove('is-open');
+  }
+  function openPop() {
+    buildFilter();
+    var r = vmFilterBtn.getBoundingClientRect();
+    vmFilterPop.style.left = Math.round(Math.min(r.left, window.innerWidth - 336)) + 'px';
+    vmFilterPop.style.top = Math.round(r.bottom + 2) + 'px';
+    vmFilterPop.hidden = false;
+    vmFilterBtn.setAttribute('aria-expanded', 'true');
+    vmFilterBtn.classList.add('is-open');
+    DSPatterns.scrollSync(vmFilterItems, qs('#vmFilterPop .fscroll'));
+  }
+  vmFilterBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (vmFilterPop.hidden) openPop(); else closePop();
+  });
+  /* иконка — role=button: Enter/Space открывают так же */
+  vmFilterBtn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); vmFilterBtn.click(); }
+  });
+  vmFilterPop.addEventListener('click', function (e) { e.stopPropagation(); });
+  document.addEventListener('click', function () { if (!vmFilterPop.hidden) closePop(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !vmFilterPop.hidden) closePop(); });
+  window.addEventListener('resize', function () { if (!vmFilterPop.hidden) closePop(); });
+
+  qs('#vmFilterApply').addEventListener('click', function (e) {
+    e.stopPropagation();
+    vmFilter = pickedIds();
+    if (vmFilter && vmFilter.length === 0) vmFilter = null;   /* ничего не отмечено = снять фильтр */
+    persistFilter();
+    closePop();
+    renderList();
+  });
+  qs('#vmFilterReset').addEventListener('click', function (e) {
+    e.stopPropagation();
+    vmFilter = null;
+    persistFilter();
+    closePop();
+    renderList();
+  });
+
+  /* поиск и сортировка */
+  vmSearch.addEventListener('input', renderList);
+  /* поиск — механика организма header-content (как на S1): XS раскрывается в поле S */
+  var hcSearchBtn = qs('#viewList .hc__search');
+  var hcSearchField = qs('#hc-search');
+  function openVmSearch() { hcSearchBtn.hidden = true; hcSearchField.hidden = false; vmSearch.focus(); }
+  function closeVmSearch(reset) {
+    if (hcSearchField.hidden) return;
+    hcSearchField.hidden = true;
+    hcSearchBtn.hidden = false;
+    if (reset !== false) { vmSearch.value = ''; renderList(); }
+  }
+  hcSearchBtn.addEventListener('click', openVmSearch);
+  hcSearchBtn.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openVmSearch(); } });
+  hcSearchField.querySelector('.ds-search__right-icon').addEventListener('click', function () { closeVmSearch(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeVmSearch(true); });
+  document.addEventListener('click', function (e) {
+    if (hcSearchField.hidden) return;
+    if (hcSearchField.contains(e.target) || hcSearchBtn.contains(e.target)) return;
+    closeVmSearch(false);
+  });
+  (function () {
+    var th = qs('#vmTable .ds-table-header-cell[data-sort]');
+    if (!th) return;
+    th.addEventListener('click', function () {
+      vmSortDir = th.getAttribute('data-dir') === 'asc' ? 'desc' : 'asc';
+      th.setAttribute('data-dir', vmSortDir);
+      th.classList.add('th-active');
+      renderList();
+    });
+  })();
+
+  /* клик по названию — переход в базовую версию ВМ (экраны S6–S8 — в основном прототипе) */
+  qs('#vmRows').addEventListener('click', function (e) {
+    var vm = e.target.closest('[data-vm]');
+    if (!vm) return;
+    var url = 'external-menu.html?state=base&menu=' + encodeURIComponent(vm.getAttribute('data-vm'));
+    if (Q.w) url += '&w=' + encodeURIComponent(Q.w);
+    location.href = url;
+  });
+
+  renderList();
+})();
+</script>
+</body>
+</html>
