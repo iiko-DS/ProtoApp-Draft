@@ -583,6 +583,21 @@
   </div>
 </div>
 
+<!-- C-13/C-09: блок размещения очищен целиком — «Сохранить» снимает стикер со всех блюд (с подтверждением) -->
+<div class="ds-backdrop dlg-dim" id="clsDim" hidden></div>
+<div class="ds-dialog-view dlg" id="clsDlg" role="dialog" aria-modal="true" aria-labelledby="clsTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="clsTitle">Снять стикер со всех размещений?</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="clsClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
+    <span class="ds-dialog-header__description" id="clsText"></span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="clsCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="clsConfirm"><span class="ds-btn__label">Снять</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- S4/C-15: «место размещения занято» — на каждое конфликтующее блюдо (⚠️ решение дизайнера) -->
 <div class="ds-backdrop dlg-dim" id="confDim" hidden></div>
 <div class="ds-dialog-view dlg" id="confDlg" role="dialog" aria-modal="true" aria-labelledby="confTitle" hidden>
@@ -1225,7 +1240,7 @@
     var n = localComboOverrides(next);
     if (!n) { applyComboValue(next); return; }
     comboTarget = next;
-    qs('#comboText').textContent = 'Сейчас у ' + n + ' ' + plural(n, ['отображения', 'отображения', 'отображений']) + ' стикера в выбранных меню и блюдах настройка отличается от этого тумблера. При сохранении глобальная настройка перезапишет их — локальные настройки будут сброшены.';
+    qs('#comboText').textContent = 'Сейчас у ' + n + ' ' + plural(n, ['отображения', 'отображения', 'отображений']) + ' стикера в выбранных меню и блюдах настройка отличается от значения этого тумблера. При сохранении глобальная настройка перезапишет эти значения — локальные настройки будут сброшены.';
     qs('#comboDim').hidden = false;
     qs('#comboDlg').hidden = false;
   });
@@ -1430,16 +1445,16 @@
   }
   saveBtn.addEventListener('click', function () {
     if (missingList().length) return;
-    /* ⚠️ C-05: если блок размещения меняли и он заполнен — «Сохранить» применяет размещение и сохраняет */
-    if (placementDirty && (state.menus.length || state.dishes.length || state.angle)) {
-      var miss = [];
-      if (state.menus.length && !state.dishes.length) miss.push('Блюда');
-      if (state.dishes.length && !state.angle) miss.push('Угол');
-      if (miss.length) {
-        applyFlow(true);   /* валидация покажет ошибки — сохранение не выполнится */
+    /* ⚠️ C-05: блок размещения меняли — «Сохранить» применяет размещение и сохраняет.
+       C-09: «Внешнее меню и версия» необязательно, поэтому полностью ОЧИЩЕННЫЙ блок =
+       стикер не размещён: снимаем его со всех блюд (C-13) — но только через подтверждение */
+    if (placementDirty) {
+      if (!state.menus.length && !state.dishes.length && !state.angle) {
+        if (state.placements.length) { openClearPlacementsDialog(); return; }
+        doSave();      /* размещений и не было (новый стикер) — сохраняем как есть */
         return;
       }
-      applyFlow(true);     /* применит (с конфликтами — диалогами), затем сохранит */
+      applyFlow(true); /* валидация полей блока (ВМ → Блюда → Угол), затем применение и сохранение */
       return;
     }
     doSave();
@@ -1506,6 +1521,32 @@
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#delDlg').hidden) { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; } });
 
+  /* ── C-13/C-09: блок «Размещение на блюдах» очищен целиком ──
+     «Внешнее меню и версия» по спеке необязательно, значит пустой блок = «стикер нигде не размещён».
+     Сохранение в этом случае снимает стикер со всех блюд, поэтому спрашиваем подтверждение
+     (текст по данным: сколько размещений и в скольких блюдах пропадёт) */
+  function openClearPlacementsDialog() {
+    var n = state.placements.length;
+    var codes = {};
+    state.placements.forEach(function (p) { codes[p.code] = 1; });
+    var m = Object.keys(codes).length;
+    qs('#clsText').textContent = 'В блоке «Размещение на блюдах» не заполнено ни одно поле, поэтому стикер «' +
+      (state.name || cardTitleText()) + '» не останется ни на одном блюде: при сохранении он снимется со всех блюд, где размещён сейчас — ' +
+      n + ' ' + plural(n, ['размещение', 'размещения', 'размещений']) + ' в ' + m + ' ' + plural(m, ['блюде', 'блюдах', 'блюдах']) + '. Снять?';
+    qs('#clsDim').hidden = false;
+    qs('#clsDlg').hidden = false;
+  }
+  function closeClearPlacementsDialog() { qs('#clsDim').hidden = true; qs('#clsDlg').hidden = true; }
+  qs('#clsCancel').addEventListener('click', closeClearPlacementsDialog);
+  qs('#clsClose').addEventListener('click', closeClearPlacementsDialog);
+  qs('#clsDim').addEventListener('click', closeClearPlacementsDialog);
+  qs('#clsConfirm').addEventListener('click', function () {
+    closeClearPlacementsDialog();
+    state.placements = [];   /* стикер снимается со всех блюд */
+    doSave();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#clsDlg').hidden) closeClearPlacementsDialog(); });
+
   /* ── «Добавить по кодам» (S9/E-03) ── */
   var codesInput = qs('#codesInput');
   var codesTa = qs('#codesTa');
@@ -1550,16 +1591,12 @@
       codesTa.classList.add('is-error');
       return;
     }
-    var known = {}, invalid = [];
+    var known = {}, invalid = [], added = [], already = [];
     unionItems().forEach(function (x) { known[x.item.code] = x.item.name; });
-    var added = [];
     codes.forEach(function (c) {
-      if (known[c]) {
-        if (state.dishes.indexOf(c) < 0) state.dishes.push(c);
-        added.push(c);
-      } else {
-        invalid.push(c);
-      }
+      if (!known[c]) { invalid.push(c); return; }
+      if (state.dishes.indexOf(c) < 0) { state.dishes.push(c); added.push(c); }
+      else already.push(c);   /* код уже выбран — добавленным не считаем (иначе «добавлены: 1» при пустом действии) */
     });
     renderDishField();
     if (invalid.length) {
@@ -1570,6 +1607,9 @@
       closeCodesDialog();
       markPlacementDirty();
       if (!invalid.length) showToast('Блюда добавлены: ' + added.length, 'positive');
+    } else if (!invalid.length && already.length) {
+      closeCodesDialog();
+      showToast('Блюда уже добавлены', 'neutral');
     }
   });
 
