@@ -20,7 +20,20 @@
     try { window.localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {}
   }
   function screenId() {
-    return (location.pathname.split('/').pop() || 'page') + (location.search || '');
+    /* ?w=1440/1280/1024 — ширина кадра панели ревью, а не отдельный экран:
+       комментарии должны быть одни и те же при смене ширины. */
+    var q = (location.search || '').replace(/^\?/, '');
+    var keep = [];
+    if (q) {
+      q.split('&').forEach(function (pair) {
+        if (!pair) return;
+        var key = pair.split('=')[0];
+        if (key === 'w') return;
+        keep.push(pair);
+      });
+    }
+    keep.sort();
+    return (location.pathname.split('/').pop() || 'page') + (keep.length ? '?' + keep.join('&') : '');
   }
   function screenLabel() {
     var label = document.title || screenId();
