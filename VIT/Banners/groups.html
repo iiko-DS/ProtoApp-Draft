@@ -13,6 +13,8 @@
   (подтверждения), Snackbar. Вне ДС — только раскладка.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../table-resize.js"></script>
+<script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
 <link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
@@ -54,8 +56,10 @@
      (текст слева → +4 справа; числа/даты справа → +4 слева; иконки по центру → по 4 с двух).
      Воздух — только при свободном месте (в группах оно есть, растягивается «Название») */
   .g-c-name { flex: 1 1 200px; min-width: 200px; width: auto; }
-  /* ховер ячейки — только у действенных: название группы — ссылка на карточку (слой ДС:
-     фон Neutral/100 #EBEBEB; журнал ДС №176/№197) */
+  /* Ховер-фон ЯЧЕЙКИ — только у действенных (fixes.md №176/№197: редактируемая или со ссылкой):
+     название группы — ссылка на карточку (фон Neutral/100 #EBEBEB); ПБО/даты/«Активен»/фото/
+     чекбокс — данные, реакции нет. Действенные правила для таблицы состава — ниже */
+  .tbl .ds-table-content-cell:hover:not(:focus):not(:focus-within):not(.t-c-actions) { background: transparent; }
   .tbl .ds-table-content-cell.g-c-name:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
   .g-c-pbo { flex: 0 0 78px; width: auto; }      /* «ПБО» 58 + 16 + 4 слева (число справа) */
   .g-c-from { flex: 0 0 133px; width: auto; }    /* 113 + 16 + 4 слева (дата справа) */
@@ -235,9 +239,9 @@
   /* Ховер-фон — ТОЛЬКО у действенных ячеек (правило №176/№195: «ховер там, где может быть
      редактирование или есть ссылки»): редактируемая «Интервал» и ячейки со ссылкой «ещё».
      Остальные ячейки в ховере строки прозрачны. */
-  .g-banner-table .ds-table-content-row > .g-c-bint.ds-element-form-field:hover,
-  .g-banner-table .ds-table-content-row > .g-c-bmenu:has(.cell-more-link):hover,
-  .g-banner-table .ds-table-content-row > .g-c-bplace:has(.cell-more-link):hover {
+  .g-banner-table .ds-table-content-row > .g-c-bint.ds-element-form-field:not(.ds-table-content-cell--readonly):hover,
+  .g-banner-table .ds-table-content-row > .g-c-bmenu:has(.cell-more-link):not(.ds-table-content-cell--readonly):hover,
+  .g-banner-table .ds-table-content-row > .g-c-bplace:has(.cell-more-link):not(.ds-table-content-cell--readonly):hover {
     background: var(--ds-palette-neutral-100, #ebebeb);
   }
   .g-banner-table .ds-table-content-row > .g-c-bmenu:has(.cell-more-link),
@@ -270,7 +274,8 @@
   .dlg.ds-dialog-view { min-height: 0; }
   .dlg--wide { width: 900px; }
   .dlg .ds-dialog-header { width: 100%; gap: var(--ds-dialog-header-gap, 8px); padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px) var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
-  .dlg .ds-dialog-header__label { white-space: normal; }
+  .dlg .ds-dialog-header__label { white-space: normal; flex: 1 0 0; min-width: 1px; }
+  .dlg .ds-dialog-header__icon { color: var(--ds-color-icon-primary, #616161); cursor: pointer; }
   .dlg .ds-dialog-header__description { background: none; white-space: pre-line; max-height: 56vh; overflow-y: auto; }
   .dlg .ds-dialog-content { width: 100%; display: block; min-height: 0; padding: var(--ds-space-2x, 8px) var(--ds-space-6x, 24px); box-sizing: border-box; }
   .dlg .ds-dialog-view__action { height: auto; flex-direction: row; justify-content: flex-end; gap: var(--ds-space-2x, 8px); padding: var(--ds-dialog-footer-pad-top, 16px) var(--ds-dialog-footer-pad-right, 24px) var(--ds-dialog-footer-pad-bottom, 16px) var(--ds-dialog-footer-pad-left, 24px); }
@@ -656,6 +661,7 @@
   <div class="ds-dialog-header">
     <div class="ds-dialog-header__title-container">
       <span class="ds-dialog-header__label" id="dlgTitle"></span>
+      <span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="dlgCloseIcon"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
     </div>
     <span class="ds-dialog-header__description" id="dlgText" hidden></span>
   </div>
@@ -1952,6 +1958,13 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeIntervalMenu(); });
   buildIntervalMenu();
   qs('#dlgDim').addEventListener('click', closeDlg);
+  qs('#dlgCloseIcon').addEventListener('click', closeDlg);
+  /* крестик Dialog — слот шапки: Enter/Space работают как клик */
+  qsa('.ds-dialog-header__icon[role="button"]').forEach(function (b) {
+    b.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
+    });
+  });
 
   renderList();
 

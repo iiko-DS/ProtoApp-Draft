@@ -91,6 +91,7 @@
   взяты из них, данные строк — из примеров постановки.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
 <link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
@@ -384,6 +385,8 @@
   .block-dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 110; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); min-height: 0; }
   .block-dlg[hidden], .block-dim[hidden] { display: none !important; }
   .block-dlg .ds-dialog-header { width: 100%; padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px) var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
+  .block-dlg .ds-dialog-header__label { flex: 1 0 0; min-width: 1px; }
+  .block-dlg .ds-dialog-header__icon { color: var(--ds-color-icon-primary, #616161); cursor: pointer; }
   .block-dlg .ds-dialog-content { width: 100%; min-height: 0; padding: var(--ds-dialog-content-pad-top, 8px) var(--ds-dialog-content-pad-right, 24px) var(--ds-dialog-content-pad-bottom, 8px) var(--ds-dialog-content-pad-left, 24px); overflow-y: auto; }
   .block-dlg .ds-dialog-view__footer { margin-top: auto; }
   .block-dlg__text { width: 100%; font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-dialog-content-text-color, #616161); }
@@ -864,6 +867,7 @@
   <div class="ds-dialog-header">
     <div class="ds-dialog-header__title-container">
       <span class="ds-dialog-header__label" id="previewTitle">Предпросмотр</span>
+      <span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="previewCloseIcon"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
     </div>
   </div>
   <div class="ds-dialog-content">
@@ -879,6 +883,7 @@
   <div class="ds-dialog-header">
     <div class="ds-dialog-header__title-container">
       <span class="ds-dialog-header__label" id="blockTitle">Баннер не удалён</span>
+      <span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="blockCloseIcon"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span>
     </div>
   </div>
   <div class="ds-dialog-content">
@@ -2226,6 +2231,7 @@
   var blockDlg = document.getElementById('blockDlg');
   function closeBlockDlg() { blockDim.hidden = true; blockDlg.hidden = true; }
   document.getElementById('blockOk').addEventListener('click', closeBlockDlg);
+  document.getElementById('blockCloseIcon').addEventListener('click', closeBlockDlg);
   blockDim.addEventListener('click', closeBlockDlg);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !blockDlg.hidden) closeBlockDlg(); });
 
@@ -2265,8 +2271,15 @@
     if (row) openPreview(row);
   });
   document.getElementById('previewClose').addEventListener('click', closePreview);
+  document.getElementById('previewCloseIcon').addEventListener('click', closePreview);
   previewDim.addEventListener('click', closePreview);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !previewDlg.hidden) closePreview(); });
+  /* крестик Dialog — слот шапки: Enter/Space работают как клик */
+  qsa('.ds-dialog-header__icon[role="button"]').forEach(function (b) {
+    b.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
+    });
+  });
 
   /* B-15/B-16/B-17: действия строки — копировать/удалить. */
   function draftFromRow(row) {

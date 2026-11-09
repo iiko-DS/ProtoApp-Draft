@@ -37,6 +37,7 @@
       .field-anchor/.fpop/.up-*/.st-thumb/.codes-*), помечено в <style>.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
 <link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
@@ -207,7 +208,8 @@
   .dlg .ds-dialog-header { width: 100%; gap: var(--ds-dialog-header-gap, 8px);
     padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px)
              var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
-  .dlg .ds-dialog-header__label { white-space: normal; }
+  .dlg .ds-dialog-header__label { white-space: normal; flex: 1 0 0; min-width: 1px; }
+  .dlg .ds-dialog-header__icon { color: var(--ds-color-icon-primary, #616161); cursor: pointer; }
   .dlg .ds-dialog-header__description { background: none; white-space: normal; }
   /* контент диалога — слот Dialog content компонента (ширина 100%, паддинги 8/24 — как в баннерах):
      блок контента живёт МЕЖДУ шапкой и подвалом, а не внутри подвала */
@@ -487,7 +489,7 @@
 <div class="ds-backdrop dlg-dim" id="exitDim" hidden></div>
 <div class="ds-dialog-view dlg" id="exitDlg" role="dialog" aria-modal="true" aria-labelledby="exitTitle" hidden>
   <div class="ds-dialog-header">
-    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="exitTitle">Внимание!</span></div>
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="exitTitle">Внимание!</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="exitClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
     <span class="ds-dialog-header__description">У Вас есть несохраненные изменения. Вы уверены, что хотите продолжить? В случае подтверждения все изменения будут потеряны.</span>
   </div>
   <div class="ds-dialog-view__footer">
@@ -502,7 +504,7 @@
 <div class="ds-backdrop dlg-dim" id="delDim" hidden></div>
 <div class="ds-dialog-view dlg" id="delDlg" role="dialog" aria-modal="true" aria-labelledby="delTitle" hidden>
   <div class="ds-dialog-header">
-    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="delTitle">Удалить стикер</span></div>
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="delTitle">Удалить стикер</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="delClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
     <span class="ds-dialog-header__description" id="delText"></span>
   </div>
   <div class="ds-dialog-view__footer">
@@ -517,7 +519,7 @@
 <div class="ds-backdrop dlg-dim" id="confDim" hidden></div>
 <div class="ds-dialog-view dlg" id="confDlg" role="dialog" aria-modal="true" aria-labelledby="confTitle" hidden>
   <div class="ds-dialog-header">
-    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="confTitle">Место размещения занято</span></div>
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="confTitle">Место размещения занято</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="confClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
     <span class="ds-dialog-header__description" id="confText"></span>
   </div>
   <div class="ds-dialog-view__footer">
@@ -532,7 +534,7 @@
 <div class="ds-backdrop dlg-dim" id="codesDim" hidden></div>
 <div class="ds-dialog-view dlg" id="codesDlg" role="dialog" aria-modal="true" aria-labelledby="codesTitle" hidden>
   <div class="ds-dialog-header">
-    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="codesTitle">Добавить блюда по кодам</span></div>
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="codesTitle">Добавить блюда по кодам</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="codesClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
     <span class="ds-dialog-header__description">Введите коды блюд через "+", "пробел" или "|"</span>
   </div>
   <div class="ds-dialog-content">
@@ -560,7 +562,7 @@
 <div class="ds-backdrop dlg-dim" id="refDim" hidden></div>
 <div class="ds-dialog-view dlg" id="refDlg" role="dialog" aria-modal="true" aria-labelledby="refTitle" hidden>
   <div class="ds-dialog-header">
-    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="refTitle">Обновить карточку?</span></div>
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="refTitle">Обновить карточку?</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="refClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
     <span class="ds-dialog-header__description">У Вас есть несохранённые изменения. Они будут потеряны.</span>
   </div>
   <div class="ds-dialog-view__footer">
@@ -1176,6 +1178,8 @@
     if (conflictQueue.length) showNextConflict();
     else if (savePending) { savePending = false; doSave(); }
   });
+  /* крестик = «Отменить» (тот же выбор для конфликтующего блюда) */
+  qs('#confClose').addEventListener('click', function () { qs('#confCancel').click(); });
   qs('#confDim').addEventListener('click', function () { /* затемнение не закрывает диалог конфликта — выбор обязателен */ });
 
   /* ── «Сохранить» (C-05/C-02): обязательные поля; применяет размещение и сохраняет (⚠️ C-05) ── */
@@ -1230,6 +1234,7 @@
   }
   qs('#backBtn').addEventListener('click', goBack);
   qs('#exitCancel').addEventListener('click', function () { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; });
+  qs('#exitClose').addEventListener('click', function () { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; });
   qs('#exitDim').addEventListener('click', function () { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; });
   qs('#exitConfirm').addEventListener('click', function () { location.href = 'stickers.html'; });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#exitDlg').hidden) { qs('#exitDim').hidden = true; qs('#exitDlg').hidden = true; } });
@@ -1242,6 +1247,7 @@
     qs('#refDlg').hidden = false;
   });
   qs('#refCancel').addEventListener('click', function () { qs('#refDim').hidden = true; qs('#refDlg').hidden = true; });
+  qs('#refClose').addEventListener('click', function () { qs('#refDim').hidden = true; qs('#refDlg').hidden = true; });
   qs('#refDim').addEventListener('click', function () { qs('#refDim').hidden = true; qs('#refDlg').hidden = true; });
   qs('#refConfirm').addEventListener('click', function () {
     qs('#refDim').hidden = true;
@@ -1267,6 +1273,7 @@
   }
   delBtn.addEventListener('click', function () { if (!delBtn.disabled) openDelDialog(); });
   qs('#delCancel').addEventListener('click', function () { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; });
+  qs('#delClose').addEventListener('click', function () { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; });
   qs('#delDim').addEventListener('click', function () { qs('#delDim').hidden = true; qs('#delDlg').hidden = true; });
   qs('#delConfirm').addEventListener('click', function () {
     var id = EDIT_ID;
@@ -1296,8 +1303,15 @@
   function closeCodesDialog() { qs('#codesDim').hidden = true; qs('#codesDlg').hidden = true; }
   qs('#dishCodesBtn').addEventListener('click', function (e) { e.stopPropagation(); closePops(); openCodesDialog(); });
   qs('#codesCancel').addEventListener('click', closeCodesDialog);
+  qs('#codesClose').addEventListener('click', closeCodesDialog);
   qs('#codesDim').addEventListener('click', closeCodesDialog);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#codesDlg').hidden) closeCodesDialog(); });
+  /* крестик Dialog — слот шапки: Enter/Space работают как клик */
+  qsa('.ds-dialog-header__icon[role="button"]').forEach(function (b) {
+    b.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
+    });
+  });
   codesInput.addEventListener('input', function () {
     qs('#codesAdd').disabled = !codesInput.value.trim();
     codesErr.hidden = true;

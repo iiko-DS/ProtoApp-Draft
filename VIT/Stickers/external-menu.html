@@ -42,6 +42,8 @@
     • вне ДС — только раскладка (классы .page/.vm-*/.tbl/.t-c*/.el-*/.st-thumb/.dlg), помечено в <style>.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../table-resize.js"></script>
+<script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
 <link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
@@ -69,6 +71,9 @@
      Прижатие КОНТЕНТА к верху задаёт сама ячейка — правилом ниже */
   .tbl .ds-table-header-row, .tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
   .tbl .ds-table-content-cell { align-items: flex-start; }
+  /* Ховер-фон ЯЧЕЙКИ — только у действенных (fixes.md №176/№197: редактируемая или со ссылкой);
+     данные («Название в системе», «Артикул», «Стикеры») реакции не имеют */
+  .tbl .ds-table-content-cell:hover:not(:focus):not(:focus-within):not(.t-c-actions) { background: transparent; }
   .tbl .ds-table-content-cell:hover { border: none; }
   .tbl .ds-table-content-cell:focus, .tbl .ds-table-content-cell:focus-within { box-shadow: none; }
 
@@ -78,6 +83,8 @@
     font: var(--ds-font-body-s-14-normal-regular); color: var(--ds-color-text-ui-link-text-color, #448aff); }
   /* без подчёркивания на ховере (заказчик 06.11.2026) */
   .t-c-vmname { flex: 1 1 320px; min-width: 320px; }
+  /* ховер — только у действенной ячейки названия (в ней ссылка на панель элемента) */
+  .tbl .ds-table-content-cell.t-c-vmname:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
   /* служебная колонка чекбоксов — 36 (как в остальных таблицах) */
   .t-c-vmcheck { width: 36px; flex: none; }
   /* счётчик выбранного + крестик — одной группой: зазор 8 только между «N» и «✕» (как в стикерах) */
@@ -263,15 +270,22 @@
   .el-sec + .el-sec { border-top: 1px solid var(--ds-color-stroke-default, #e0e0e0); padding-top: var(--ds-space-4x, 16px); }
   .el-sec__cap { font: var(--ds-font-body-s-14-normal-medium); color: var(--ds-color-text-primary, #333333);
     grid-column: 1 / -1; margin-bottom: var(--ds-space-2x, 8px); }
+  /* размеры элемента — табами компонента Tabs: 16 от навигации до табличного блока */
+  .el-size-tabs { margin: 0 0 var(--ds-space-4x, 16px); }
   .el-tbl { display: flex; flex-direction: column; }
   /* ячейки тянутся на всю высоту строки (stretch): иначе при поле 36 + паддинги в одной ячейке
      соседние ячейки висели 36 и не доходили до низа строки (правило «ячейка на всю высоту»);
      контент внутри ячейки — к верху (правило 19.10) */
   .el-tbl .ds-table-header-row, .el-tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
   .el-tbl .ds-table-content-cell { align-items: flex-start; }
+  /* Ховер-фон ячейки — только у действенных (fixes.md №176/№197): «Расположение стикера» — просто
+     текст, реакции нет; действенные — поле «Стикер» и тумблер «Отображать» (живые контролы) */
+  .el-tbl .ds-table-content-cell:hover:not(:focus):not(:focus-within):not(.t-c-actions) { background: transparent; }
+  .el-tbl .ds-table-content-cell.e-c-st:hover:not(:focus):not(:focus-within),
+  .el-tbl .ds-table-content-cell.e-c-combo:has(.ds-slide-toggle__input:not(:disabled)):hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
   .e-c-angle { flex: 1 1 220px; min-width: 220px; }
   .e-c-st { width: 280px; flex: none; }
-  .e-c-combo { width: 129px; flex: none; position: relative; }
+  .e-c-combo { width: 137px; flex: none; position: relative; }
   /* тумблер — по центру своей ячейки (горизонтально и вертикально): контрол без подписи,
      выравнивание по верху здесь не нужно, ячейка тянется на высоту строки */
   .el-tbl .ds-table-content-cell.e-c-combo { align-items: center; justify-content: center; }
@@ -1017,6 +1031,9 @@
         if (el) best = Math.max(best, textWidthOf(el.textContent.trim(), el));
       });
       widths[i] = Math.ceil(best) + 16 + (hasIcon ? 28 : 0);
+      /* «Отображать»: иконка-подсказка — Icon size State (подложка +8: по 4 с двух сторон),
+         иначе текст с иконкой упирается в паддинг и иконка режется на масштабе/при загрузке шрифта */
+      if (h.classList.contains('e-c-combo')) widths[i] += 8;
       /* «Стикеры» — минимум 204 px (ширина из CSS колонки): миниатюрам нужен запас */
       if (h.classList.contains('t-c-vst')) widths[i] = Math.max(widths[i], 204);
       fixed[i] = isFixed;
@@ -1275,6 +1292,7 @@
   /* полоса прокрутки контента — компонент Scroll: слушатель ставим один раз, дальше — scrollSync */
   if (window.DSPatterns && DSPatterns.initScroll) DSPatterns.initScroll(elBody, elScroll);
   var elState = null;   /* { menu, version, code, item, rows: {size: [{angle, sticker, combo}]} } */
+  var elSize = null;    /* активный размер в S8 (табы размеров) */
   var elPop = null;      /* открытый попап селекта (живёт в #elPopLayer) */
   var elPopAnchor = null; /* поле, к которому привязан попап */
 
@@ -1317,6 +1335,7 @@
       });
     });
     elState = { menu: menu, version: version, code: code, item: it, rows: rows };
+    elSize = sizes[0];
     elDim.hidden = false;
     elDlg.hidden = false;
     renderElementPanel();
@@ -1358,7 +1377,18 @@
     var body = qs('#elBody');
     body.innerHTML = '';
     var sizes = elState.item.sizes && elState.item.sizes.length ? elState.item.sizes : [null];
+    if (sizes.indexOf(elSize) < 0) elSize = sizes[0];
+    var multi = sizes.length > 1;
+    /* размеры — табами Tabs: переключают таблицу и превью активного размера */
+    if (multi) {
+      body.innerHTML = '<div class="ds-tabs el-size-tabs" role="tablist" aria-label="Размер">' +
+        sizes.map(function (s, i) {
+          var on = s === elSize;
+          return '<button type="button" class="ds-tab' + (on ? ' ds-tab--active' : '') + '" role="tab" aria-selected="' + (on ? 'true' : 'false') + '" data-el-size="' + i + '">' + esc(s) + '</button>';
+        }).join('') + '</div>';
+    }
     sizes.forEach(function (sz) {
+      if (multi && sz !== elSize) return;
       var sec = document.createElement('div');
       sec.className = 'el-sec';
       var preview = '<div class="el-prev">' +
@@ -1387,7 +1417,7 @@
           '</div></div>' +
         '</div>';
       }).join('');
-      sec.innerHTML = (sz ? '<div class="el-sec__cap">Размер: ' + esc(sz) + '</div>' : '') +
+      sec.innerHTML = (!multi && sz ? '<div class="el-sec__cap">Размер: ' + esc(sz) + '</div>' : '') +
         '<div class="el-tbl"><div class="ds-table-header-row">' +
           '<div class="ds-table-header-cell e-c-angle"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Расположение стикера</span></div></div></div></div>' +
           '<div class="ds-table-header-cell e-c-st"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Стикер</span></div></div></div></div>' +
@@ -1436,6 +1466,14 @@
   qs('#elBody').addEventListener('click', function (e) {
     /* клик по полю селекта не должен доходить до document — иначе попап закроется тем же кликом */
     if (e.target.closest('.e-anchor')) e.stopPropagation();
+    /* табы размеров: активный размер перерисовывает таблицу и превью */
+    var sizeTab = e.target.closest('[data-el-size]');
+    if (sizeTab && elState) {
+      var sizeList = elState.item.sizes && elState.item.sizes.length ? elState.item.sizes : [null];
+      elSize = sizeList[+sizeTab.getAttribute('data-el-size')];
+      renderElementPanel();
+      return;
+    }
     /* крестик очистки в поле селекта */
     var clr = e.target.closest('[data-el-clear]');
     if (clr) {

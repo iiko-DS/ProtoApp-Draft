@@ -16,6 +16,8 @@
   Разметка и поведение — из существующих экранов (external-menu.html), новых компонентов нет.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../table-resize.js"></script>
+<script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
 <script src="../../../Design-System/components-web/ds-patterns.js"></script>
@@ -111,8 +113,10 @@
   .tbl .ds-table-header-row, .tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; min-width: 0; }
   .tbl .ds-table-content-cell { align-items: flex-start; }
   .t-c-dish { flex: 1 1 240px; min-width: 240px; }
-  /* ховер ячейки — только у действенных: в колонке «Название для внеш. меню» ссылка на S8
-     (слой ДС: фон Neutral/100 #EBEBEB; журнал ДС №176/№197) */
+  /* Ховер-фон ЯЧЕЙКИ — только у действенных (fixes.md №176/№197: ячейка редактируется или в ней
+     ссылка): «Артикул», «Название в системе», «Стикеры» и строки-категории — данные, реакции нет.
+     Действенная здесь одна — «Название для внеш. меню» со ссылкой на S8 (фон Neutral/100 #EBEBEB) */
+  .tbl .ds-table-content-cell:hover:not(:focus):not(:focus-within):not(.t-c-actions) { background: transparent; }
   .tbl .ds-table-content-row:not(.group-row) .ds-table-content-cell.t-c-dish:hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
   .t-c-sys { flex: 1 1 180px; min-width: 180px; }
   /* «Артикул» — ширина по шапке: текст 57 + зазор 8 + иконка сортировки 20 + паддинги 16 = 101
@@ -212,12 +216,19 @@
   .el-sec + .el-sec { border-top: 1px solid var(--ds-color-stroke-default, #e0e0e0); padding-top: var(--ds-space-4x, 16px); }
   .el-sec__cap { font: var(--ds-font-body-s-14-normal-medium); color: var(--ds-color-text-primary, #333333);
     grid-column: 1 / -1; margin-bottom: var(--ds-space-2x, 8px); }
+  /* размеры элемента — табами компонента Tabs: 16 от навигации до табличного блока */
+  .el-size-tabs { margin: 0 0 var(--ds-space-4x, 16px); }
   .el-tbl { display: flex; flex-direction: column; }
   .el-tbl .ds-table-header-row, .el-tbl .ds-table-content-row { display: flex; flex-direction: row; align-items: stretch; width: 100%; }
   .el-tbl .ds-table-content-cell { align-items: flex-start; }
+  /* Ховер-фон ячейки — только у действенных (fixes.md №176/№197): «Расположение стикера» — просто
+     текст, реакции нет; действенные — поле «Стикер» и тумблер «Отображать» (живые контролы) */
+  .el-tbl .ds-table-content-cell:hover:not(:focus):not(:focus-within):not(.t-c-actions) { background: transparent; }
+  .el-tbl .ds-table-content-cell.e-c-st:hover:not(:focus):not(:focus-within),
+  .el-tbl .ds-table-content-cell.e-c-combo:has(.ds-slide-toggle__input:not(:disabled)):hover:not(:focus):not(:focus-within) { background: var(--ds-palette-neutral-100, #ebebeb); }
   .e-c-angle { flex: 1 1 220px; min-width: 220px; }
   .e-c-st { width: 280px; flex: none; }
-  .e-c-combo { width: 129px; flex: none; position: relative; }
+  .e-c-combo { width: 137px; flex: none; position: relative; }
   .el-tbl .ds-table-content-cell.e-c-combo { align-items: center; justify-content: center; }
   .e-c-combo .ds-table-content-cell__element { width: 100%; display: flex; align-items: center; justify-content: center; }
   .e-c-combo .ds-slide-toggle { display: flex; align-items: center; }
@@ -873,6 +884,7 @@
   /* полоса прокрутки контента — компонент Scroll: слушатель ставим один раз, дальше — scrollSync */
   if (window.DSPatterns && DSPatterns.initScroll) DSPatterns.initScroll(elBody, elScroll);
   var elState = null;   /* { menu, version, code, item, rows: {size: [{angle, sticker, combo}]} } */
+  var elSize = null;    /* активный размер в S8 (табы размеров) */
   var elPop = null;      /* открытый попап селекта (живёт в #elPopLayer) */
   var elPopAnchor = null; /* поле, к которому привязан попап */
 
@@ -917,6 +929,7 @@
       });
     });
     elState = { menu: menu, version: version, code: code, item: it, rows: rows };
+    elSize = sizes[0];
     elDim.hidden = false;
     elDlg.hidden = false;
     renderElementPanel();
@@ -959,7 +972,18 @@
     qs('#elDesc').textContent = 'Артикул: ' + elState.item.code;
     elBody.innerHTML = '';
     var sizes = elState.item.sizes && elState.item.sizes.length ? elState.item.sizes : [null];
+    if (sizes.indexOf(elSize) < 0) elSize = sizes[0];
+    var multi = sizes.length > 1;
+    /* размеры — табами Tabs: переключают таблицу и превью активного размера */
+    if (multi) {
+      elBody.innerHTML = '<div class="ds-tabs el-size-tabs" role="tablist" aria-label="Размер">' +
+        sizes.map(function (s, i) {
+          var on = s === elSize;
+          return '<button type="button" class="ds-tab' + (on ? ' ds-tab--active' : '') + '" role="tab" aria-selected="' + (on ? 'true' : 'false') + '" data-el-size="' + i + '">' + esc(s) + '</button>';
+        }).join('') + '</div>';
+    }
     sizes.forEach(function (sz) {
+      if (multi && sz !== elSize) return;
       var sec = document.createElement('div');
       sec.className = 'el-sec';
       var preview = '<div class="el-prev">' +
@@ -986,7 +1010,7 @@
           '</div></div>' +
         '</div>';
       }).join('');
-      sec.innerHTML = (sz ? '<div class="el-sec__cap">Размер: ' + esc(sz) + '</div>' : '') +
+      sec.innerHTML = (!multi && sz ? '<div class="el-sec__cap">Размер: ' + esc(sz) + '</div>' : '') +
         '<div class="el-tbl"><div class="ds-table-header-row">' +
           '<div class="ds-table-header-cell e-c-angle"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Расположение стикера</span></div></div></div></div>' +
           '<div class="ds-table-header-cell e-c-st"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">Стикер</span></div></div></div></div>' +
@@ -1067,6 +1091,14 @@
   elBody.addEventListener('click', function (e) {
     /* клик по полю селекта не должен доходить до document — иначе попап закроется тем же кликом */
     if (e.target.closest('.e-anchor')) e.stopPropagation();
+    /* табы размеров: активный размер перерисовывает таблицу и превью */
+    var sizeTab = e.target.closest('[data-el-size]');
+    if (sizeTab && elState) {
+      var sizeList = elState.item.sizes && elState.item.sizes.length ? elState.item.sizes : [null];
+      elSize = sizeList[+sizeTab.getAttribute('data-el-size')];
+      renderElementPanel();
+      return;
+    }
     var clr = e.target.closest('[data-el-clear]');
     if (clr) {
       var key = clr.getAttribute('data-el-clear').split('|');
