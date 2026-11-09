@@ -300,12 +300,14 @@
      у `.ds-table-header-row` overflow: hidden — вложенный тултип срезался снизу */
   /* подсказка — компонент Hint (Tooltip): корень ds-hint-container--up (хвостик сверху) +
      хвостик 8×4 + тело с фоном/радиусом (как в Hint-Tooltip_DS/demo.html, Single) */
-  .e-hint { position: fixed; z-index: 220; width: max-content; }
+  .e-hint { position: fixed; z-index: 220; width: 250px; max-width: 320px; }
   .e-hint__arrow { display: block; flex-shrink: 0; width: 8px; height: 4px; fill: var(--ds-color-hint-background-color, #424242); }
   .e-hint__body { display: flex; flex-direction: column; width: 100%; min-width: 0;
     background: var(--ds-color-hint-background-color, #424242);
     border-radius: var(--ds-hint-border-radius, 8px); overflow: hidden; }
   .e-hint[hidden] { display: none !important; }
+  /* текст подсказки длиннее компонентной строки (nowrap) — переносим, иначе вылезет за экран */
+  .e-hint .ds-hint-content__label { white-space: normal; }
   /* селект стикера в ячейке — Select form S (36) + контейнер; поле по ширине ячейки
      (у компонента своя фикс-ширина 250 — без этого он вылезал в соседнюю колонку;
      обвязка ячейки тоже тянется на всю ширину, иначе поле сжимается по контенту) */
@@ -596,7 +598,7 @@
 <div class="ds-hint-container ds-hint-container--up e-hint" id="elHint" role="tooltip" hidden>
   <svg class="e-hint__arrow" width="8" height="4" viewBox="0 0 8 4" aria-hidden="true"><path d="M0 4L4 0L8 4H0Z"/></svg>
   <div class="e-hint__body">
-    <div class="ds-hint-container__content"><span class="ds-hint-content__label">Отображать на итоговой картинке комбо</span></div>
+    <div class="ds-hint-container__content"><span class="ds-hint-content__label">Каждый стикер можно включить или выключить локально — вне зависимости от глобальной настройки отображения</span></div>
   </div>
 </div>
 

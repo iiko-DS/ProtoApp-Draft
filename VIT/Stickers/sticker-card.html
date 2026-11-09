@@ -100,9 +100,30 @@
      (заказчик 09.11.2026: «этот тугл переносим на самый верх блока»);
      зазор до первой группы — 16 из .frm-groups */
   .frm-groups > [data-field="combo"] { margin: 0; }
-  /* обёртка — flex, иначе inline-flex компонента даёт лишние 4 px строки
-     (высота строки 24 вместо 20 у трека): отступы сверху/снизу становятся одинаковыми */
-  .field-anchor.fld-combo { display: flex; }
+  /* обёртка — flex-колонка: сверху тумблер, под ним плашка Banners;
+     иначе inline-flex компонента даёт лишние 4 px строки (высота 24 вместо 20 у трека).
+     Ширина — во всю форму: в базовом правиле align-self:start даёт max-content,
+     и длинный текст плашки не переносится (уезжает за карточку) */
+  .field-anchor.fld-combo { display: flex; flex-direction: column; align-items: stretch; gap: var(--ds-space-2x, 8px);
+    align-self: stretch; width: 100%; min-width: 0; }
+  /* иконка-подсказка у тумблера — слот Icon компонента Slide toggle (размер 20×20 и цвет
+     Icon/Primary #616161 задаёт сам компонент: `.ds-slide-toggle__icon svg path`);
+     иконка — СЕСТРА label, иначе клик по ней переключал бы тумблер (label[for]) */
+  .fld-combo__hint { cursor: pointer; }
+  /* Hint: размер (250), фон (#424242), радиус (8), тень (08dp) и паддинги (8/12) — 
+     из компонента `.ds-hint-container` / `.ds-hint-container__content`;
+     странице нужны только позиционирование, стрелка (в ДС — отдельный слой) и перенос строк */
+  .c-hint { position: fixed; z-index: 220; }
+  .c-hint__arrow { display: block; flex-shrink: 0; width: 8px; height: 4px; fill: var(--ds-color-hint-background-color, #424242); }
+  .c-hint__body { display: flex; flex-direction: column; width: 100%; min-width: 0;
+    background: var(--ds-color-hint-background-color, #424242); border-radius: var(--ds-hint-border-radius, 8px); overflow: hidden; }
+  .c-hint[hidden] { display: none !important; }
+  /* крестик закрытия плашки — слот Icon компонента Banners (стенд Banners_DS: close 20 в ds-icon-size--state,
+     цвет Icon/Primary — селектор из 2 классов, чтобы перебить .ds-banner--warning .ds-banner__icon, как в стенде);
+     выравнивание — по верхнему краю, как в компоненте (в ДС у .ds-banner--horizontal align-items: flex-start) */
+  .fld-combo__banner .fld-combo__banner-close { color: var(--ds-color-icon-primary, #616161); cursor: pointer; }
+  /* подсказка длиннее компонентной строки (nowrap) — переносим, иначе вылезет за экран */
+  .c-hint .ds-hint-content__label { white-space: normal; }
 
   /* поле-обёртка: якорь выпадающего списка; поле — по ширине колонки (общее правило растяжения) */
   .field-anchor { position: relative; display: block; min-width: 0; align-self: start; }
@@ -218,7 +239,7 @@
   .dlg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 110;
     min-height: 0; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow: hidden; }
   .dlg[hidden], .dlg-dim[hidden] { display: none !important; }
-  .dlg .ds-dialog-header { width: 100%; gap: var(--ds-dialog-header-gap, 8px);
+  .dlg .ds-dialog-header { width: 100%; gap: var(--ds-dialog-header-gap, 8px); flex: 0 0 auto;
     padding: var(--ds-dialog-header-pad-top, 24px) var(--ds-dialog-header-pad-right, 24px)
              var(--ds-dialog-header-pad-bottom, 8px) var(--ds-dialog-header-pad-left, 24px); }
   .dlg .ds-dialog-header__label { white-space: normal; flex: 1 0 0; min-width: 1px; }
@@ -320,15 +341,31 @@
       <div class="frm-card ds-card ds-card--outlined ds-card--custom">
         <div class="frm-groups">
           <!-- Слайд-тугл — самый верх блока (заказчик 09.11.2026); относится к размещению (C-12),
-               но стоит над группами, а не внутри «Размещения на блюдах» -->
+               но стоит над группами, а не внутри «Размещения на блюдах».
+               Рядом — иконка подсказки (слот Icon компонента): живёт ВНЕ label, чтобы клик не переключал тумблер -->
           <div class="field-anchor fld-combo" data-field="combo">
-            <label class="ds-slide-toggle" for="comboToggle">
-              <span class="ds-slide-toggle__row">
-                <input class="ds-slide-toggle__input" type="checkbox" id="comboToggle">
-                <span class="ds-slide-toggle__track"></span>
-                <span class="ds-slide-toggle__title">Отображать на итоговой картинке комбо</span>
+            <span class="ds-slide-toggle__row">
+              <label class="ds-slide-toggle" for="comboToggle">
+                <span class="ds-slide-toggle__row">
+                  <input class="ds-slide-toggle__input" type="checkbox" id="comboToggle">
+                  <span class="ds-slide-toggle__track"></span>
+                  <span class="ds-slide-toggle__title">Отображать на итоговой картинке комбо</span>
+                </span>
+              </label>
+              <span class="ds-slide-toggle__icon fld-combo__hint" id="comboHintIc" role="button" tabindex="0" aria-label="Пояснение к тумблеру" aria-describedby="comboHint">
+                <!-- иконка info из компонента Slide toggle: путь — из слоя Figma (24-сетка)
+                     инлайн, чтобы работало компонентное правило `.ds-slide-toggle__icon svg path { fill: currentColor }` -->
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
               </span>
-            </label>
+            </span>
+            <!-- Пояснение под тумблером — компонент Banners (Warning); иконка info (тот же путь,
+                 что в слоте Icon тумблера), цвет — из .ds-banner--warning .ds-banner__icon; текст — в .ds-banner__text -->
+            <div class="ds-banner ds-banner--warning ds-banner--horizontal fld-combo__banner">
+              <span class="ds-banner__icon" aria-hidden="true"><span class="ds-icon-size ds-icon-size--5x"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg></span></span>
+              <span class="ds-banner__text">Отображать на итоговой картинке комбо — глобальная настройка вкл/выкл отображения сразу для всех внешних меню, где используется данный стикер. Отдельные отображения можно настроить локально, но при переключении глобального тумблера локальные настройки сбрасываются.</span>
+              <!-- крестик — как в стенде Banners_DS: второй слот Icon с close 20 в ds-icon-size--state -->
+              <span class="ds-banner__icon fld-combo__banner-close" id="comboBannerClose" role="button" tabindex="0" aria-label="Закрыть баннер"><span class="ds-icon-size ds-icon-size--5x ds-icon-size--state"><svg viewBox="0 0 20 20" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M5.33329 15.8333L4.16663 14.6667L8.83329 9.99999L4.16663 5.33332L5.33329 4.16666L9.99996 8.83332L14.6666 4.16666L15.8333 5.33332L11.1666 9.99999L15.8333 14.6667L14.6666 15.8333L9.99996 11.1667L5.33329 15.8333Z"/></svg></span></span>
+            </div>
           </div>
 
           <!-- Основная информация -->
@@ -507,6 +544,15 @@
        раньше кнопка была в подвале организма app-page-footer — убрана вместе с подвалом. -->
 </div>
 
+
+<!-- Подсказка к иконке у тумблера — компонент Hint (ds-hint-container): хвостик + тело -->
+<div class="ds-hint-container ds-hint-container--up c-hint" id="comboHint" role="tooltip" hidden>
+  <svg class="c-hint__arrow" width="8" height="4" viewBox="0 0 8 4" aria-hidden="true"><path d="M0 4L4 0L8 4H0Z"/></svg>
+  <div class="c-hint__body">
+    <div class="ds-hint-container__content"><span class="ds-hint-content__label">Глобальная настройка: включает или выключает отображение стикера на итоговой картинке комбо сразу для всех внешних меню, где он используется. Отдельный стикер можно настроить локально — вне зависимости от этого переключателя.</span></div>
+  </div>
+</div>
+
 <!-- S4/C-06: подтверждение закрытия без сохранения (макет 11) -->
 <div class="ds-backdrop dlg-dim" id="exitDim" hidden></div>
 <div class="ds-dialog-view dlg" id="exitDlg" role="dialog" aria-modal="true" aria-labelledby="exitTitle" hidden>
@@ -548,6 +594,21 @@
     <div class="ds-dialog-view__action">
       <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="confCancel"><span class="ds-btn__label">Отменить</span></button>
       <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="confReplace"><span class="ds-btn__label">Заменить</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- C-12: предупреждение — глобальный тумблер перезапишет локальные настройки элементов -->
+<div class="ds-backdrop dlg-dim" id="comboDim" hidden></div>
+<div class="ds-dialog-view dlg" id="comboDlg" role="dialog" aria-modal="true" aria-labelledby="comboTitle" hidden>
+  <div class="ds-dialog-header">
+    <div class="ds-dialog-header__title-container"><span class="ds-dialog-header__label" id="comboTitle">Перезаписать локальные настройки?</span><span class="ds-dialog-header__icon" role="button" tabindex="0" aria-label="Закрыть" id="comboClose"><span class="ds-icon-size ds-icon-size--6x ds-icon-size--state"><span class="material-icons" aria-hidden="true">close</span></span></span></div>
+    <span class="ds-dialog-header__description" id="comboText"></span>
+  </div>
+  <div class="ds-dialog-view__footer">
+    <div class="ds-dialog-view__action">
+      <button type="button" class="ds-btn ds-btn--m ds-btn--neutral ds-btn--outlined" id="comboCancel"><span class="ds-btn__label">Отменить</span></button>
+      <button type="button" class="ds-btn ds-btn--m ds-btn--accent ds-btn--filled" id="comboConfirm"><span class="ds-btn__label">Перезаписать</span></button>
     </div>
   </div>
 </div>
@@ -1132,9 +1193,90 @@
     if (sc) sc.addEventListener('scroll', function () { syncPopScroll(pop); });
   });
 
-  /* ── тоггл комбо (C-12) ── */
+  /* ── тоггл комбо (C-12) ──
+     Если у стикера есть ЛОКАЛЬНЫЕ настройки (размещения с другим значением combo),
+     глобальный тумблер их перезапишет — спрашиваем подтверждение, как при удалении/конфликте */
   var comboToggle = qs('#comboToggle');
-  comboToggle.addEventListener('change', function () { state.combo = comboToggle.checked; markPlacementDirty(); });
+  var comboTarget = false;   /* значение, выбранное в тумблере до подтверждения */
+  function plural(n, forms) {
+    var a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return forms[2];
+    if (b > 1 && b < 5) return forms[1];
+    if (b === 1) return forms[0];
+    return forms[2];
+  }
+  function localComboOverrides(next) {
+    /* считаем только то, что реально перезапишется: размещения в ВЫБРАННЫХ меню и блюдах
+       (сохраняются только они — см. applyFlow), всё остальное настройка не трогает */
+    return state.placements.filter(function (p) {
+      var inMenu = state.menus.indexOf(p.menu + '|' + p.version) >= 0;
+      var inDish = state.dishes.indexOf(p.code) >= 0;
+      return inMenu && inDish && (!!p.combo !== !!next);
+    }).length;
+  }
+  function applyComboValue(next) {
+    state.combo = next;
+    comboToggle.checked = next;
+    markPlacementDirty();
+  }
+  function closeComboDlg() { qs('#comboDim').hidden = true; qs('#comboDlg').hidden = true; }
+  comboToggle.addEventListener('change', function () {
+    var next = comboToggle.checked;
+    var n = localComboOverrides(next);
+    if (!n) { applyComboValue(next); return; }
+    comboTarget = next;
+    qs('#comboText').textContent = 'Сейчас у ' + n + ' ' + plural(n, ['отображения', 'отображения', 'отображений']) + ' стикера в выбранных меню и блюдах настройка отличается от этого тумблера. При сохранении глобальная настройка перезапишет их — локальные настройки будут сброшены.';
+    qs('#comboDim').hidden = false;
+    qs('#comboDlg').hidden = false;
+  });
+  /* «Отменить»/крестик/затемнение/Esc — тумблер возвращается в прежнее положение */
+  qs('#comboCancel').addEventListener('click', function () { comboToggle.checked = state.combo; closeComboDlg(); });
+  qs('#comboClose').addEventListener('click', function () { qs('#comboCancel').click(); });
+  qs('#comboDim').addEventListener('click', function () { qs('#comboCancel').click(); });
+  qs('#comboConfirm').addEventListener('click', function () { closeComboDlg(); applyComboValue(comboTarget); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !qs('#comboDlg').hidden) qs('#comboCancel').click(); });
+
+  /* иконка подсказки у тумблера — компонент Hint (ds-hint-container).
+     Тултип один на страницу, position: fixed — его не срезает карточка; ставим под иконкой */
+  var comboHintIc = qs('#comboHintIc'), comboHint = qs('#comboHint');
+  function showComboHint(on) {
+    if (!comboHintIc || !comboHint) return;
+    comboHint.hidden = !on;
+    if (!on) return;
+    var r = comboHintIc.getBoundingClientRect();
+    comboHint.style.left = '0px';
+    comboHint.style.top = Math.round(r.bottom + 8) + 'px';
+    var hr = comboHint.getBoundingClientRect();
+    var cx = r.left + r.width / 2;
+    var left = Math.max(8, Math.min(window.innerWidth - hr.width - 8, Math.round(cx - hr.width / 2)));
+    comboHint.style.left = left + 'px';
+    var arrow = comboHint.querySelector('.c-hint__arrow');
+    if (arrow) {
+      var aw = arrow.getBoundingClientRect().width || 8;
+      var shift = Math.round(cx - (left + hr.width / 2));
+      var maxShift = Math.round(hr.width / 2 - aw / 2 - 4);
+      shift = Math.max(-maxShift, Math.min(maxShift, shift));
+      arrow.style.transform = shift ? 'translateX(' + shift + 'px)' : '';
+    }
+  }
+  comboHintIc.addEventListener('mouseenter', function () { showComboHint(true); });
+  comboHintIc.addEventListener('mouseleave', function () { showComboHint(false); });
+  comboHintIc.addEventListener('focus', function () { showComboHint(true); });
+  comboHintIc.addEventListener('blur', function () { showComboHint(false); });
+  comboHintIc.addEventListener('keydown', function (e) { if (e.key === 'Escape') showComboHint(false); });
+  window.addEventListener('scroll', function () { showComboHint(false); }, true);
+  window.addEventListener('resize', function () { showComboHint(false); });
+
+  /* крестик на плашке (компонент Banners): скрывает пояснение до перезагрузки страницы */
+  (function () {
+    var banner = qs('.fld-combo__banner'), close = qs('#comboBannerClose');
+    if (!banner || !close) return;
+    function hideBanner() { showComboHint(false); banner.hidden = true; }
+    close.addEventListener('click', hideBanner);
+    close.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hideBanner(); }
+    });
+  })();
 
   /* ── размещение (C-14/C-15): применение на «Сохранить» ── */
   function showFieldError(wrapId, errId, text) {
