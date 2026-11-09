@@ -37,6 +37,7 @@
       .field-anchor/.fpop/.up-*/.st-thumb/.codes-*), помечено в <style>.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../nav-transition.js"></script>
 <script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
@@ -51,7 +52,9 @@
   .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
   @media (max-width: 1160px) { .frame { padding: var(--ds-space-5x, 20px) var(--ds-space-4x, 16px) var(--ds-space-6x, 24px); } }
   .page { display: flex; flex-direction: column; gap: var(--ds-space-4x, 16px); }
-  .sec-tabs { margin: 0; }
+  /* Табы карточки временно скрыты (заказчик 09.11.2026: «будет просто блок») —
+     разметка вкладок сохранена, вернуть — убрать display: none */
+  .sec-tabs { margin: 0; display: none; }
 
   /* в шапке карточки рядом стоят две группы действий: кнопки-иконки и кнопки;
      у организма зазор 29 рассчитан на пару «поиск ↔ кнопки» — на этой странице
@@ -71,6 +74,11 @@
      справа — карточка «Изображение стикера» */
   .frm { display: grid; grid-template-columns: minmax(0, 1fr) 384px; gap: var(--ds-space-6x, 24px); align-items: start; }
   @media (max-width: 1100px) { .frm { grid-template-columns: 1fr; } }
+  /* вкладка «Внешнее меню» — экран 9 внутри карточки, без перехода на страницу раздела.
+     СКРЫТО (заказчик 09.11.2026: «эта таблица не нужна, её тоже скрыть») —
+     разметка и логика сохранены, вернуть — убрать display: none */
+  .ext-tab-view { width: 100%; min-width: 0; margin: 0; display: none; }
+  .ext-tab-view iframe { display: block; width: 100%; height: 120px; min-height: 0; border: 0; overflow: hidden; background: #fff; border-radius: var(--ds-radius-3x, 12px); }
   .frm-main { min-width: 0; display: flex; flex-direction: column; }
   .frm-side { min-width: 0; display: flex; flex-direction: column; }
   .frm-card { box-sizing: border-box; }
@@ -88,8 +96,13 @@
      заказчик 03.11.2026: «На всю ширину....было блядь такое правило») */
   .frm-grid .field-anchor[data-field="angle"] { grid-column: 1 / -1; }
 
-  /* тумблер группы — после заголовка; зазор 8 до полей (как от заголовка до полей) */
-  .frm-group [data-field="combo"] { margin-bottom: var(--ds-space-2x, 8px); }
+  /* тумблер «Отображать на итоговой картинке комбо» — самый верх карточки, над всеми группами
+     (заказчик 09.11.2026: «этот тугл переносим на самый верх блока»);
+     зазор до первой группы — 16 из .frm-groups */
+  .frm-groups > [data-field="combo"] { margin: 0; }
+  /* обёртка — flex, иначе inline-flex компонента даёт лишние 4 px строки
+     (высота строки 24 вместо 20 у трека): отступы сверху/снизу становятся одинаковыми */
+  .field-anchor.fld-combo { display: flex; }
 
   /* поле-обёртка: якорь выпадающего списка; поле — по ширине колонки (общее правило растяжения) */
   .field-anchor { position: relative; display: block; min-width: 0; align-self: start; }
@@ -292,10 +305,12 @@
     </div>
   </header>
 
-  <!-- Вкладки раздела (ТЗ: два таба) — под заголовком (макет 04) -->
+  <!-- Вкладки раздела (ТЗ: два таба) — под заголовком (макет 04).
+       СКРЫТЫ (не удалены): заказчик 09.11.2026 — «скрываем пока эти табы, будет просто блок»;
+       карточка показывается одним блоком, «Настройки во внешнем меню» идёт секцией ниже -->
   <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
-    <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true" data-go="stickers.html">Стикеры</button>
-    <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="external-menu.html?state=list">Внешнее меню</button>
+    <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true" data-tab="main">Описание</button>
+    <button type="button" class="ds-tab" role="tab" aria-selected="false" data-tab="menu">Настройки во внешнем меню</button>
   </div>
 
   <!-- Форма — одна карточка на всю ширину с группами по смыслу («Основная информация»,
@@ -304,6 +319,18 @@
     <div class="frm-main">
       <div class="frm-card ds-card ds-card--outlined ds-card--custom">
         <div class="frm-groups">
+          <!-- Слайд-тугл — самый верх блока (заказчик 09.11.2026); относится к размещению (C-12),
+               но стоит над группами, а не внутри «Размещения на блюдах» -->
+          <div class="field-anchor fld-combo" data-field="combo">
+            <label class="ds-slide-toggle" for="comboToggle">
+              <span class="ds-slide-toggle__row">
+                <input class="ds-slide-toggle__input" type="checkbox" id="comboToggle">
+                <span class="ds-slide-toggle__track"></span>
+                <span class="ds-slide-toggle__title">Отображать на итоговой картинке комбо</span>
+              </span>
+            </label>
+          </div>
+
           <!-- Основная информация -->
           <section class="frm-group">
             <div class="frm-group__title">Основная информация</div>
@@ -349,17 +376,6 @@
                применение — на «Сохранить», отдельной кнопки «Применить» нет (ДС обязательна) -->
           <section class="frm-group" data-group="place">
             <div class="frm-group__title">Размещение на блюдах</div>
-            <!-- Слайд-тугл группы — идёт после заголовка (правило: ко всему блоку — первый,
-                 к группе — после заголовка); признак блока размещения (C-12) -->
-            <div class="field-anchor fld-combo" data-field="combo">
-              <label class="ds-slide-toggle" for="comboToggle">
-                <span class="ds-slide-toggle__row">
-                  <input class="ds-slide-toggle__input" type="checkbox" id="comboToggle">
-                  <span class="ds-slide-toggle__track"></span>
-                  <span class="ds-slide-toggle__title">Отображать на итоговой картинке комбо</span>
-                </span>
-              </label>
-            </div>
             <div class="frm-grid">
               <!-- Внешнее меню и версия — составное поле (⚠️ C-09): Select multiple, значения текстом
                    в поле, у меню в подписи версия; очистка каскадом: ВМ+версия+Блюда+Угол (C-13) -->
@@ -480,6 +496,12 @@
     </div>
   </div>
 
+  <!-- Блок «Настройки во внешнем меню» (вместо скрытого таба): экран 9 с экспандерами,
+       отфильтрованный по ВМ+версии, выбранным в поле «Внешнее меню и версия»;
+       СКРЫТ вместе с табами (09.11.2026) — разметка сохранена, iframe не загружается -->
+  <div class="ext-tab-view" id="extTabView" hidden>
+    <iframe id="extTabFrame" title="Внешнее меню стикера" scrolling="no"></iframe>
+  </div>
 
   <!-- Подвала в карточке нет: «Удалить» — иконкой в шапке рядом с «Обновить» (заказчик 03.11.2026);
        раньше кнопка была в подвале организма app-page-footer — убрана вместе с подвалом. -->
@@ -819,6 +841,9 @@
       f.classList.remove('is-open');
       f.setAttribute('aria-expanded', 'false');
     });
+    syncSelectState(menuField, menuLabelEl, state.menus.length > 0);
+    syncSelectState(dishField, dishLabelEl, state.dishes.length > 0);
+    syncSelectState(angleField, angleLabelEl, !!state.angle);
     menuPop.hidden = dishPop.hidden = anglePop.hidden = true;
     openPop = null;
   }
@@ -829,6 +854,7 @@
     pop.hidden = false;
     field.classList.add('is-open');
     field.setAttribute('aria-expanded', 'true');
+    syncSelectState(field, field.querySelector('.ds-input__label'), field.classList.contains('ds-select-form--populated'));
     openPop = pop;
     rebuild();
     syncPopScroll(pop);
@@ -875,6 +901,18 @@
   var menuValue = qs('#menuValue');
   var menuErr = qs('#menuErr');
   var menuClear = qs('#menuClear');
+  var menuLabelEl = qs('#menuLabel');
+
+  /* подпись поля-селекта по анатомии DS Select form: Empty — подписи нет (текст-плейсхолдер),
+     Populated — подпись сверху; в открытом списке подпись видна всегда (как в demo Select) */
+  function syncSelectState(field, labelEl, filled) {
+    var inner = field.querySelector('.ds-input');
+    if (inner) {
+      inner.classList.toggle('ds-input--populated', filled);
+      inner.classList.toggle('ds-input--empty', !filled);
+    }
+    if (labelEl) labelEl.hidden = !filled && !field.classList.contains('is-open');
+  }
 
   function menuLabel(mv) {
     var m = menuById(mv.split('|')[0]);
@@ -886,12 +924,37 @@
     menuValue.textContent = text || 'Внешнее меню и версия';
     menuField.classList.toggle('ds-select-form--empty', !state.menus.length);
     menuField.classList.toggle('ds-select-form--populated', state.menus.length > 0);
+    syncSelectState(menuField, menuLabelEl, state.menus.length > 0);
     menuClear.hidden = state.menus.length === 0;
     menuErr.hidden = true;
+    /* блок «Настройки во внешнем меню» перестраивается по выбранным ВМ+версиям */
+    syncExtBlock();
   }
   function buildMenuList() {
     menuItems.innerHTML = '';
     var values = [];
+    data.menus.forEach(function (m) {
+      (m.versions || []).forEach(function (v) { values.push(m.id + '|' + v.id); });
+    });
+    var allOn = values.length > 0 && values.every(function (v) { return state.menus.indexOf(v) >= 0; });
+    /* общий пункт «Все» — как в «Блюдах»: чекбокс + Divider, затем сами ВМ */
+    selectItem(menuItems, {
+      value: 'ALL', label: 'Все', checkbox: true, checked: allOn,
+      onChange: function (on) {
+        state.menus = on ? values.slice() : [];
+        /* состав ВМ изменился — в «Блюдах» остаются только коды из объединения версий (E-05) */
+        var valid = {};
+        unionItems().forEach(function (x) { valid[x.item.code] = true; });
+        state.dishes = state.dishes.filter(function (c) { return valid[c]; });
+        renderDishField();
+        renderMenuField();
+        markPlacementDirty();
+        buildMenuList();
+      }
+    });
+    var sep = document.createElement('div');
+    sep.className = 'ds-divider';
+    menuItems.appendChild(sep);
     data.menus.forEach(function (m) {
       (m.versions || []).forEach(function (v) {
         var key = m.id + '|' + v.id;
@@ -936,6 +999,7 @@
   var dishValue = qs('#dishValue');
   var dishErr = qs('#dishErr');
   var dishClear = qs('#dishClear');
+  var dishLabelEl = qs('#dishLabel');
   var dishSearch = qs('#dishSearch');
   var dishSearchSlot = qs('#dishSearchSlot');
   var dishSearchDiv = qs('#dishSearchDiv');
@@ -950,6 +1014,7 @@
     dishValue.textContent = text || 'Выберите блюда';
     dishField.classList.toggle('ds-select-form--empty', !state.dishes.length);
     dishField.classList.toggle('ds-select-form--populated', state.dishes.length > 0);
+    syncSelectState(dishField, dishLabelEl, state.dishes.length > 0);
     dishClear.hidden = state.dishes.length === 0;
     dishErr.hidden = true;
   }
@@ -1033,11 +1098,13 @@
   var angleItems = qs('#angleItems');
   var angleValue = qs('#angleValue');
   var angleErr = qs('#angleErr');
+  var angleLabelEl = qs('#angleLabel');
 
   function renderAngleField() {
     angleValue.textContent = angleName(state.angle) || 'Угол';
     angleField.classList.toggle('ds-select-form--empty', !state.angle);
     angleField.classList.toggle('ds-select-form--populated', !!state.angle);
+    syncSelectState(angleField, angleLabelEl, !!state.angle);
     angleErr.hidden = true;
   }
   function buildAngleList() {
@@ -1397,16 +1464,25 @@
         /* изображение-заглушка: реальных байтов в прототипе нет — превью из сохранённого имени */
         state.image.fileData = state.image.fileName ? makeStickerPlaceholder(st) : '';
       }
-      /* блок размещения заполнен (S3): показываем первое применение */
+      /* блок размещения заполнен (S3): показываем ВСЕ текущие размещения стикера,
+         иначе список и карточка расходятся (заказчик 09.11.2026: «Все данные должны
+         соответствовать друг другу… данные внешнего меню, выбранного в карточке») */
       var own = data.placements.filter(function (p) { return p.sticker === EDIT_ID; });
       if (own.length) {
         state.placements = own.map(function (p) {
           var it = itemByCode(p.code, p.menu, p.version);
           return { menu: p.menu, version: p.version, code: p.code, size: p.size, angle: p.angle, combo: p.combo, dishName: it ? it.name : p.code };
         });
-        /* S3: поля блока показывают первое применение (первое ВМ+версия, блюдо, угол, тумблер) */
-        state.menus = [own[0].menu + '|' + own[0].version];
-        state.dishes = [own[0].code];
+        /* поля-мультиселекты — все ВМ+версии и все блюда из размещений;
+           угол и тумблер — первого размещения (в карточке они одиночные) */
+        var seenMv = {}, seenCode = {};
+        state.menus = [];
+        state.dishes = [];
+        own.forEach(function (p) {
+          var mv = p.menu + '|' + p.version;
+          if (!seenMv[mv]) { seenMv[mv] = true; state.menus.push(mv); }
+          if (!seenCode[p.code]) { seenCode[p.code] = true; state.dishes.push(p.code); }
+        });
         state.angle = own[0].angle;
         state.combo = !!own[0].combo;
       }
@@ -1469,12 +1545,70 @@
     }
   };
 
-  /* вкладки раздела — переход между табами */
-  qsa('[data-go]').forEach(function (t) {
-    t.addEventListener('click', function () { location.href = t.getAttribute('data-go'); });
+  /* вкладки карточки СКРЫТЫ (заказчик 09.11.2026) — страница одним блоком, только форма.
+     Секция «Настройки во внешнем меню» (встроенный экран 9) тоже скрыта —
+     разметка и JS сохранены, вернуть — EXT_BLOCK_VISIBLE = true и убрать display: none. */
+  var EXT_BLOCK_VISIBLE = false;
+  var cardMain = qs('.frm');
+  var extTabView = qs('#extTabView');
+  var extTabFrame = qs('#extTabFrame');
+  var extLoadedKey = '';
+  var extFrameObs = null;
+  var extRefreshTimer = null;
+  function fitExtFrame() {
+    try {
+      var d = extTabFrame.contentDocument;
+      var content = d && (d.getElementById('viewAll') || d.body);
+      if (!content) return;
+      var h = Math.ceil(content.getBoundingClientRect().height);
+      extTabFrame.style.height = Math.max(120, h) + 'px';
+    } catch (e) {}
+  }
+  extTabFrame.addEventListener('load', function () {
+    fitExtFrame();
+    try {
+      if (extFrameObs) extFrameObs.disconnect();
+      var d = extTabFrame.contentDocument;
+      var content = d && d.getElementById('viewAll');
+      if (window.ResizeObserver && content) {
+        extFrameObs = new ResizeObserver(fitExtFrame);
+        extFrameObs.observe(content);
+      }
+    } catch (e) {}
   });
+  window.addEventListener('resize', fitExtFrame);
+  function extTabUrl() {
+    var mvs = [];
+    state.menus.forEach(function (mv) {
+      if (mvs.indexOf(mv) < 0) mvs.push(mv);
+    });
+    var url = 'external-menu-all.html?embed=1&mvs=' + encodeURIComponent(mvs.join(','));
+    var w = new URLSearchParams(location.search).get('w');
+    if (w) url += '&w=' + encodeURIComponent(w);
+    return url;
+  }
+  function syncExtBlock() {
+    /* форма всегда видна; секция с экраном 9 скрыта (флаг) и не грузит iframe */
+    cardMain.hidden = false;
+    var hasMenu = EXT_BLOCK_VISIBLE && state.menus.length > 0;
+    extTabView.hidden = !hasMenu;
+    if (!hasMenu) { extLoadedKey = ''; return; }
+    var key = state.menus.join(',') + '|' + (new URLSearchParams(location.search).get('w') || '');
+    if (key === extLoadedKey) return;
+    /* пауза: при «Все»/мультивыборе не перезагружаем iframe на каждый чекбокс */
+    if (extRefreshTimer) clearTimeout(extRefreshTimer);
+    extRefreshTimer = setTimeout(function () {
+      extRefreshTimer = null;
+      if (state.menus.length) extFrameRefresh(key);
+    }, 120);
+  }
+  function extFrameRefresh(key) {
+    extLoadedKey = key;
+    extTabFrame.src = extTabUrl();
+  }
 
   loadFromData();
+  syncExtBlock();
 
   /* начальное состояние из URL (прямой переход на шаг панели ревью):
      S4 — сразу модалка удаления, S9 — сразу диалог «Добавить по кодам», S3 — с данными стикера */

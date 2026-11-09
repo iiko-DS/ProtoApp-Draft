@@ -13,6 +13,7 @@
   (подтверждения), Snackbar. Вне ДС — только раскладка.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../nav-transition.js"></script>
 <script src="../table-resize.js"></script>
 <script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
@@ -100,7 +101,10 @@
   .is-deleted-row .ds-text-ui__list-item, .is-deleted-row .g-name-btn, .is-deleted-row .g-sub { color: var(--ds-color-text-ui-disable-text-color, #9e9e9e); text-decoration: line-through; }
   /* действия строки — только по наведению на строку (как на странице баннеров) */
   .g-row-actions { display: inline-flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .12s ease; }
-  .ds-table-content-row:hover .g-row-actions, .ds-table-content-row:focus-within .g-row-actions { opacity: 1; }
+  /* действия — только при наведении на строку: фокус мышью (клик по чекбоксу) их НЕ показывает,
+     наведение на сам чекбокс — тоже; клавиатурный фокус (:focus-visible) оставляем для доступности */
+  .ds-table-content-row:hover:not(:has(.ds-checkbox:hover)) .g-row-actions,
+  .ds-table-content-row:has(:focus-visible) .g-row-actions { opacity: 1; }
   .g-row-actions .ds-btn-icon { cursor: pointer; }
   .g-row-actions .ds-icon-size { color: inherit; }
   .g-row-actions .ds-btn-icon[data-act="copy"], .g-row-actions .ds-btn-icon[data-act="restore"] { color: var(--ds-color-icon-primary, #616161); }

@@ -37,6 +37,7 @@
     • вне ДС — только раскладка (классы .page/.t-c*/.sec-tabs/.t-empty/.counter), помечено в <style>.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../nav-transition.js"></script>
 <script src="../table-resize.js"></script>
 <script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
@@ -133,20 +134,22 @@
      редактирование открывается ссылкой на названии, как в баннерах);
      при наведении колонка прижимается к правому краю видимой области (как в баннерах) */
   .t-row-actions { display: inline-flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .12s ease; }
-  .ds-table-content-row:hover .t-row-actions,
-  .ds-table-content-row:focus-within .t-row-actions { opacity: 1; }
+  /* действия — только при наведении на строку: фокус мышью (клик по чекбоксу) их НЕ показывает,
+     наведение на сам чекбокс — тоже; клавиатурный фокус (:focus-visible) оставляем для доступности */
+  .ds-table-content-row:hover:not(:has(.ds-checkbox:hover)) .t-row-actions,
+  .ds-table-content-row:has(:focus-visible) .t-row-actions { opacity: 1; }
   .t-row-actions .row-del { color: var(--ds-color-text-negative, #ff5252); }
   .t-row-actions .ds-icon-size { color: inherit; }
   .t-row-actions [hidden] { display: none !important; }
   .tbl .ds-btn-icon:focus, .tbl .ds-btn-icon:focus-visible { outline: none; }
   .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions,
   .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions:hover,
-  .tbl .ds-table-content-row:focus-within > .ds-table-content-cell.t-c-actions {
+  .tbl .ds-table-content-row:has(:focus-visible) > .ds-table-content-cell.t-c-actions {
     position: sticky; right: 0; z-index: 3;
     background: var(--ds-color-table-row-content-hover-background, #f5f5f5);
   }
   .tbl .ds-table-content-row--selected:hover > .ds-table-content-cell.t-c-actions,
-  .tbl .ds-table-content-row--selected:focus-within > .ds-table-content-cell.t-c-actions {
+  .tbl .ds-table-content-row--selected:has(:focus-visible) > .ds-table-content-cell.t-c-actions {
     background: var(--ds-palette-accent-5, #f8f9fc);
   }
 
@@ -294,7 +297,7 @@
   <!-- Вкладки раздела (ТЗ: раздел делится на два таба) — под заголовком (макет 04) -->
   <div class="ds-tabs sec-tabs" role="tablist" aria-label="Раздел «Стикеры»">
     <button type="button" class="ds-tab ds-tab--active" role="tab" aria-selected="true">Стикеры</button>
-    <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="external-menu.html?state=list">Внешнее меню</button>
+    <button type="button" class="ds-tab" role="tab" aria-selected="false" data-go="external-menu-all.html">Внешнее меню</button>
   </div>
 
   <!-- Полоса таблицы — организм table-header-actions: в обычном режиме скрыта (выбор не идёт);

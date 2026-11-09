@@ -94,6 +94,7 @@
   взяты из них, данные строк — из примеров постановки.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../nav-transition.js"></script>
 <script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
 <script src="../../../Design-System/connect.js" defer></script>
@@ -201,19 +202,22 @@
   .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions:hover,
   .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions:focus,
   .tbl .ds-table-content-row:hover > .ds-table-content-cell.t-c-actions:focus-within,
-  .tbl .ds-table-content-row:focus-within > .ds-table-content-cell.t-c-actions {
+  .tbl .ds-table-content-row:has(:focus-visible) > .ds-table-content-cell.t-c-actions {
     position: sticky; right: 0; z-index: 3;
     background: var(--ds-color-table-row-content-hover-background, #f5f5f5);
   }
   /* у выбранной строки — свой фон (Accent/5), наведение его не меняет */
   .tbl .ds-table-content-row--selected:hover > .ds-table-content-cell.t-c-actions,
   .tbl .ds-table-content-row--selected:hover > .ds-table-content-cell.t-c-actions:hover,
-  .tbl .ds-table-content-row--selected:focus-within > .ds-table-content-cell.t-c-actions {
+  .tbl .ds-table-content-row--selected:has(:focus-visible) > .ds-table-content-cell.t-c-actions {
     background: var(--ds-palette-accent-5, #f8f9fc);
   }
   .t-row-actions { display: inline-flex; align-items: center; gap: 4px; opacity: 0; transition: opacity .12s ease; }
   .t-row-actions [hidden] { display: none !important; }   /* у .ds-btn-icon display:inline-flex перебивает [hidden] */
-  .ds-table-content-row:hover .t-row-actions, .ds-table-content-row:focus-within .t-row-actions { opacity: 1; }
+  /* действия — только при наведении на строку: фокус мышью (клик по чекбоксу) их НЕ показывает,
+     наведение на сам чекбокс — тоже; клавиатурный фокус (:focus-visible) оставляем для доступности */
+  .ds-table-content-row:hover:not(:has(.ds-checkbox:hover)) .t-row-actions,
+  .ds-table-content-row:has(:focus-visible) .t-row-actions { opacity: 1; }
   .t-row-actions .ds-btn-icon { cursor: pointer; }
   .t-row-actions .row-copy { color: var(--ds-color-icon-primary, #616161); }
   .t-row-actions .row-del { color: var(--ds-color-text-negative, #ff5252); }

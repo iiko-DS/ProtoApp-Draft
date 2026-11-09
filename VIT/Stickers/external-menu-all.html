@@ -16,9 +16,15 @@
   Разметка и поведение — из существующих экранов (external-menu.html), новых компонентов нет.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../nav-transition.js"></script>
 <script src="../table-resize.js"></script>
 <script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
+<script>
+  /* embed=1 — экран встраивается внутрь карточки стикера: без шапки раздела,
+     табов и полосы фильтров (фильтр — селект в карточке) */
+  if (/(?:^|[?&])embed=1(?:&|$)/.test(location.search)) document.documentElement.className += ' dsr-embed';
+</script>
 <script src="../../../Design-System/connect.js" defer></script>
 <script src="../../../Design-System/components-web/ds-patterns.js"></script>
 <link rel="stylesheet" href="../../../Design-System/organisms/app-header-content/header-content.css?v=1">
@@ -28,6 +34,17 @@
   .apph__store, .apph__tabs, .apph__pill, .apph__cal, .apph__search, .apph__mpill, .apph__mright { display: none !important; }
   .material-icons { font-family: 'Material Icons Outlined'; }
   :root { color-scheme: light; }
+
+  /* встроенный режим (внутри карточки стикера) — только панели меню */
+  html.dsr-embed .dsr-bar, html.dsr-embed .dsr-nav, html.dsr-embed .dsr-chrome,
+  html.dsr-embed .dsr-restore, html.dsr-embed #vitCmtFab, html.dsr-embed #vitCmtPanel,
+  html.dsr-embed .apph, html.dsr-embed .app-snav, html.dsr-embed .app-snav__scrim,
+  html.dsr-embed .app-rp, html.dsr-embed .app-rp-scrim { display: none !important; }
+  html.dsr-embed, html.dsr-embed body { height: auto !important; min-height: 0 !important; overflow: hidden !important; }
+  html.dsr-embed #panel { width: 100% !important; height: auto !important; margin: 0 !important; min-height: 0 !important; }
+  html.dsr-embed #frame { width: 100% !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+  html.dsr-embed #viewAll > .hc, html.dsr-embed #viewAll > .sec-tabs, html.dsr-embed #viewAll > .tha { display: none !important; }
+  html.dsr-embed #viewAll { gap: var(--ds-space-2x, 8px); }
 
   /* ── раскладка (вне ДС) ── */
   .frame { padding: var(--ds-space-5x, 20px) 30px var(--ds-space-6x, 24px); }
@@ -456,6 +473,32 @@
   if (raw) { try { data = JSON.parse(raw); } catch (e) {} }
   if (!data || !data.menus) { location.href = 'stickers.html'; return; }
 
+  /* query: menu=<id>&version=<id> — пришли из карточки стикера с выбранным ВМ */
+  var Q = {};
+  (location.search.replace(/^\?/, '') || '').split('&').forEach(function (p) {
+    var i = p.indexOf('=');
+    if (i < 0) return;
+    try { Q[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1)); } catch (e) {}
+  });
+  var qMenuOk = Q.menu && data.menus.some(function (m) { return m.id === Q.menu; });
+  /* menus=id1,id2,… — набор ВМ из фильтра карточки (встроенный режим) */
+  var qMenusGiven = Object.prototype.hasOwnProperty.call(Q, 'menus');
+  var qMenus = (Q.menus || '').split(',').map(function (x) { return x.trim(); }).filter(function (id) {
+    return id && data.menus.some(function (m) { return m.id === id; });
+  });
+  /* mvs=menu|version,… — точный набор ВМ+версий из карточки стикера */
+  var qMvsGiven = Object.prototype.hasOwnProperty.call(Q, 'mvs');
+  var qMvs = [];
+  (Q.mvs || '').split(',').forEach(function (pair) {
+    var parts = pair.split('|');
+    var m = data.menus.filter(function (x) { return x.id === parts[0]; })[0];
+    if (!m) return;
+    var v = (m.versions || []).filter(function (x) { return x.id === parts[1]; })[0];
+    if (!v) return;
+    var key = m.id + '|' + v.id;
+    if (!qMvs.some(function (x) { return x.key === key; })) qMvs.push({ menu: m, version: v, key: key });
+  });
+
   var placements = data.placements || [];
   var stickers = data.stickers || [];
   function stickerById(id) { return stickers.filter(function (s) { return s.id === id; })[0] || null; }
@@ -489,8 +532,9 @@
     });
     return out;
   }
-  /* фильтры полосы: внешнее меню / версия / тип элементов / наличие стикеров */
-  var flt = { menu: 'all', version: '', types: { list: true, mod: true }, stickers: 'all' };
+  /* фильтр по стикерам — мультивыбор: «Все» + список стикеров раздела */
+  /* фильтры полосы: внешнее меню / версия / тип элементов / стикеры (мультивыбор, по умолчанию — все) */
+  var flt = { menu: qMenuOk ? Q.menu : 'all', menus: qMenus, mvs: qMvs, version: Q.version || '', types: { list: true, mod: true }, stickers: stickers.map(function (s) { return s.id; }) };
   /* сортировка таблицы элементов (D-03): пустой ключ = порядок из данных */
   var sortState = { key: '', dir: 'asc' };
   /* версия для панели: выбранная в фильтре (если есть у этого меню), иначе первая */
@@ -499,8 +543,8 @@
     if (flt.version) { for (var i = 0; i < vs.length; i++) if (vs[i].id === flt.version) return flt.version; }
     return (vs[0] || { id: 'base' }).id;
   }
-  function itemsOf(menu) {
-    var vid = versionIdOf(menu);
+  function itemsOf(menu, versionId) {
+    var vid = versionId || versionIdOf(menu);
     var v = (menu.versions || []).filter(function (x) { return x.id === vid; })[0] || { id: vid, name: vid };
     var groups = data.catalog[menu.id + '|' + vid] || [];
     /* группы каталога (Соусы / Комбо / Блюда / Напитки) — сохраняем, чтобы показать их подзаголовками */
@@ -511,7 +555,7 @@
     var st = stickersOf(menu.id, version.id, it.code);
     var hasCombo = st.some(function (id) { return comboOf(menu.id, version.id, it.code, id); });
     var stHtml = st.length ? st.map(function (id) { return thumbHtml(id, comboOf(menu.id, version.id, it.code, id)); }).join('') : '<span class="ds-text-ui__list-item">—</span>';
-    return '<div class="ds-table-content-row"' + (open ? '' : ' hidden') + ' data-row="' + esc(it.code) + '" data-type="' + esc(it.type || '') + '" data-has-st="' + (st.length ? '1' : '0') + '" data-combo="' + (hasCombo ? '1' : '0') + '"' + (groupName ? ' data-group-row="' + esc(groupName) + '"' : '') + '>' +
+    return '<div class="ds-table-content-row"' + (open ? '' : ' hidden') + ' data-row="' + esc(it.code) + '" data-type="' + esc(it.type || '') + '" data-has-st="' + (st.length ? '1' : '0') + '" data-st="' + esc(st.join(',')) + '" data-combo="' + (hasCombo ? '1' : '0') + '"' + (groupName ? ' data-group-row="' + esc(groupName) + '"' : '') + '>' +
       '<div class="ds-table-content-cell t-c-dish"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><button type="button" class="vm-link" data-open="' + esc(it.code) + '">' + esc(it.name) + '</button></div></div></div></div></div>' +
       '<div class="ds-table-content-cell t-c-sku"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.code) + '</span></div></div></div></div></div>' +
       '<div class="ds-table-content-cell t-c-sys"><div class="ds-table-content-cell__element"><div class="ds-element-cell ds-element-cell--text-ui"><div class="ds-text-ui"><div class="ds-text-ui__content"><span class="ds-text-ui__list-item">' + esc(it.sys || '') + '</span></div></div></div></div></div>' +
@@ -538,8 +582,9 @@
     if (el) el.innerHTML = countsHtml(total, st, on, isGroup);
   }
 
-  function panelHtml(menu) {
-    var info = itemsOf(menu);
+  function panelHtml(menu, versionId) {
+    var info = itemsOf(menu, versionId);
+    var panelKey = menu.id + '|' + info.version.id;
     var total = 0;
     var body = '';
     info.groups.forEach(function (g) {
@@ -554,7 +599,7 @@
         });
       }
       total += items.length;
-      var gkey = menu.id + '|' + g.name;
+      var gkey = panelKey + '|' + g.name;
       var open = openedGroups.hasOwnProperty(gkey) ? openedGroups[gkey] : true;
       /* строка-заголовок категории (эталон — список баннеров): шеврон + название + счётчик */
       body += '<div class="ds-table-content-row group-row' + (open ? ' is-open' : '') + '" data-group="' + esc(g.name) + '" role="button" tabindex="0" aria-expanded="' + (open ? 'true' : 'false') + '">' +
@@ -569,10 +614,10 @@
         '</div>';
       body += items.map(function (it) { return rowHtml(menu, info.version, it, g.name, open); }).join('');
     });
-    return '<div class="ds-expansion" data-menu="' + esc(menu.id) + '">' +
+    return '<div class="ds-expansion" data-menu="' + esc(menu.id) + '" data-version="' + esc(info.version.id) + '" data-key="' + esc(panelKey) + '">' +
       '<div class="ds-expansion__header" role="button" tabindex="0" aria-expanded="false">' +
         '<span class="ds-expansion__arrow"><span class="material-icons" aria-hidden="true">keyboard_arrow_down</span></span>' +
-        '<span class="ds-expansion__title"><span class="acc-title"><span class="acc-name">' + esc(menu.name) + '</span><span class="acc-count">' + countsHtml(total, 0, 0) + '</span></span></span>' +
+        '<span class="ds-expansion__title"><span class="acc-title"><span class="acc-name">' + esc(menu.name) + (qMvsGiven ? ' · ' + esc(info.version.name || info.version.id) : '') + '</span><span class="acc-count">' + countsHtml(total, 0, 0) + '</span></span></span>' +
       '</div>' +
       '<div class="ds-expansion__content ds-expansion__content--no-padding">' +
         '<div class="tbl">' +
@@ -590,15 +635,35 @@
 
   var acc = qs('#allAcc');
   var opened = {};
+  /* пришли по прямой ссылке с конкретным ВМ — сразу раскрываем его панель */
+  if (qMenuOk) {
+    var openMenu = data.menus.filter(function (m) { return m.id === flt.menu; })[0];
+    var openVer = openMenu ? versionIdOf(openMenu) : 'base';
+    opened[flt.menu + '|' + openVer] = true;
+  }
+  /* встроенный режим из карточки: первая выбранная пара раскрыта, чтобы сразу были видны данные */
+  if (qMvsGiven && flt.mvs.length) opened[flt.mvs[0].key] = true;
+  if (qMenusGiven && qMenus.length) {
+    var qm = data.menus.filter(function (x) { return x.id === qMenus[0]; })[0];
+    if (qm) opened[qMenus[0] + '|' + versionIdOf(qm)] = true;
+  }
   /* раскрытость категорий внутри панелей (ключ menuId|категория) */
   var openedGroups = {};
   function visibleMenus() {
+    if (qMenusGiven) {
+      return data.menus.filter(function (m) { return flt.menus.indexOf(m.id) >= 0; });
+    }
     return data.menus.filter(function (m) { return flt.menu === 'all' || m.id === flt.menu; });
   }
   function renderAll() {
-    acc.innerHTML = visibleMenus().map(panelHtml).join('');
+    var pairs = qMvsGiven
+      ? flt.mvs
+      : visibleMenus().map(function (m) { return { menu: m, version: null }; });
+    acc.innerHTML = pairs.map(function (p) {
+      return panelHtml(p.menu, p.version ? p.version.id : null);
+    }).join('');
     qsa('.ds-expansion', acc).forEach(function (p) {
-      if (opened[p.getAttribute('data-menu')]) {
+      if (opened[p.getAttribute('data-key')]) {
         p.classList.add('ds-expansion--open');
         p.querySelector('.ds-expansion__header').setAttribute('aria-expanded', 'true');
       }
@@ -612,7 +677,7 @@
     var gr = e.target.closest('.group-row');
     if (gr) {
       var panelG = gr.closest('.ds-expansion');
-      var menuG = panelG ? panelG.getAttribute('data-menu') : '';
+      var menuG = panelG ? (panelG.getAttribute('data-key') || panelG.getAttribute('data-menu')) : '';
       var gName = gr.getAttribute('data-group');
       var nowOpen = !gr.classList.contains('is-open');
       gr.classList.toggle('is-open', nowOpen);
@@ -638,7 +703,7 @@
       var panel = head.closest('.ds-expansion');
       var open = panel.classList.toggle('ds-expansion--open');
       head.setAttribute('aria-expanded', open ? 'true' : 'false');
-      opened[panel.getAttribute('data-menu')] = open;
+      opened[panel.getAttribute('data-key') || panel.getAttribute('data-menu')] = open;
       return;
     }
     /* название элемента — панель «Управление стикерами на элементе» (S8) прямо на этом экране */
@@ -646,8 +711,9 @@
     if (link) {
       var p = link.closest('.ds-expansion');
       var menuId = p.getAttribute('data-menu');
+      var verId = p.getAttribute('data-version');
       var m = data.menus.filter(function (x) { return x.id === menuId; })[0];
-      openElementPanel(menuId, m ? versionIdOf(m) : 'base', link.getAttribute('data-open'));
+      openElementPanel(menuId, verId || (m ? versionIdOf(m) : 'base'), link.getAttribute('data-open'));
     }
   });
   acc.addEventListener('keydown', function (e) {
@@ -662,20 +728,20 @@
   function rowPass(row, q) {
     var isMod = row.getAttribute('data-type') === 'modifier';
     if (isMod ? !flt.types.mod : !flt.types.list) return false;
-    if (flt.stickers !== 'all') {
-      var has = row.getAttribute('data-has-st') === '1';
-      if (flt.stickers === 'yes' && !has) return false;
-      if (flt.stickers === 'no' && has) return false;
+    /* фильтр по стикерам: все выбранные = без ограничения; иначе — хотя бы один из выбранных */
+    if (flt.stickers.length !== stickers.length) {
+      var rowSt = (row.getAttribute('data-st') || '').split(',').filter(Boolean);
+      if (!flt.stickers.some(function (id) { return rowSt.indexOf(id) >= 0; })) return false;
     }
     if (!q) return true;
     return row.textContent.toLowerCase().indexOf(q) >= 0;
   }
   function applyFilters() {
     var q = searchInput.value.trim().toLowerCase();
-    var expand = q !== '' || !(flt.types.list && flt.types.mod) || flt.stickers !== 'all';
+    var expand = q !== '' || !(flt.types.list && flt.types.mod) || flt.stickers.length !== stickers.length;
     var hits = 0;
     qsa('.ds-expansion', acc).forEach(function (panel) {
-      var menuId = panel.getAttribute('data-menu');
+      var menuId = panel.getAttribute('data-key') || panel.getAttribute('data-menu');
       var count = 0;
       var pTotal = 0, pSt = 0, pOn = 0;
       qsa('.ds-table-content-row.group-row', panel).forEach(function (gr) {
@@ -739,7 +805,6 @@
   var selTypeField = qs('#selTypeField'), selTypePop = qs('#selTypePop'), selTypeItems = qs('#selTypeItems'), selTypeValue = qs('#selTypeValue');
   var selStField = qs('#selStickersField'), selStPop = qs('#selStickersPop'), selStItems = qs('#selStickersItems'), selStValue = qs('#selStickersValue');
   var TYPE_OPTS = [{ id: 'list', name: 'Список блюд' }, { id: 'mod', name: 'Модификаторы' }];
-  var ST_OPTS = [{ id: 'all', name: 'Все' }, { id: 'yes', name: 'Со стикерами' }, { id: 'no', name: 'Без стикеров' }];
 
   function menuName(id) { var m = data.menus.filter(function (x) { return x.id === id; })[0]; return m ? m.name : id; }
   function versionsForFilter() {
@@ -759,8 +824,9 @@
     selVerValue.textContent = 'Версии меню: ' + (v.name || v.id);
     var names = TYPE_OPTS.filter(function (t) { return flt.types[t.id]; }).map(function (t) { return t.name; });
     selTypeValue.textContent = 'Тип элементов: ' + (names.length === TYPE_OPTS.length ? 'Все' : (names.join(', ') || 'Все'));
-    var stOpt = ST_OPTS.filter(function (s) { return s.id === flt.stickers; })[0] || ST_OPTS[0];
-    selStValue.textContent = 'Стикеры: ' + stOpt.name;
+    var stNames = flt.stickers.map(function (id) { var s = stickerById(id); return s ? s.name : id; });
+    var stText = flt.stickers.length === stickers.length ? 'Все' : (stNames.join(', ') || 'не выбрано');
+    selStValue.textContent = 'Стикеры: ' + stText;
     [selMenuValue, selVerValue, selTypeValue, selStValue].forEach(function (el) { el.title = el.textContent; });
   }
   function closePops() {
@@ -845,18 +911,28 @@
       }));
     });
   }
-  /* фильтр по наличию стикеров: Все / Со стикерами / Без стикеров (общий пункт «Все» — с Divider) */
+  /* фильтр по стикерам — мультиселект как везде (banner-new.html, фильтр «Тип элементов»):
+     «Все» — общий чек с Checkbox и indeterminate (все / частично / ничего), клик по нему
+     выбирает все стикеры или снимает все; у КАЖДОГО стикера — свой чек; после любого
+     переключения список перерисовывается, чтобы «Все» синхронизировался. */
   function buildStickersList() {
     selStItems.innerHTML = '';
-    selStItems.appendChild(pickItem('Все', flt.stickers === 'all', function () {
-      flt.stickers = 'all'; closePops(); updateFilterValues(); applyFilters();
-    }));
+    var ids = stickers.map(function (s) { return s.id; });
+    var allOn = ids.length > 0 && ids.every(function (id) { return flt.stickers.indexOf(id) >= 0; });
+    var allItem = checkItem('Все', allOn, function (on) {
+      flt.stickers = on ? ids.slice() : [];
+      buildStickersList(); updateFilterValues(); applyFilters();
+    });
+    if (flt.stickers.length > 0 && !allOn) allItem.querySelector('.ds-checkbox__input').indeterminate = true;
+    selStItems.appendChild(allItem);
     var sep = document.createElement('div');
     sep.className = 'ds-divider';
     selStItems.appendChild(sep);
-    ST_OPTS.filter(function (s) { return s.id !== 'all'; }).forEach(function (s) {
-      selStItems.appendChild(pickItem(s.name, flt.stickers === s.id, function () {
-        flt.stickers = s.id; closePops(); updateFilterValues(); applyFilters();
+    stickers.forEach(function (st) {
+      selStItems.appendChild(checkItem(st.name || st.id, flt.stickers.indexOf(st.id) >= 0, function (on) {
+        if (on) { if (flt.stickers.indexOf(st.id) < 0) flt.stickers.push(st.id); }
+        else flt.stickers = flt.stickers.filter(function (x) { return x !== st.id; });
+        buildStickersList(); updateFilterValues(); applyFilters();
       }));
     });
   }

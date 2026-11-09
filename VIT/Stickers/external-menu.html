@@ -42,6 +42,7 @@
     • вне ДС — только раскладка (классы .page/.vm-*/.tbl/.t-c*/.el-*/.st-thumb/.dlg), помечено в <style>.
 -->
 <script src="sidenav-menu.js"></script>
+<script src="../nav-transition.js"></script>
 <script src="../table-resize.js"></script>
 <script src="../comments.js"></script>
 <script>window.DSR_NO_CHROME = true;</script>
@@ -678,6 +679,11 @@
     try { Q[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1)); } catch (e) {}
   });
   var VIEW = Q.state === 'base' || Q.state === 'version' || Q.state === 'element' ? 'menu' : 'list';
+  /* раздел «Внешнее меню» — экран 9 с экспандерами (S5-список больше не отдельный экран) */
+  if (VIEW === 'list') {
+    location.replace('external-menu-all.html' + (Q.w ? '?w=' + encodeURIComponent(Q.w) : ''));
+    return;
+  }
   var reviewState = VIEW === 'menu' ? (Q.state || 'base') : 'list';   /* текущий шаг панели ревью */
   var sel = { menu: Q.menu || 'kiosk-main', version: Q.version || 'base' };
   /* выбор ВМ запоминаем (прототип возвращается на последнее меню) */
