@@ -909,8 +909,7 @@
   /* Плашка остатка — как плашка количества базы: #E0E0E0, 22/28 Bold #333, число и единица вместе */
   /* Плашка количества — теперь внутри .kds-srow__l1 (рядом с названием) */
   /* Полный стоп — красный текст вместо плашки (остаток 0 виден, отдельного бейджа нет) */
-  .kds-sstop { flex: 0 0 auto; align-self: center; margin-left: 6px;
-    font-size: 22px; font-weight: 500; line-height: 28px; letter-spacing: .25px; color: var(--kds-ic-negative); }
+  .kds-srow__name--stop { color: var(--kds-ic-negative); }
   /* Чекбокс режима выбора — слева у строки */
   .kds-srow__check { flex: 0 0 52px; width: 52px; border: 0; background: transparent; color: var(--kds-text-2);
     display: flex; align-items: center; justify-content: center; }
@@ -969,15 +968,13 @@
      padding 0/16, arrow_back 20 серый + текст 14/20 500 капсом). Так она читается как кнопка, а не как подпись.
      Место — шапка слева (ТЗ §5.2, Material leading navigation), не переносим.
      Достижимость: видимые 40 → цель нажатия 48 (прозрачный ::after inset −4 вокруг кнопки). */
-  .kds-sl-back { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    height: 40px; padding: 0 16px; border: 1px solid var(--kds-line); border-radius: 12px; background: transparent;
-    color: #fff; font-style: normal; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: .5px;
-    text-transform: uppercase; white-space: nowrap; cursor: pointer; }
-  .kds-sl-back .material-icons { flex: 0 0 20px; width: 20px; height: 20px; font-size: 20px; color: var(--kds-text-2); }
-  .kds-sl-back::after { content: ''; position: absolute; inset: -4px; border-radius: 16px; }
-  .kds-sl-back:active { background: rgba(255, 255, 255, .08); }
-  /* В узком/мобильном кадре подпись не прячем — иначе от кнопки остаётся один значок без рамки */
-  .kds-view--mob .kds-sl-back { padding: 0 12px; }
+  .kds-sl-back { position: relative; display: inline-flex; align-items: center; gap: 8px;
+    height: 24px; padding: 0; border: 0; border-radius: 0; background: transparent;
+    color: #fff; font-style: normal; font-weight: 500; font-size: 16px; line-height: 24px; letter-spacing: .5px;
+    text-transform: none; white-space: nowrap; cursor: pointer; }
+  .kds-sl-back .material-icons { flex: 0 0 24px; width: 24px; height: 24px; font-size: 20px; color: var(--kds-text-2); }
+  .kds-sl-back::after { content: ''; position: absolute; inset: -8px; }
+  .kds-sl-back:active { opacity: .7; }
   .kds-view--mob .kds-sl-back [data-val] { display: inline; }
   .kds-sl-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
   .kds-sl-title__t { font-size: 16px; font-weight: 500; line-height: 24px; letter-spacing: .5px; color: var(--kds-text); white-space: nowrap; }
@@ -1455,8 +1452,7 @@
     function slData() { return RT.cfg.items || []; }
     function slCount() { return slData().length; }
     function slPlateHtml(it) {
-      if (it.stop) return '<span class="kds-sstop">Полный стоп</span>';
-      if (it.nodata) return '';
+      if (it.stop || it.nodata) return '';
       if (it.rest != null && it.rest !== '') {
         return '<span class="kds-qty">' + esc(it.rest) + (it.unit ? ' ' + esc(it.unit) : '') + '</span>';
       }
@@ -1674,10 +1670,12 @@
           '<button class="kds-btn kds-srow__btn" type="button" data-sl-edit="' + i + '" aria-label="Добавить в стоп-лист"><span class="material-icons">add</span></button>' +
           '</div></div>';
       }
-      var l1 = '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(it.name) + '</span>' +
+      var l1 = '<div class="kds-srow__l1">' +
         (it.stop || !it.sizes || !it.sizes.length ? slPlateHtml(it) : '') +
+        '<span class="kds-srow__name' + (it.stop ? ' kds-srow__name--stop' : '') + '">' + esc(it.name) + '</span>' +
       '</div>';
-      var cap = it.excluded ? 'Исключена из меню'
+      var cap = it.stop ? 'Полный стоп'
+        : it.excluded ? 'Исключена из меню'
         : (it.nodata ? 'Нет данных об остатке'
         : (it.sizes && it.sizes.length ? it.sizes.length + ' ' + slSizePlur(it.sizes.length) : ''));
       var main = '<div class="kds-srow__main">' + l1 +
@@ -1694,13 +1692,13 @@
     function slSizesHtml(it, i) {
       return it.sizes.map(function (sz, si) {
         var empty = !sz.stop && (sz.rest == null || sz.rest === '');
-        var plate = sz.stop ? '<span class="kds-sstop">Полный стоп</span>'
-          : (sz.rest != null && sz.rest !== '' ? '<span class="kds-qty">' + esc(sz.rest) + ' ' + esc(it.unit || 'шт') + '</span>' : '');
+        var plate = (!sz.stop && sz.rest != null && sz.rest !== '') ? '<span class="kds-qty">' + esc(sz.rest) + ' ' + esc(it.unit || 'шт') + '</span>' : '';
         return '<div class="kds-srow kds-srow--sub" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '">' +
           '<div class="kds-srow__top">' +
             '<div class="kds-srow__main"><div class="kds-srow__l1">' +
-              '<span class="kds-srow__name">' + esc(sz.s) + '</span>' + plate +
-            '</div>' + (empty ? '<span class="kds-srow__cap">Без ограничения</span>' : '') + '</div>' +
+              plate + '<span class="kds-srow__name' + (sz.stop ? ' kds-srow__name--stop' : '') + '">' + esc(sz.s) + '</span>' +
+            '</div>' + (sz.stop ? '<span class="kds-srow__cap">Полный стоп</span>' : '') +
+            (empty ? '<span class="kds-srow__cap">Без ограничения</span>' : '') + '</div>' +
             '<button class="kds-btn kds-srow__btn" type="button" data-sl-edit="' + i + '" data-sl-si="' + si + '" aria-label="Изменить остаток"><span class="material-icons">edit</span></button>' +
           '</div></div>';
       }).join('');
