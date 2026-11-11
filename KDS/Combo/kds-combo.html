@@ -162,7 +162,9 @@
         «Гость 3» — красный кант 4 px слева, перенос — пунктирная рамка «Часть заказа X из Y». */
 
   /* ── Своя раскладка экрана кухни (КДС-компонента в веб-ДС нет) ──────────── */
-  .kds-host { max-width: 1280px; }
+  /* Колонка макета — по ширине самой широкой части (кадр с коробкой 1351) и по центру панели ревью */
+  .kds-host { width: max-content; max-width: none; margin-left: auto; margin-right: auto; }
+  .kds-host .kds-doc { margin-left: auto; margin-right: auto; }
   .kds-anno {
     font: 400 14px/20px 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     color: #616161; margin: 0 0 12px; max-width: 1280px;
