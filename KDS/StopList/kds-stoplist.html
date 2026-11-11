@@ -27,29 +27,30 @@
       выделяет значение, реакция :active, баннеры без обязательного тапа;
     • демо-контента нет — только собственные экраны прототипа (правило 16.10.2026).
 
-  ЭКРАНЫ — ЧТО ПРОИСХОДИТ (реестр layouts.js, 19 состояний = 19 ключей SCREENS):
+  ЭКРАНЫ — ЧТО ПРОИСХОДИТ (реестр layouts.js, 20 состояний = 20 ключей SCREENS):
     1. base-noaccess — та же база без кнопки входа (опция выкл / нет права / смена выкл)
     2. base — база 1:1 из kds-combo + кнопка «Стоп-лист» в шапке перед счётчиками (block + текст)
     3. list-empty — «Стоп-лист пуст»: «Ограничений нет» + акцентная кнопка «Добавить позицию»
        (сюда ведёт кнопка «Стоп-лист» на базе)
     4. add-fail — «Добавить в стоп-лист»: часть позиций исключена из меню, блок ввода заблокирован
     5. add-multi — то же наполнение + массовый выбор с чекбоксами
-    6. list — стоп-лист после внесения: поиск, «Выбрать все», «Печать» (в шапке), «Добавить позицию»;
+    6. add-panel — вариант 2 внесения: панель справа поверх стоп-листа, список приглушён
+    7. list — стоп-лист после внесения: поиск, «Выбрать все», «Печать» (в шапке), «Добавить позицию»;
        позиции сгруппированы по категориям; у «Маргариты» размеры 25/30/35 см (сворачиваются ▾);
        футер «В стоп-листе: N блюд (M позиций)» · «Очистить стоп-лист»
-    7. excluded — «Суп дня — 3 порции» с подписью «Исключена из меню», снять можно
-    8. item-nodata — у «Тирамису» подпись «Нет данных об остатке» вместо плашки
-    9. item-edit — правка остатка прямо в строке: поле с числом в фокусе
-   10. item-sizes — правка размера «25 см» в его строке; размеры — отдельные строки
-   11. item-sizes-by — размер «30 см» в фокусе; размеры независимы
-   12. item-invalid — некорректный остаток: красная подпись под строкой
-   13. multi-head — выбор позиций, действия в шапке (вариант A)
-   14. multi-lock — выбор позиций, плашка внизу, остальное неактивно (вариант B)
-   15. multi-partial — результат «Снято ограничений: 2 · пропущено: 1 (без ограничения)»
-   16. clear-confirm — «Очистить стоп-лист?» с обязательным подтверждением
-   17. shift-off — экран заказов + нейтральный баннер «Стоп-лист закрыт…», авто-скрытие 3 с
-   18. icons — постер пиктограмм (все — кандидаты, ни одна не утверждена)
-   19. rationale — постер «Обоснование решений» (6 решений из §5.10)
+    8. excluded — «Суп дня — 3 порции» с подписью «Исключена из меню», снять можно
+    9. item-nodata — у «Тирамису» подпись «Нет данных об остатке» вместо плашки
+   10. item-edit — правка остатка прямо в строке: поле с числом в фокусе
+   11. item-sizes — правка размера «25 см» в его строке; размеры — отдельные строки
+   12. item-sizes-by — размер «30 см» в фокусе; размеры независимы
+   13. item-invalid — некорректный остаток: красная подпись под строкой
+   14. multi-head — выбор позиций, действия в шапке (вариант A)
+   15. multi-lock — выбор позиций, плашка внизу, остальное неактивно (вариант B)
+   16. multi-partial — результат «Снято ограничений: 2 · пропущено: 1 (без ограничения)»
+   17. clear-confirm — «Очистить стоп-лист?» с обязательным подтверждением
+   18. shift-off — экран заказов + нейтральный баннер «Стоп-лист закрыт…», авто-скрытие 3 с
+   19. icons — постер пиктограмм (все — кандидаты, ни одна не утверждена)
+   20. rationale — постер «Обоснование решений» (6 решений из §5.10)
 
   ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ:
     • селект «Экраны» в плашке ревью (событие dsreview:state) и прямая ссылка ?state=<id>;
@@ -76,7 +77,9 @@
         «Гость 3» — красный кант 4 px слева, перенос — пунктирная рамка «Часть заказа X из Y». */
 
   /* ── Своя раскладка экрана кухни (КДС-компонента в веб-ДС нет) ──────────── */
-  .kds-host { max-width: 1280px; }
+  /* Колонка макета — по ширине самой широкой части (кадр с коробкой 1351) и по центру панели ревью */
+  .kds-host { width: max-content; max-width: none; margin-left: auto; margin-right: auto; }
+  .kds-host .kds-doc { margin-left: auto; margin-right: auto; }
   .kds-anno {
     font: 400 14px/20px 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     color: #616161; margin: 0 0 12px; max-width: 1280px;
@@ -1035,6 +1038,71 @@
   .kds-view ::selection { background: rgba(68, 138, 255, .38); color: var(--kds-text); }
   /* Переход фона ДС (0,15 с) при перерисовке экрана давал светлую вспышку заливки поля */
   .kds-srow__val .ds-input__frame, .kds-numpad__field .ds-input__frame { transition: none; }
+  /* ── Панель внесения (вариант 2): выезжает справа поверх стоп-листа ──
+     Список под ней остаётся видимым, но неактивным; приглушает его scrim панели
+     (как в Material — затемнение всего экрана под модальной панелью), а не своя opacity */
+  .kds-slist--bg { pointer-events: none; }
+  .kds-srow--bg .kds-srow__val--bg,
+  .kds-srow--bg.is-stop .kds-srow__val--bg { padding-right: 8px; white-space: nowrap;
+    font: 500 22px/28px 'Roboto', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .25px; color: var(--kds-text-2); }
+  .kds-srow--bg.is-stop .kds-srow__val--bg { color: var(--kds-ic-negative); }
+  /* Панель — на всю высоту кадра: Material, modal side sheet / modal navigation drawer
+     (Container height 100%, скруглены только свободные левые углы, правая кромка прижата
+     к рамке). Раньше панель стояла «внутри» шапки и футера (top 60 / bottom 72) и
+     обрывалась, не доходя до краёв планшета. z-index выше шапки и футера (6): панель
+     перекрывает их, а не подстраивается под них */
+  .kds-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 640px; z-index: 8;
+    display: flex; flex-direction: column; gap: var(--ds-space-3x, 12px); padding: var(--ds-space-4x, 16px);
+    /* Поверхность панели — фон экрана (--kds-bg, #121212), а не цвет плашки массовых действий
+       (#333333): на #333 карточки позиций (#212121) и поля ввода читались как «дыры», а белый
+       заголовок, серые подписи и красная причина теряли контраст. На #121212 строка-карточка,
+       поле, иконки и текст выглядят ровно так же, как в самом стоп-листе; от экрана панель
+       отделяют линия --kds-line, тень и scrim, который гасит всё, что под ней */
+    background: var(--kds-bg, #121212);
+    border: 0; border-left: 1px solid var(--kds-line);
+    border-radius: var(--ds-radius-l, 12px) 0 0 var(--ds-radius-l, 12px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+    animation: kdsDrawerIn .22s ease-out both; }
+  @keyframes kdsDrawerIn { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+  /* Scrim модальной панели (Material, modal side sheet: элемент 7). В тёмной плотной палитре КДС
+     32% мало — фон продолжал спорить с панелью, поэтому 50%: это та же приглушённость, что раньше
+     давала opacity .45 у списка, но теперь гаснут и шапка с футером. Scrim закрывает их от нажатий
+     и по тапу закрывает панель */
+  .kds-scrim { position: absolute; inset: 0; z-index: 7; padding: 0; border: 0;
+    background: rgba(0, 0, 0, .5); cursor: pointer;
+    animation: kdsScrimIn .22s ease-out both; }
+  @keyframes kdsScrimIn { from { opacity: 0; } to { opacity: 1; } }
+  .kds-drawer__head { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); }
+  .kds-drawer__title { font-size: 22px; line-height: 28px; font-weight: 500; letter-spacing: .25px; color: var(--kds-text); }
+  .kds-drawer__close { margin-left: auto; }
+  .kds-drawer__search { width: 100%; }
+  .kds-drawer__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column;
+    gap: var(--ds-space-2x, 8px); padding-right: 4px;
+    /* нативная полоса скрыта, как у списка стоп-листа; полоса прокрутки — инстанс Scroll ДС в .kds-drawer__list */
+    scrollbar-width: none; }
+  .kds-drawer__body::-webkit-scrollbar { width: 0; height: 0; }
+  /* Обёртка «список + полоса Scroll ДС» в панели: без отступа .kds-sbody-wrap и на всю высоту панели */
+  .kds-drawer__list { margin: 0; width: 100%; flex: 1 1 auto; min-height: 0; }
+  /* Подвал панели — пара кнопок как в диалоге/цифровой панели: «Отмена» (Outlined) слева,
+     главное действие (Accent) справа, по половине ширины, зазор 8 */
+  .kds-drawer__foot { display: flex; gap: var(--ds-space-2x, 8px); }
+  .kds-drawer__foot > * { flex: 1 1 0; min-width: 0; }
+  /* Строка внутри панели — компактная: панель уже списка, поэтому поле и шаги мельче,
+     а нейтральная подпись «Без ограничения» не нужна (красная причина остаётся) */
+  .kds-drawer .kds-srow__name { font-size: 18px; line-height: 24px; }
+  /* Название и подпись — в столбик: в панели подпись стоит ПОД названием */
+  .kds-drawer .kds-srow__main { flex-direction: column; align-items: stretch; justify-content: center; gap: 0; }
+  .kds-drawer .kds-srow__namecol { min-width: 0; flex: 0 0 auto; }
+  .kds-drawer .kds-srow__meta { min-width: 0; overflow: hidden; justify-content: flex-start; }
+  .kds-drawer .kds-srow__meta-t { display: none; }
+  /* Подпись — кегль подписи ДС 12/16, цвет причины (палитра КДС) */
+  .kds-drawer .kds-srow__meta-t--danger { display: block; font-size: 12px; line-height: 16px; letter-spacing: .4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kds-drawer .kds-srow__val { gap: var(--ds-space-1x, 4px); }
+  .kds-drawer .kds-srow__val .ds-input { width: 96px; }
+  .kds-drawer .kds-srow__val .kds-btn { flex: 0 0 44px; width: 44px; height: 44px; }
+  .kds-drawer .kds-srow__val .ds-input__field { font-size: 18px; line-height: 24px; }
+  .kds-drawer .kds-srow__unit { font-size: 14px; }
   /* Позиция исключена из меню: блок ввода недоступен целиком — приглушён, без реакции на наведение */
   .kds-view .kds-srow__val.is-off { opacity: .4; cursor: default; }
   .kds-view .kds-srow__val.is-off .kds-btn[disabled] { opacity: 1; }
@@ -1046,6 +1114,11 @@
   .kds-view .kds-srow__main.is-off { cursor: default; pointer-events: none; }
   .kds-view .kds-srow__main.is-off .kds-srow__name { opacity: .4; }
   .kds-view .kds-srow__main.is-off:active { background: transparent; }
+  /* Одиночное внесение: название блюда — только подпись, а не кнопка. Цифровая панель
+     открывается исключительно тапом в поле «Кол-во», поэтому строка не ловит тап
+     и не показывает состояние нажатия (иначе выглядит кликабельной, но ничего не делает) */
+  .kds-view .kds-srow__main.is-static { cursor: default; pointer-events: none; }
+  .kds-view .kds-srow__main.is-static:active { background: transparent; }
   .kds-srow__val .ds-input--error .ds-input__frame { background: var(--kds-row); border-color: var(--kds-ic-negative); }
   /* Значение — крупно, 22/28 как плашка количества базы, а не 16/24 из десктопного Input.
      Одна анатомия у поля в строке и у поля ввода в цифровой панели */
@@ -1078,7 +1151,8 @@
   /* Цифровая панель — та же, что была в панели остатка: поверхность меню (#333, r12, рамка #616161,
      тень), клавиши 52 с обводкой 1px #616161 r12, три равные колонки, «Готово» во всю ширину.
      Всегда по центру кадра */
-  .kds-numpad { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5;
+  /* Цифровая панель — над панелью внесения (z 8): поле остатка открывает её прямо из панели */
+  .kds-numpad { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 9;
     width: 560px; padding: 16px 24px; display: flex; flex-direction: column; gap: 8px;
     background: #333333; border: 1px solid var(--kds-line); border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, .45); }
@@ -1235,8 +1309,8 @@
     /* Меню группы «Зал» — единый источник данных для стоп-листа и экрана внесения:
        одни и те же позиции, категории и размеры на обоих экранах */
     var SL_MENU = [
-      { name: 'Суп дня' },
-      { name: 'Крем-суп грибной' },
+      { name: 'Суп дня', unit: 'порц' },
+      { name: 'Крем-суп грибной', unit: 'порц' },
       { name: 'Салат с морепродуктами' },
       { name: 'Салат цезарь' },
       { name: 'Соус к пасте' },
@@ -1456,7 +1530,7 @@
       /* 10. Правка размера: поле в строке «25 см» */
       'item-sizes': {
         nw: 1280, nh: 800, mode: 'slist', pill: 'Стоп-лист', stat: '',
-        anno: 'Размеры правятся каждый в своей строке: поле «25 см» в фокусе, значение 12 выделено.',
+        anno: 'Размеры правятся каждый в своём поле: «25 см» в фокусе, значение 12 выделено.',
         edit: { i: 1, si: 0 },
         items: slBase()
       },
@@ -1495,6 +1569,13 @@
       'add-multi': {
         nw: 1280, nh: 800, mode: 'add', multi: true, pill: 'Стоп-лист', stat: '',
         anno: 'То же наполнение, что на предыдущем экране, плюс массовый выбор: чекбоксы слева, «Выбрать все» в полосе; по умолчанию не отмечено ничего. Исключённые из меню не отмечаются (чекбокс и блок количества у них неактивны), остальные вносятся одним действием «Добавить в стоп-лист»; остаток берётся из поля строки, пустое поле = полный стоп.',
+        items: slMenuAdd()
+      },
+
+      /* 6. Вариант 2 внесения: то же самое, но панелью справа поверх стоп-листа */
+      'add-panel': {
+        nw: 1280, nh: 800, mode: 'add', panel: true, pill: 'Стоп-лист', stat: '',
+        anno: 'Вариант 2: «Добавить позицию» не уводит с экрана — справа выезжает панель внесения, список остаётся виден (приглушён и неактивен). В панели — заголовок, поиск, позиции и кнопка «Добавить в стоп»; закрывается крестиком.',
         items: slMenuAdd()
       },
 
@@ -1836,14 +1917,15 @@
     function slAddFilled() {
       if (!RT.view || !RT.sl || !RT.sl.addMode) return;
       var added = 0, last = '', failed = 0;
-      Array.prototype.forEach.call(RT.view.querySelectorAll('.kds-sbody [data-sl-row]'), function (r) {
-        var inp = r.querySelector('[data-sl-in]');
+      Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-row] [data-sl-in]'), function (inp) {
         if (!inp) return;
+        var row = inp.closest('[data-sl-row]');
+        if (!row) return;
         var pr = parseRest(inp.value);
         if (!pr.ok || pr.empty) return;
-        if (r.querySelector('[data-sl-fail]')) { failed++; return; }
-        var name = r.getAttribute('data-sl-name') || '';
-        var un = r.querySelector('.kds-srow__unit');
+        if (row.querySelector('[data-sl-fail]')) { failed++; return; }
+        var name = row.getAttribute('data-sl-name') || '';
+        var un = row.querySelector('.kds-srow__unit');
         var unit = un ? un.textContent.trim() : 'шт';
         if (pr.val === 0) slLiveItems().push({ name: name, stop: true, unit: unit || 'шт' });
         else slLiveItems().push({ name: name, rest: fmtRest(pr.val), unit: unit || 'шт' });
@@ -1864,7 +1946,7 @@
       if (!RT.view || !RT.sl || !RT.sl.addMode) return;
       var btns = RT.view.querySelectorAll('[data-sl-addfilled]');
       if (!btns.length) return;
-      var any = Array.prototype.some.call(RT.view.querySelectorAll('.kds-sbody [data-sl-row] [data-sl-in]'), function (i) {
+      var any = Array.prototype.some.call(RT.view.querySelectorAll('[data-sl-row] [data-sl-in]'), function (i) {
         if (i.disabled) return false;
         var pr = parseRest(i.value);
         return pr.ok && !pr.empty;
@@ -1887,7 +1969,9 @@
       var inp = RT.sl && RT.sl.padInp;
       var v = inp ? String(inp.value == null ? '' : inp.value) : '';
       var valEl = padEl.querySelector('[data-sl-pad-val]');
-      if (valEl && valEl.value !== v) valEl.value = v;
+      /* Пустое значение показываем как «0», а не подписью «Кол-во»: в цифровой панели всегда есть число */
+      var shown = v === '' ? '0' : v;
+      if (valEl && valEl.value !== shown) valEl.value = shown;
       var nameEl = padEl.querySelector('[data-sl-pad-name]');
       if (nameEl) nameEl.textContent = (RT.sl && RT.sl.padName) || '';
       var unitEl = padEl.querySelector('[data-sl-pad-unit]');
@@ -2132,7 +2216,7 @@
         return '<div class="kds-srow' + (RT.sl.checks[i] ? ' is-sel' : '') + '" data-sl-row="' + i + '" data-sl-name="' + esc(it.name) + '">' +
           '<div class="kds-srow__top">' +
             '<div class="kds-srow__box">' + mChk +
-              '<div class="kds-srow__main' + (it._fail ? ' is-off' : '') + '"' + (it._fail ? ' data-sl-fail' : '') + '>' +
+              '<div class="kds-srow__main' + (it._fail ? ' is-off' : '') + (RT.cfg.multi ? '' : ' is-static') + '"' + (it._fail ? ' data-sl-fail' : '') + '>' +
                 '<div class="kds-srow__namecol">' +
                   '<span class="kds-srow__name">' + esc(it.name) + '</span>' +
                 '</div>' +
@@ -2200,6 +2284,47 @@
           '</div>' + slErrHtml() + '</div>';
       }).join('');
     }
+    function slNumpadHtml() {
+      return '<div class="kds-numpad" data-sl-numpad hidden>' +
+        '<div class="kds-numpad__head">' +
+          '<div class="kds-numpad__title">' +
+            '<span class="kds-numpad__name" data-sl-pad-name></span>' +
+            '<span class="kds-numpad__unit" data-sl-pad-unit></span>' +
+          '</div>' +
+          '<div class="kds-numpad__disp">' +
+            '<div class="ds-input ds-input--m kds-numpad__field">' +
+              '<div class="ds-input__frame"><div class="ds-input__content">' +
+                '<input class="ds-input__field" type="text" readonly tabindex="-1" placeholder="Кол-во"' +
+                  ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
+              '</div></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="kds-numpad__grid">' +
+          ['1','2','3','4','5','6','7','8','9',',','0','back'].map(function (k) {
+            return '<button class="kds-numpad__k" type="button" data-sl-k="' + k + '"' + (k === 'back' ? ' aria-label="Стереть"' : '') + '>' +
+              (k === 'back' ? '<span class="material-icons">backspace</span>' : k) + '</button>';
+          }).join('') +
+        '</div>' +
+        '<div class="kds-numpad__acts">' +
+          '<button class="kds-btn-out kds-numpad__cancel" type="button" data-sl-k="cancel">Отмена</button>' +
+          '<button class="kds-btn-acc kds-numpad__done" type="button" data-sl-k="done">Готово</button>' +
+        '</div>' +
+      '</div>';
+    }
+    function slConfirmHtml() {
+      return '<div class="kds-menu kds-sconfirm" data-sl-confirm>' +
+        '<div class="kds-sconfirm__head">' +
+          '<div class="kds-sconfirm__t">Очистить стоп-лист?</div>' +
+          '<button class="kds-iconbtn" type="button" data-sl-confirm="no" aria-label="Закрыть"><span class="material-icons">close</span></button>' +
+        '</div>' +
+        '<div class="kds-sconfirm__d">Будут сняты все ограничения, включая позиции с остатком</div>' +
+        '<div class="kds-sconfirm__btns">' +
+          '<button class="kds-btn-out" type="button" data-sl-confirm="no">Отмена</button>' +
+          '<button class="kds-btn-acc" type="button" data-sl-confirm="yes">Очистить</button>' +
+        '</div>' +
+      '</div>';
+    }
     function slEmptyHtml() {
       return '<div class="kds-sempty"><div class="kds-sempty__t">Ограничений нет</div>' +
         '<div class="kds-sempty__d">Нажмите «Добавить позицию», чтобы задать остаток</div>' +
@@ -2207,6 +2332,8 @@
     }
     function slScreen(cfg) {
       var items = slData();
+      /* Внесение панелью справа — только у отдельного экрана-варианта (cfg.panel) */
+      if (RT.sl.addMode && cfg.panel) return slAddPanelHtml(cfg);
       /* Полоса действий — три разные роли, а не три равные кнопки в кучу:
          1) поиск (растягивается на всё свободное место), 2) «Выбрать все» — второстепенная
          Button/Outlined рядом с выбранными, 3) «Добавить позицию» — единственная главная (filled).
@@ -2249,40 +2376,12 @@
             '</div>' +
           '</div>'
         : slEmptyHtml();
-      /* Внесение: та же кнопка «Добавить» дублируется в плашке у футера — туда дотягивается палец */
-      var addMass = (RT.sl.addMode && !cfg.multi)
+      /* Внесение: кнопка «Добавить в стоп» в плашке у футера — туда дотягивается палец */
+      var addMass = (RT.sl.addMode && !cfg.multi && !cfg.panel)
         ? '<div class="kds-mass kds-mass--add" data-sl-addmass hidden>' +
             '<button class="kds-btn-acc" type="button" data-sl-addfilled>Добавить в стоп</button>' +
           '</div>'
         : '';
-      /* Цифровая панель — для ручного ввода на сенсоре (открывается тапом по полю).
-         Стоит по центру кадра и закрывает строку — поэтому вводимое значение показываем в ней */
-      var numpad = '<div class="kds-numpad" data-sl-numpad hidden>' +
-        '<div class="kds-numpad__head">' +
-          '<div class="kds-numpad__title">' +
-            '<span class="kds-numpad__name" data-sl-pad-name></span>' +
-            '<span class="kds-numpad__unit" data-sl-pad-unit></span>' +
-          '</div>' +
-          '<div class="kds-numpad__disp">' +
-            '<div class="ds-input ds-input--m kds-numpad__field">' +
-              '<div class="ds-input__frame"><div class="ds-input__content">' +
-                '<input class="ds-input__field" type="text" readonly tabindex="-1" placeholder="Кол-во"' +
-                  ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
-              '</div></div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="kds-numpad__grid">' +
-          ['1','2','3','4','5','6','7','8','9',',','0','back'].map(function (k) {
-            return '<button class="kds-numpad__k" type="button" data-sl-k="' + k + '"' + (k === 'back' ? ' aria-label="Стереть"' : '') + '>' +
-              (k === 'back' ? '<span class="material-icons">backspace</span>' : k) + '</button>';
-          }).join('') +
-        '</div>' +
-        '<div class="kds-numpad__acts">' +
-          '<button class="kds-btn-out kds-numpad__cancel" type="button" data-sl-k="cancel">Отмена</button>' +
-          '<button class="kds-btn-acc kds-numpad__done" type="button" data-sl-k="done">Готово</button>' +
-        '</div>' +
-      '</div>';
       return '<div class="kds-slist">' +
         headBlock +
         rows +
@@ -2296,19 +2395,66 @@
               '<button class="kds-btn-neg" type="button" data-sl-massact="stop">В стоп</button>') +
         '</div>' +
         addMass +
-        numpad +
-        '<div class="kds-menu kds-sconfirm" data-sl-confirm>' +
-          '<div class="kds-sconfirm__head">' +
-            '<div class="kds-sconfirm__t">Очистить стоп-лист?</div>' +
-            '<button class="kds-iconbtn" type="button" data-sl-confirm="no" aria-label="Закрыть"><span class="material-icons">close</span></button>' +
-          '</div>' +
-          '<div class="kds-sconfirm__d">Будут сняты все ограничения, включая позиции с остатком</div>' +
-          '<div class="kds-sconfirm__btns">' +
-            '<button class="kds-btn-out" type="button" data-sl-confirm="no">Отмена</button>' +
-            '<button class="kds-btn-acc" type="button" data-sl-confirm="yes">Очистить</button>' +
-          '</div>' +
-        '</div>' +
+        slNumpadHtml() +
+        slConfirmHtml() +
       '</div>';
+    }
+    /* ── Вариант 2 внесения: панель справа поверх стоп-листа ──
+       Список остаётся на месте (неактивен и приглушён), панель — с поиском, строками позиций
+       и кнопкой внесения. Сюда же попадают исключённые из меню позиции. */
+    function slBgRowsHtml(items) {
+      if (!items.length) return '<div class="kds-sempty"><div class="kds-sempty__t">Ограничений нет</div></div>';
+      var html = '', last = null;
+      items.forEach(function (it) {
+        var c = slCat(it) || '';
+        if (c !== last) { html += '<div class="kds-sgroup">' + esc(c) + '</div>'; last = c; }
+        var val = it.stop ? 'Полный стоп' : (it.rest != null && it.rest !== '' ? it.rest + ' ' + (it.unit || 'шт') : '');
+        html += '<div class="kds-srow kds-srow--bg' + (it.stop ? ' is-stop' : '') + '"><div class="kds-srow__top"><div class="kds-srow__box">' +
+          '<div class="kds-srow__main"><div class="kds-srow__namecol"><span class="kds-srow__name">' + esc(it.name) + '</span></div></div>' +
+          '</div><div class="kds-srow__val kds-srow__val--bg">' + esc(val) + '</div></div></div>';
+        if (it.sizes) it.sizes.forEach(function (sz) {
+          var sv = sz.stop ? 'Полный стоп' : (sz.rest != null && sz.rest !== '' ? sz.rest + ' ' + (it.unit || 'шт') : '');
+          html += '<div class="kds-srow kds-srow--sub kds-srow--bg' + (sz.stop ? ' is-stop' : '') + '"><div class="kds-srow__top"><div class="kds-srow__box">' +
+            '<div class="kds-srow__main"><div class="kds-srow__namecol"><div class="kds-srow__l1"><span class="kds-srow__name">' + esc(sz.s) + '</span></div></div></div>' +
+            '</div><div class="kds-srow__val kds-srow__val--bg">' + esc(sv) + '</div></div></div>';
+        });
+      });
+      return html;
+    }
+    function slAddPanelHtml(cfg) {
+      var items = slData();
+      var bg = '<div class="kds-slist kds-slist--bg" aria-hidden="true">' +
+        '<div class="kds-sbody-wrap"><div class="kds-sbody">' + slBgRowsHtml(slLiveItems()) + '</div></div>' +
+      '</div>';
+      var selAll = cfg.multi ? slSelAllHtml(items) : '';
+      var body = items.length
+        ? '<div class="kds-sbody-wrap kds-drawer__list"><div class="kds-drawer__body" data-sl-body>' + items.map(function (it, i) { return slRowHtml(it, i); }).join('') + '</div>' +
+          '<div class="ds-scroll ds-scroll--v ds-scroll--middle kds-sbody-scroll" aria-hidden="true" hidden>' +
+            '<div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>' +
+          '</div></div>'
+        : '<div class="kds-drawer__body"><div class="kds-sempty"><div class="kds-sempty__t">Нет позиций для внесения</div></div></div>';
+      var drawer = '<button class="kds-scrim" type="button" tabindex="-1" data-sl-back="list" aria-label="Закрыть панель"></button>' +
+        '<div class="kds-drawer" role="dialog" aria-label="Добавить в стоп-лист" data-sl-drawer>' +
+        '<div class="kds-drawer__head">' +
+          '<span class="kds-drawer__title">Добавить в стоп-лист</span>' +
+          selAll +
+          '<button class="kds-iconbtn kds-drawer__close" type="button" data-sl-back="list" aria-label="Закрыть панель"><span class="material-icons">close</span></button>' +
+        '</div>' +
+        '<label class="ds-search ds-search--m kds-ssearch kds-drawer__search" data-sl-search-wrap><span class="ds-search__icon"><span class="material-icons">search</span></span><input class="ds-search__label" type="text" placeholder="Найти позицию" autocapitalize="none" autocomplete="off" spellcheck="false" enterkeyhint="search" data-sl-search><span class="ds-search__right-icon"><button class="ds-search__clear kds-ssearch__x" type="button" data-sl-sclear aria-label="Очистить поиск" style="display:none"><span class="material-icons">close</span></button></span></label>' +
+        body +
+        (cfg.multi ? '' : '<div class="kds-drawer__foot">' +
+          '<button class="kds-btn-out" type="button" data-sl-back="list">Отмена</button>' +
+          '<button class="kds-btn-acc" type="button" data-sl-addfilled>Добавить в стоп</button>' +
+        '</div>') +
+      '</div>';
+      return bg + drawer +
+        '<div class="kds-mass" data-sl-mass hidden>' +
+          '<span class="kds-mass__n" data-sl-tb-n>Выбрано: 0</span>' +
+          '<span class="kds-mass__sp"></span>' +
+          '<button class="kds-btn-out" type="button" data-sl-unselect>Снять выбор</button>' +
+          '<button class="kds-btn-acc" type="button" data-sl-massact="addsel">Добавить в стоп-лист</button>' +
+        '</div>' +
+        slNumpadHtml() + slConfirmHtml();
     }
     function slBanner(text) {
       var b = RT.view && RT.view.querySelector('[data-sl-banner]');
@@ -2372,9 +2518,11 @@
          чтобы состав футера не менялся от состояния к состоянию */
       var wipe = RT.view.querySelector('.kds-footer [data-sl-wipe]');
       if (wipe) {
-        wipe.style.display = '';
+        /* Пустой стоп-лист — чистить нечего: кнопки на экране нет совсем */
+        var canWipe = slFooterCount() > 0;
+        wipe.style.display = canWipe ? '' : 'none';
         /* Кнопка, заблокированную плашкой выбора (data-sl-lock), не разблокируем: блокировка снимается вместе с плашкой */
-        wipe.disabled = wipe.hasAttribute('data-sl-lock') || !(slFooterCount() > 0);
+        wipe.disabled = wipe.hasAttribute('data-sl-lock') || !canWipe;
       }
       var pr = RT.view.querySelector('.kds-shead [data-sl-print]');
       if (pr) { pr.disabled = pr.hasAttribute('data-sl-lock') || !(slFooterCount() > 0); }
@@ -2423,7 +2571,7 @@
     function slVisibleIdx() {
       var out = [];
       if (!RT.view) return out;
-      Array.prototype.forEach.call(RT.view.querySelectorAll('.kds-sbody [data-sl-row]'), function (r) {
+      Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-row]'), function (r) {
         if (r.hasAttribute('data-sl-si')) return;
         if (r.style.display === 'none') return;
         var k = +r.getAttribute('data-sl-row');
@@ -2799,14 +2947,17 @@
       '</div>';
     }
     function slTopbarHtml(cfg) {
-      var backTo = cfg.mode === 'add' ? 'list' : 'base';
-      var backLabel = cfg.mode === 'add' ? 'К списку' : 'К заказам';
+      /* У экрана-варианта с панелью шапка остаётся шапкой стоп-листа, а поиск живёт в панели */
+      var isPanel = !!(cfg && cfg.panel);
+      var backTo = (cfg.mode === 'add' && !isPanel) ? 'list' : 'base';
+      var backLabel = (cfg.mode === 'add' && !isPanel) ? 'К списку' : 'К заказам';
+      var title = (cfg.mode === 'add' && !isPanel) ? 'Добавить в стоп-лист' : 'Стоп-лист и остатки';
       return '<div class="kds-topbar">' +
         '<div class="kds-tb-lists">' +
           '<button class="kds-tb-list kds-tb-pick kds-sl-back" type="button" data-sl-back="' + backTo + '"><span class="material-icons">arrow_back</span><span data-val>' + backLabel + '</span></button>' +
-          '<div class="kds-sl-title"><span class="kds-sl-title__t">' + (cfg.mode === 'add' ? 'Добавить в стоп-лист' : 'Стоп-лист и остатки') + '</span>' +
+          '<div class="kds-sl-title"><span class="kds-sl-title__t">' + title + '</span>' +
             '<span class="kds-sl-title__s">Терминальная группа: Зал</span></div>' +
-          '<label class="ds-search ds-search--m kds-ssearch kds-ssearch--tb" data-sl-search-wrap><span class="ds-search__icon"><span class="material-icons">search</span></span><input class="ds-search__label" type="text" placeholder="Найти позицию" autocapitalize="none" autocomplete="off" spellcheck="false" enterkeyhint="search" data-sl-search><span class="ds-search__right-icon"><button class="ds-search__clear kds-ssearch__x" type="button" data-sl-sclear aria-label="Очистить поиск" style="display:none"><span class="material-icons">close</span></button><button class="ds-search__clear kds-ssearch__mic" type="button" data-sl-mic aria-label="Голосовой поиск"><span class="material-icons">mic</span></button></span></label>' +
+          (isPanel ? '' : '<label class="ds-search ds-search--m kds-ssearch kds-ssearch--tb" data-sl-search-wrap><span class="ds-search__icon"><span class="material-icons">search</span></span><input class="ds-search__label" type="text" placeholder="Найти позицию" autocapitalize="none" autocomplete="off" spellcheck="false" enterkeyhint="search" data-sl-search><span class="ds-search__right-icon"><button class="ds-search__clear kds-ssearch__x" type="button" data-sl-sclear aria-label="Очистить поиск" style="display:none"><span class="material-icons">close</span></button><button class="ds-search__clear kds-ssearch__mic" type="button" data-sl-mic aria-label="Голосовой поиск"><span class="material-icons">mic</span></button></span></label>') +
         '</div>' +
         '<div class="kds-sl-right">' +
           '<span class="kds-tb-list" data-clock>' + nowHHMM() + '</span>' +
@@ -2824,12 +2975,15 @@
       '</div>';
     }
     function slFooterHtml(cfg) {
+      /* «Очистить стоп-лист» — действие экрана стоп-листа (§5.7/§5.11).
+         На экране внесения его нет: там сотрудник добавляет позиции (§5.6) */
+      var canWipe = !(cfg && cfg.mode === 'add');
       return '<div class="kds-footer">' +
         '<div class="kds-footer__left"><span class="kds-footer__ver">WebKDS v. 9.4.5.208229</span><span class="kds-footer__status"><span class="kds-dot"></span>Включен</span></div>' +
         '<span class="kds-footer__total">' + slFootText() + '</span>' +
         '<div class="kds-footer__right">' +
           '<span class="kds-footer__grp">' +
-            '<button class="kds-footer__btn kds-footer__clear" type="button" data-sl-wipe><span class="material-icons">delete_sweep</span>Очистить стоп-лист</button>' +
+            (canWipe ? '<button class="kds-footer__btn kds-footer__clear" type="button" data-sl-wipe><span class="material-icons">delete_sweep</span>Очистить стоп-лист</button>' : '') +
           '</span>' +
         '</div>' +
       '</div>';
@@ -3238,8 +3392,9 @@
       'item-sizes-by': { t: 'Редактирование размера', s: 'Маргарита · 30 см', q: 'Ограничения размеров задаются и снимаются независимо друг от друга: снятие ограничения с одного размера не меняет ограничений остальных размеров.', d: 'Поле «30 см» в фокусе, значение выделено — удобно перепечатать. У «35 см» — «Полный стоп» (остаток 0): поле показывает «0», под названием красная подпись «Полный стоп».' },
       'item-invalid': { t: 'Некорректный остаток', s: 'ошибка под полем, поле для правки', q: 'Остаток вне допустимого диапазона (меньше 0,001 или больше 999,999), с большей точностью или отрицательный — значение не принимается.', d: 'Поле содержит недопустимое значение «0,0005» — красная подпись «Допустимо от 0,001 до 999,999, не больше 3 знаков после запятой» под строкой; поле доступно для правки, значение не сохраняется.' },
       'item-nodata': { t: 'Стоп-лист', s: 'нет данных об остатке', q: 'Нет данных об остатке — интерфейс не показывает значения; показ некорректного или выдуманного остатка не допускается.', d: 'У «Тирамису» поле пустое: под названием — подпись «Нет данных об остатке» (12/16 #9e9e9e). Значение не выдумано: пустое поле ≠ 0 и ≠ полный стоп.' },
-      'add-fail': { t: 'Внесение в стоп-лист', s: 'часть позиций внести нельзя', q: 'Предлагаются блюда, заготовки, услуги и модификаторы, связанные с приготовлением: задано место приготовления либо признак «готовить вместе с основным блюдом». Товары, внешние товары, позиции для закупки и топливо не предлагаются. Если попытка внесения всё же происходит, действие не выполняется, сотрудник получает понятное сообщение об отказе.', d: 'Экран внесения: «К списку» · «Добавить в стоп-лист» · терминальная группа «Зал», поиск и строки позиций: у большинства подпись «Без ограничения», у «Суп дня», «Салат цезарь» и «Соус чесночный» — «исключена из меню». Остаток задаётся в строке или в цифровой панели, вносит одна кнопка «Добавить в стоп». Исключённые не вносятся: нейтральный баннер «Не удалось добавить: позиция исключена из меню», ограничение не появляется.' },
+      'add-fail': { t: 'Внесение в стоп-лист', s: 'часть позиций внести нельзя', q: 'Предлагаются блюда, заготовки, услуги и модификаторы, связанные с приготовлением: задано место приготовления либо признак «готовить вместе с основным блюдом». Товары, внешние товары, позиции для закупки и топливо не предлагаются. Если попытка внесения всё же происходит, действие не выполняется, сотрудник получает понятное сообщение об отказе.', d: 'Экран внесения: «К списку» · «Добавить в стоп-лист» · терминальная группа «Зал», поиск и строки позиций: у большинства подпись «Без ограничения», у «Суп дня», «Салат цезарь» и «Соус чесночный» — «Исключена из меню». Остаток задаётся в строке или в цифровой панели, вносит одна кнопка «Добавить в стоп». Исключённые не вносятся: нейтральный баннер «Не удалось добавить: позиция исключена из меню», ограничение не появляется.' },
       'add-multi': { t: 'Внесение нескольких позиций', s: 'чекбоксы · массовое внесение', q: 'Внесение в стоп-лист может касаться нескольких позиций сразу: отметил несколько — внёс одним действием.', d: 'Копия экрана внесения: у каждой строки чекбокс, в полосе — «Выбрать все»; при выборе сверху появляется «Выбрано: N» и акцентная кнопка «Добавить в стоп-лист» — вносит все отмеченные. Остаток берётся из поля строки, пустое поле = полный стоп. Поштучных кнопок «Добавить» в строках нет — на этом экране вносит только массовое действие.' },
+      'add-panel': { t: 'Добавить в стоп-лист · вариант 2: панель справа', s: 'список остаётся на месте', q: 'Вариант взаимодействия: внесение не уводит со стоп-листа — панель выезжает справа поверх списка.', d: '«Добавить позицию» открывает панель справа: список остаётся виден (приглушён и неактивен), в панели — заголовок «Добавить в стоп-лист», крестик, поиск, строки позиций с подписями и полем остатка и акцентная кнопка «Добавить в стоп». После внесения панель закрывается, позиции появляются в списке; баннер сообщает результат. Исключённые из меню в панели помечены красным, поле и шаги у них заблокированы.' },
       'multi-head': { t: 'Режим выбора', s: 'действия в шапке · вариант A', q: 'Предусмотрены три массовых действия: массовый полный стоп — выбранные позиции переводятся в полный стоп; массовое снятие ограничений; очистка всего стоп-листа — с обязательным подтверждением. Массовая установка положительных остатков не предусматривается.', d: 'Вариант A: отмечены 3 позиции — слева «Выбрано: 3» и «Снять выбор», справа «Снять ограничения» и «В стоп»; нижней плашки нет, «Добавить позицию» на время выбора уступает место действиям.' },
       'multi-lock': { t: 'Режим выбора', s: 'плашка · вариант B', q: 'Предусмотрены три массовых действия: массовый полный стоп — выбранные позиции переводятся в полный стоп; массовое снятие ограничений; очистка всего стоп-листа — с обязательным подтверждением. Массовая установка положительных остатков не предусматривается.', d: 'Вариант B: отмечены 3 позиции — действует только нижняя плашка («Выбрано: 3 · Снять выбор · Снять ограничения · В стоп»); полоса, шаги остатков, сброс значения и кнопки футера неактивны, галочки и шевроны работают.' },
       'multi-partial': { t: 'Массовое снятие', s: 'результат с пропуском', q: 'Массовое действие, когда часть отмеченных позиций его не допускает — действие применяется к тем позициям, к которым применимо; результат виден.', d: 'После «Снять ограничения» — подпись результата: «Снято ограничений: 2 · пропущено: 1 (без ограничения)». Результат виден, пропущенная позиция названа с причиной; действие не теряется незаметно.' },
@@ -3267,7 +3422,7 @@
     var SCREEN_ORDER = ['base', 'base-noaccess',
       'list', 'list-empty', 'excluded',
       'item-edit', 'item-sizes', 'item-sizes-by', 'item-invalid', 'item-nodata',
-      'add-fail', 'add-multi',
+      'add-fail', 'add-multi', 'add-panel',
       'multi-head', 'multi-lock', 'multi-partial', 'clear-confirm',
       'shift-off',
       'icons', 'rationale'];
@@ -4498,7 +4653,6 @@
           if (srow) {
             /* тап по полю остатка — это правка числа, а не отметка строки */
             if (t.closest('[data-sl-in]')) return;
-            var rowInp = srow.querySelector('[data-sl-in]');
             /* строка размера — сразу в своё поле */
             /* тап по названию размера ничего не делает: панель ввода — только по самому полю */
             if (srow.hasAttribute('data-sl-si')) { return; }
@@ -4506,13 +4660,10 @@
             /* Исключённая из меню строка не кликабельна (pointer-events: none у блока блюда):
                ни панели, ни баннера — причину показывает красная подпись справа */
             if (t.closest('[data-sl-fail]')) return;
-            /* На экране с чекбоксами (множественное внесение) тап по строке = отметка,
-               как в стоп-листе; панель ввода — только по самому полю */
-            if (RT.sl.addMode) {
-              if (RT.cfg.multi) toggleSlCheck(+srow.getAttribute('data-sl-row'));
-              else if (rowInp) rowInp.focus();
-            }
-            else toggleSlCheck(+srow.getAttribute('data-sl-row'));
+            /* Тап по блюду цифровую панель НЕ открывает: она появляется только по тапу
+               в само поле «Кол-во» (focusin по [data-sl-in]). На экране с чекбоксами
+               тап по строке — это отметка, как в стоп-листе */
+            if (!RT.sl.addMode || RT.cfg.multi) toggleSlCheck(+srow.getAttribute('data-sl-row'));
             return;
           }
           /* тап мимо строки — ничего не делаем */
