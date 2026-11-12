@@ -884,9 +884,17 @@
   .kds-btn-acc, .kds-btn-acc-out, .kds-btn-out, .kds-btn-neg, .kds-btn-neg-out { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 48px; padding: 14px 16px; border-radius: 12px; flex: 0 0 auto;
     font-size: 14px; font-weight: 500; line-height: 20px; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
-  /* Неактивная кнопка любого вида — приглушена и не реагирует (состояние Disable компонента Button) */
-  .kds-btn[disabled], .kds-btn-out[disabled], .kds-btn-acc-out[disabled], .kds-btn-quiet[disabled],
-  .kds-srow__clear[disabled], .kds-footer__btn[disabled] { color: var(--kds-text-2); cursor: default; }
+  /* Неактивная кнопка любого вида — ВСЯ кнопка в состоянии Disable (Button/Disable в ДС):
+     текст Text/Disable, рамка нейтральная вместо цветной, иконка тоже гаснет */
+  .kds-btn[disabled], .kds-btn-out[disabled], .kds-btn-acc-out[disabled], .kds-btn-neg-out[disabled],
+  .kds-btn-quiet[disabled], .kds-srow__clear[disabled], .kds-footer__btn[disabled] {
+    color: var(--kds-text-2); border-color: var(--kds-line); cursor: default; }
+  .kds-btn[disabled] .material-icons, .kds-btn-out[disabled] .material-icons,
+  .kds-btn-acc-out[disabled] .material-icons, .kds-btn-neg-out[disabled] .material-icons,
+  .kds-btn-quiet[disabled] .material-icons { color: var(--kds-text-2); }
+  /* Disable важнее цветных вариантов рамки (Warning/Accent/Negative) */
+  .kds-view--warnhead .kds-shead .kds-btn-acc-out[disabled] { border-color: var(--kds-line); color: var(--kds-text-2); }
+  .kds-view--warnhead .kds-shead .kds-btn-acc-out[disabled] .material-icons { color: var(--kds-text-2); }
   .kds-btn-acc { border: 0; background: var(--kds-ic-accent); color: var(--kds-text); }
   .kds-btn-acc .material-icons { font-size: 20px; color: var(--kds-text); }
   /* Акцентная кнопка-обводка (Button/Outlined Accent): заливки нет, синий контур и синий текст */
@@ -2961,8 +2969,9 @@
          Снимаем блокировку только с тех кнопок, которые заблокировали мы сами (data-sl-lock):
          кнопка, отключённая своим правилом («Печать» на пустом списке), остаётся отключённой */
       /* Блокировка живёт ровно столько, сколько видна плашка: сняли выбор — всё снова доступно.
-         На экране внесения не блокируем: там сначала выбирают позиции, потом задают им количество */
-      var lockOthers = !(RT.sl && RT.sl.addMode) && n > 0 && !(RT.cfg && RT.cfg.massInHead);
+         На экране внесения — так же, как на 8-м: пока плашка действий открыта, кнопки строк
+         («В стоп-лист») неактивны; поля количества при этом остаются рабочими */
+      var lockOthers = n > 0 && !(RT.cfg && RT.cfg.massInHead);
       Array.prototype.forEach.call(RT.view.querySelectorAll('.kds-slist button, .kds-footer button'), function (b) {
         if (b.closest('[data-sl-mass]')) return;
         /* Галочки и шевроны остаются живыми, иначе выбор не изменить */
