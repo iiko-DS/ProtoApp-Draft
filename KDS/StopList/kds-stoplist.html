@@ -979,6 +979,12 @@
   .kds-srow.is-sel .kds-srow__box { background: rgba(68, 138, 255, .12); }
   /* Полный стоп — тинт статуса 12%, как шапка заказа (--st-tint) */
   .kds-srow.is-stop .kds-srow__box { background: rgba(255, 82, 82, .12); }
+  /* Полный стоп: заливка самого поля количества — тот же тон 12%, что у карточки названия,
+     чтобы состояние читалось целой строкой. Кнопки шагов и единица остаются нейтральными,
+     рамка поля — --kds-line (красная рамка в ДС = состояние Error, его не изображаем) */
+  .kds-view .kds-srow.is-stop .kds-srow__val .ds-input__frame,
+  .kds-view .kds-srow.is-stop .kds-srow__val .ds-input__frame:hover,
+  .kds-view .kds-srow.is-stop .kds-srow__val .ds-input__frame:focus-within { background-color: rgba(255, 82, 82, .12) !important; }
   .kds-srow__main:active { background: rgba(255, 255, 255, .08); }
   .kds-srow__check:active { background: rgba(255, 255, 255, .08); }
   /* Размеры позиции — как в Figma 10628:57825: отдельные строки-коробки 52 с отступом 24 слева
@@ -1115,7 +1121,7 @@
   .kds-view .kds-srow__main.is-off .kds-srow__name { opacity: .4; }
   .kds-view .kds-srow__main.is-off:active { background: transparent; }
   /* Одиночное внесение: название блюда — только подпись, а не кнопка. Цифровая панель
-     открывается исключительно тапом в поле «Кол-во», поэтому строка не ловит тап
+     открывается исключительно тапом в поле «Количество», поэтому строка не ловит тап
      и не показывает состояние нажатия (иначе выглядит кликабельной, но ничего не делает) */
   .kds-view .kds-srow__main.is-static { cursor: default; pointer-events: none; }
   .kds-view .kds-srow__main.is-static:active { background: transparent; }
@@ -1828,7 +1834,7 @@
           '<div class="ds-input__frame">' +
             '<div class="ds-input__content">' +
               '<input class="ds-input__field" type="text" inputmode="decimal" enterkeyhint="done"' +
-                ' autocomplete="off" spellcheck="false" placeholder="Кол-во"' + attrs +
+                ' autocomplete="off" spellcheck="false" placeholder="0"' + attrs +
                 ' value="' + esc(val) + '" aria-label="Количество"' + da + '>' +
             '</div>' +
             /* Element right у Input ДС: сброс значения; показывается только при заполненном поле */
@@ -1901,7 +1907,7 @@
         }
       } else if (pr.val === 0) {
         sz.stop = true; sz.rest = '';
-        inp.value = '';                       /* 0 — это пусто: число не выводим, состояние читается по «Полный стоп» */
+        inp.value = '0';                      /* 0 — полный стоп: в поле цифра 0, состояние дублирует подпись */
       } else {
         sz.stop = false; sz.rest = fmtRest(pr.val);
         inp.value = sz.rest;
@@ -1967,7 +1973,7 @@
       var inp = RT.sl && RT.sl.padInp;
       var v = inp ? String(inp.value == null ? '' : inp.value) : '';
       var valEl = padEl.querySelector('[data-sl-pad-val]');
-      /* Пустое значение показываем как «0», а не подписью «Кол-во»: в цифровой панели всегда есть число */
+      /* Пустое значение показываем как «0», а не подписью поля: в цифровой панели всегда есть число */
       var shown = v === '' ? '0' : v;
       if (valEl && valEl.value !== shown) valEl.value = shown;
       var nameEl = padEl.querySelector('[data-sl-pad-name]');
@@ -1979,6 +1985,12 @@
       var inp = RT.sl && RT.sl.padInp;
       if (!inp) return;
       if (k === 'done') {
+        /* В панели пустое поле показывается как «0» — значит «Готово» и подставляет 0
+           (полный стоп), а не оставляет строку пустой */
+        if (String(inp.value == null ? '' : inp.value).trim() === '') {
+          inp.value = '0';
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        }
         var ok = slCommit(inp);
         if (!ok) return;                      /* ошибка осталась на месте — панель не закрываем */
         slPadHide();
@@ -2227,7 +2239,7 @@
             slFieldHtml(i, null, '', it.unit || 'шт', !!it._fail) +
           '</div>' + slErrHtml() + '</div>';
       }
-      var val = it.rest != null ? String(it.rest) : '';
+      var val = it.stop ? '0' : (it.rest != null ? String(it.rest) : '');
       /* Служебная подпись справа от названия: «В работе: 3 · Стоп с 12:40 · Петров».
          Под названием остаётся только то, чем позиция особенная (исключена, нет данных, размеры) */
       var stopLine = it.stop ? slStopLine(it.name) : '';
@@ -2269,7 +2281,8 @@
     function slSizesHtml(it, i) {
       return it.sizes.map(function (sz, si) {
         var empty = !sz.stop && (sz.rest == null || sz.rest === '');
-        var val = sz.rest != null ? String(sz.rest) : '';
+        /* Полный стоп — в поле цифра 0, а не плейсхолдер */
+        var val = sz.stop ? '0' : (sz.rest != null ? String(sz.rest) : '');
         /* У размера в стопе — тоже кто и когда поставил */
         var stopLine = sz.stop ? slStopLine(it.name + ' ' + sz.s) : '';
         return '<div class="kds-srow kds-srow--sub' + (RT.sl.checks[i] ? ' is-sel' : '') + (sz.stop ? ' is-stop' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '"' +
@@ -2298,7 +2311,7 @@
           '<div class="kds-numpad__disp">' +
             '<div class="ds-input ds-input--m kds-numpad__field">' +
               '<div class="ds-input__frame"><div class="ds-input__content">' +
-                '<input class="ds-input__field" type="text" readonly tabindex="-1" placeholder="Кол-во"' +
+                '<input class="ds-input__field" type="text" readonly tabindex="-1" placeholder="0"' +
                   ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
               '</div></div>' +
             '</div>' +
@@ -4681,7 +4694,7 @@
                ни панели, ни баннера — причину показывает красная подпись справа */
             if (t.closest('[data-sl-fail]')) return;
             /* Тап по блюду цифровую панель НЕ открывает: она появляется только по тапу
-               в само поле «Кол-во» (focusin по [data-sl-in]). На экране с чекбоксами
+               в само поле «Количество» (focusin по [data-sl-in]). На экране с чекбоксами
                тап по строке — это отметка, как в стоп-листе */
             if (!RT.sl.addMode || RT.cfg.multi) toggleSlCheck(+srow.getAttribute('data-sl-row'));
             return;
