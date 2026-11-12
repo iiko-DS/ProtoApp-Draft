@@ -881,7 +881,7 @@
   @keyframes kds-mic { 0%, 100% { color: var(--kds-ic-negative); } 50% { color: var(--ds-palette-negative-400, #ff8585); } }
   /* Кнопки стоп-листа: цвета — ТОЛЬКО переменные КДС (--kds-ic-accent / negative / positive),
      заливка — в тоне кнопок строк --kds-btn; обводка — --kds-line */
-  .kds-btn-acc, .kds-btn-acc-out, .kds-btn-out, .kds-btn-neg { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  .kds-btn-acc, .kds-btn-acc-out, .kds-btn-out, .kds-btn-neg, .kds-btn-neg-out { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 48px; padding: 14px 16px; border-radius: 12px; flex: 0 0 auto;
     font-size: 14px; font-weight: 500; line-height: 20px; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
   /* Неактивная кнопка любого вида — приглушена и не реагирует (состояние Disable компонента Button) */
@@ -907,6 +907,11 @@
   .kds-btn-neg .material-icons { font-size: 20px; color: var(--kds-text); }
   .kds-btn-neg:active { background: var(--ds-color-button-negative-press, #de1a12); }
   .kds-btn-neg[disabled] { color: var(--kds-text-2); cursor: default; }
+  /* «В стоп» — красный аутлайн (Negative/Outlined из ДС): прозрачный фон, рамка и текст Negative */
+  .kds-btn-neg-out { border: 1px solid var(--kds-ic-negative); background: transparent; color: var(--kds-ic-negative); }
+  .kds-btn-neg-out .material-icons { font-size: 20px; color: inherit; }
+  .kds-btn-neg-out:active { background: rgba(255, 82, 82, .12); }
+  .kds-btn-neg-out[disabled] { border-color: var(--kds-text-2); color: var(--kds-text-2); cursor: default; }
   .kds-btn-out { border: 1px solid var(--kds-line); background: transparent; color: var(--kds-text); }
   .kds-btn-out .material-icons { font-size: 20px; color: var(--kds-text); }
   .kds-btn-out:active, .kds-btn-out.is-on { background: rgba(255, 255, 255, .08); }
@@ -1227,13 +1232,29 @@
      а кнопка «В стоп-лист» — отдельным блоком справа, вне плашки */
   .kds-srow__plate { flex: 1 1 auto; min-width: 0; display: flex; align-items: stretch;
     gap: var(--ds-space-4x, 16px); }
-  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add) > .kds-srow__top {
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add) > .kds-srow__top,
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__stop) > .kds-srow__top {
     background: transparent; padding-right: 0; }
-  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add) .kds-srow__plate {
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add) .kds-srow__plate,
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__stop) .kds-srow__plate {
     background: var(--picca-dish); border-radius: 8px; }
-  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add).is-sel > .kds-srow__top { background: transparent; }
-  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add).is-sel .kds-srow__plate {
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add).is-sel > .kds-srow__top,
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__stop).is-sel > .kds-srow__top { background: transparent; }
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__add).is-sel .kds-srow__plate,
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__stop).is-sel .kds-srow__plate {
     background: linear-gradient(rgba(68, 138, 255, .12), rgba(68, 138, 255, .12)), var(--picca-dish); }
+  /* Позиция в полном стопе — розовый тинт, как на остальных экранах */
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__stop).is-stop > .kds-srow__top { background: transparent; }
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow:has(.kds-srow__stop).is-stop .kds-srow__plate {
+    background: linear-gradient(rgba(255, 82, 82, .12), rgba(255, 82, 82, .12)), var(--picca-dish); }
+  /* «В стоп» и «Снять ограничение» в строке — ДВЕ иконочные кнопки 48×48 рядом
+     (красный и акцентный аутлайн), отдельным блоком справа от плашки */
+  .kds-srow__acts { display: flex; align-items: center; gap: var(--ds-space-2x, 8px);
+    margin-left: var(--ds-space-2x, 8px); }
+  .kds-srow__stop, .kds-srow__unstop { width: 52px; height: 52px; padding: 0; }
+  .kds-srow__acts .material-icons { font-size: 24px; }
+  .kds-srow__acts button[disabled] { border-color: var(--kds-line); color: var(--kds-text-2); }
+  .kds-srow__acts button[disabled] .material-icons { color: inherit; }
   /* Поле — в палитре КДС: тёмная коробка в фоне экрана с обводкой #616161, число белое 22/28 700 */
   .kds-srow__val .ds-input__frame { width: 100%; background: var(--kds-bg); border-color: var(--kds-line); }
   /* Тёмная заливка поля не должна зависеть от порядка подключения стилей ДС:
@@ -1734,7 +1755,7 @@
       },
       /* 6а. Копия 7-го экрана — чтобы можно было менять, не трогая исходный */
       'list-clean-copy': {
-        nw: 1280, nh: 800, mode: 'slist', pill: 'Стоп-лист', stat: '', noSteps: true, noClear: true, acc: true, noWork: true, warnHead: true, accNoDivider: true, dishBg: true,
+        nw: 1280, nh: 800, mode: 'slist', pill: 'Стоп-лист', stat: '', noSteps: true, noClear: true, acc: true, noWork: true, warnHead: true, accNoDivider: true, dishBg: true, rowStop: true,
         anno: 'Копия экрана с панелями раскрытия: то же самое, что и 7-й экран — рамка 1px #616161, радиус 12, шапка 12/16, разделители между строками.',
         items: (function () {
           var a = slBase();
@@ -2502,7 +2523,19 @@
         ? '<div class="kds-srow__val kds-srow__val--blank' + (RT.cfg.noClear ? ' kds-srow__val--compact' : '') + '"></div>'
         : slFieldHtml(i, null, val, it.unit || 'шт', !!it.excluded, !!RT.cfg.noSteps, !!RT.cfg.noClear);
       return '<div class="kds-srow' + (RT.sl.checks[i] ? ' is-sel' : '') + (stopNow ? ' is-stop' : '') + '" data-sl-row="' + i + '" data-sl-key="' + i + '" data-sl-name="' + esc(it.name) + '">' +
-        '<div class="kds-srow__top"><div class="kds-srow__box">' + chk + main + '</div>' + field + '</div>' + slErrHtml() + '</div>' +
+        '<div class="kds-srow__top">' +
+          (RT.cfg.rowStop ? '<div class="kds-srow__plate">' : '') +
+          '<div class="kds-srow__box">' + chk + main + '</div>' + field +
+          (RT.cfg.rowStop ? '</div>' : '') +
+          (RT.cfg.rowStop
+            ? '<span class="kds-srow__acts">' +
+                '<button class="kds-btn-acc-out kds-srow__unstop" type="button" data-sl-rowunstop="' + i + '" aria-label="Снять ограничение" title="Снять ограничение"' + ((!slRestricted(it) || it.excluded) ? ' disabled' : '') + '>' +
+                  '<span class="material-icons">lock_open</span></button>' +
+                '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + i + '" aria-label="В стоп" title="В стоп"' + ((slIsStopped(it) || it.excluded) ? ' disabled' : '') + '>' +
+                  '<span class="material-icons">do_not_disturb_on</span></button>' +
+              '</span>'
+            : '') +
+        '</div>' + slErrHtml() + '</div>' +
         (sized ? slSizesHtml(it, i) : '');
     }
     /* Размеры позиции — отдельные строки с отступом (Figma 10628:57825): название 22/28,
@@ -2601,7 +2634,7 @@
             (RT.sl.addMode
               ? '<button class="kds-btn-acc" type="button" data-sl-massact="addsel">Добавить в стоп-лист</button>'
               : '<button class="kds-btn-acc-out" type="button" data-sl-massact="clear">Снять ограничения</button>' +
-                '<button class="kds-btn-neg" type="button" data-sl-massact="stop">В стоп</button>') +
+                '<button class="kds-btn-neg-out" type="button" data-sl-massact="stop">В стоп</button>') +
           '</div>'
         : '';
       var selAllBlock = (cfg.massInHead && selAll)
@@ -2640,7 +2673,7 @@
           (RT.sl.addMode
             ? '<button class="' + (RT.cfg.rowAdd ? 'kds-btn-acc-out' : 'kds-btn-acc') + '" type="button" data-sl-massact="addsel">' + (RT.cfg.rowAdd ? 'В стоп-лист' : 'Добавить в стоп-лист') + '</button>'
             : '<button class="kds-btn-acc-out" type="button" data-sl-massact="clear">Снять ограничения</button>' +
-              '<button class="kds-btn-neg" type="button" data-sl-massact="stop">В стоп</button>') +
+              '<button class="kds-btn-neg-out" type="button" data-sl-massact="stop">В стоп</button>') +
         '</div>' +
         slNumpadHtml() +
         slConfirmHtml() +
@@ -4923,6 +4956,8 @@
             var gIco = gfoldBtn.querySelector('.kds-sgroup__ico');
             if (gIco) gIco.textContent = gOff ? 'chevron_right' : 'expand_more';
             slSyncFoldAll();
+            /* Высота списка изменилась — полоса прокрутки может стать не нужной (и наоборот) */
+            slScrollSync();
             return;
           }
           /* «Свернуть все / Раскрыть все»: есть хоть одна раскрытая панель — сворачиваем все, иначе раскрываем */
@@ -4943,6 +4978,7 @@
               if (nm) RT.sl.gfolds[nm] = anyOpen;
             });
             slSyncFoldAll();
+            slScrollSync();
             return;
           }
           /* Свернуть/развернуть размеры позиции */
@@ -4954,6 +4990,7 @@
             if (foldIco) foldIco.textContent = foldOff ? 'chevron_right' : 'expand_more';
             var foldSubs = RT.view.querySelectorAll('.kds-srow--sub[data-sl-row="' + foldIdx + '"]');
             Array.prototype.forEach.call(foldSubs, function (sr) { sr.style.display = foldOff ? 'none' : ''; });
+            slScrollSync();
             return;
           }
           var sclr = t.closest('[data-sl-sclear]');          if (sclr) {
@@ -4976,6 +5013,34 @@
           if (ma) { slMass(ma.getAttribute('data-sl-massact')); return; }
           var pr = t.closest('[data-sl-print]');
           if (pr) { slBanner('Стоп-лист отправлен на печать'); return; }
+          /* «В стоп» в строке — полный стоп одной позиции (у позиции с размерами — все размеры) */
+          var rstop = t.closest('[data-sl-rowstop]');
+          if (rstop) {
+            e.preventDefault();
+            var rsi = +rstop.getAttribute('data-sl-rowstop');
+            var rit = slData()[rsi];
+            if (rit) {
+              if (rit.sizes && rit.sizes.length) rit.sizes.forEach(function (sz) { sz.stop = true; sz.rest = ''; });
+              else { rit.stop = true; rit.rest = ''; }
+              refreshSl();
+              slBanner('В стопе: ' + rit.name);
+            }
+            return;
+          }
+          /* «Снять ограничение» в строке — позиция уходит из стоп-листа */
+          var runstop = t.closest('[data-sl-rowunstop]');
+          if (runstop) {
+            e.preventDefault();
+            var usi = +runstop.getAttribute('data-sl-rowunstop');
+            var uit = slData()[usi];
+            if (uit) {
+              slData().splice(usi, 1);
+              RT.sl.checks = {};
+              refreshSl();
+              slBanner('Снято ограничение: ' + uit.name);
+            }
+            return;
+          }
           var srow = t.closest('[data-sl-row]');
           if (srow) {
             /* тап по полю остатка — это правка числа, а не отметка строки */
