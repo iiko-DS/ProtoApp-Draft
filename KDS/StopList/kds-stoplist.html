@@ -4040,6 +4040,27 @@
         if (steps[k] && steps[k].state === id) { i = k; break; }
       }
       if (i < 0) return;
+      /* Панель ревью держит свой шаг отдельно (обновляет его только своим селектом):
+         после живого перехода кнопкой внутри прототипа её шаг оставался прежним, и первое
+         нажатие ← / → открывало СТАРЫЙ экран (казалось, что переключение не работает).
+         Поэтому просим панель переключиться на нужный шаг её же пунктом — её состояние
+         совпадёт с открытым экраном. Пункт нажимаем после отрисовки, а баннер перехода
+         возвращаем: перерисовка панелью его сбрасывает */
+      var cur = '';
+      try { cur = new URL(location.href).searchParams.get('state') || ''; } catch (e0) {}
+      if (cur !== id) {
+        var item = document.querySelectorAll('.dsr-sel--steps .ds-select-item')[i];
+        if (item) {
+          setTimeout(function () {
+            /* баннер читаем перед перерисовкой: переход показывает его уже после render */
+            var bn = RT.view && RT.view.querySelector('[data-sl-banner]');
+            var bnTxt = bn && bn.style.display !== 'none' ? bn.textContent : '';
+            item.click();
+            if (bnTxt) slBanner(bnTxt);
+          }, 0);
+          return;
+        }
+      }
       try { history.replaceState(null, '', '?state=' + encodeURIComponent(id)); } catch (e) {}
       var count = document.querySelector('.dsr-count');
       if (count) count.textContent = (i + 1) + '/' + steps.length;
