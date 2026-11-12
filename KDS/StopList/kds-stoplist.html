@@ -1095,11 +1095,13 @@
     color: inherit; }
   /* Шеврон раскрытия — 20, цвет варнинга (в Figma он единственный цветной элемент шапки) */
   .kds-sgroup__ico { flex: 0 0 auto; font-size: 20px; color: var(--kds-ic-warning); }
-  /* Шеврон позиции с размерами — СРАЗУ ПОСЛЕ чекбокса, отдельным блоком 48×48 (минимум для пальца в КДС).
-     Ничего не перекрывает: занимает своё место в строке, поэтому у этой строки название сдвинуто на его ширину */
-  .kds-sgrp--acc .kds-srow__fold { order: -1; flex: 0 0 48px; width: 48px; height: 48px;
-    margin: 0 0 0 -8px; padding: 0; border-radius: 8px; color: var(--kds-ic-warning); }
+  /* Шеврон позиции с размерами — ПОСЛЕ заголовка, отдельным блоком 48×48 (минимум для пальца в КДС).
+     Название при этом не растягивается на всю строку, а стоит по своему тексту — шеврон идёт сразу за ним */
+  .kds-sgrp--acc .kds-srow__fold { flex: 0 0 48px; width: 48px; height: 48px;
+    margin: 0; padding: 0; border-radius: 8px; color: var(--kds-ic-warning); }
   .kds-sgrp--acc .kds-srow__fold .material-icons { font-size: 20px; }
+  .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) .kds-srow__namecol { flex: 0 1 auto; }
+  .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) .kds-srow__meta { order: 1; margin-left: auto; }
   .kds-sgrp--acc .kds-srow__main { gap: var(--ds-space-2x, 8px); }
   /* Строки размеров — вложены на 80 (margin, а не padding): дивидер тянется только по ширине
      самой строки размера. Правый край при этом совпадает с краем строк блюд (иначе поля «шт»
@@ -1263,6 +1265,18 @@
   .kds-srow__acts .material-icons { font-size: 24px; }
   .kds-srow__acts button[disabled] { border-color: var(--kds-line); color: var(--kds-text-2); }
   .kds-srow__acts button[disabled] .material-icons { color: inherit; }
+  /* Строки размеров тоже с кнопками: плашка — как у блюда (box + поле), кнопки стоят отдельно, вне неё */
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow--sub:has(.kds-srow__stop) > .kds-srow__top {
+    background: transparent; padding-right: 0; }
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow--sub:has(.kds-srow__stop) .kds-srow__plate {
+    background: var(--picca-dish); border-radius: 8px; }
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow--sub:has(.kds-srow__stop).is-sel > .kds-srow__top,
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow--sub:has(.kds-srow__stop).is-stop > .kds-srow__top {
+    background: transparent; }
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow--sub:has(.kds-srow__stop).is-sel .kds-srow__plate {
+    background: linear-gradient(rgba(68, 138, 255, .12), rgba(68, 138, 255, .12)), var(--picca-dish); }
+  .kds-view--dishbg .kds-sgrp--acc .kds-srow--sub:has(.kds-srow__stop).is-stop .kds-srow__plate {
+    background: linear-gradient(rgba(255, 82, 82, .12), rgba(255, 82, 82, .12)), var(--picca-dish); }
   /* Поле — в палитре КДС: тёмная коробка в фоне экрана с обводкой #616161, число белое 22/28 700 */
   .kds-srow__val .ds-input__frame { width: 100%; background: var(--kds-bg); border-color: var(--kds-line); }
   /* Тёмная заливка поля не должна зависеть от порядка подключения стилей ДС:
@@ -2560,7 +2574,8 @@
         var szChk = '<button class="kds-srow__check' + (RT.sl.checks[szKey] ? ' is-on' : '') + '" type="button" data-sl-check="' + szKey + '"><span class="material-icons">' + (RT.sl.checks[szKey] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
         return '<div class="kds-srow kds-srow--sub' + (RT.sl.checks[szKey] ? ' is-sel' : '') + (sz.stop ? ' is-stop' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-key="' + szKey + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '"' +
           (RT.sl.folds && RT.sl.folds[i] ? ' style="display:none"' : '') + '>' +
-          '<div class="kds-srow__top"><div class="kds-srow__box">' + szChk +
+          '<div class="kds-srow__top">' + (RT.cfg.rowStop ? '<div class="kds-srow__plate">' : '') +
+            '<div class="kds-srow__box">' + szChk +
               '<div class="kds-srow__main">' +
                 '<div class="kds-srow__namecol">' +
                   '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(sz.s) + '</span>' +
@@ -2573,6 +2588,15 @@
               '</div>' +
             '</div>' +
             slFieldHtml(i, si, val, it.unit || 'шт', false, !!RT.cfg.noSteps, !!RT.cfg.noClear) +
+            (RT.cfg.rowStop ? '</div>' : '') +
+            (RT.cfg.rowStop
+              ? '<span class="kds-srow__acts">' +
+                  '<button class="kds-btn-acc-out kds-srow__unstop" type="button" data-sl-rowunstop="' + szKey + '" aria-label="Снять ограничение" title="Снять ограничение"' + ((!slRestricted(sz) || it.excluded) ? ' disabled' : '') + '>' +
+                    '<span class="material-icons">lock_open</span></button>' +
+                  '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + szKey + '" aria-label="В стоп" title="В стоп"' + ((sz.stop || it.excluded) ? ' disabled' : '') + '>' +
+                    '<span class="material-icons">do_not_disturb_on</span></button>' +
+                '</span>'
+              : '') +
           '</div>' + slErrHtml() + '</div>';
       }).join('');
     }
@@ -5022,31 +5046,48 @@
           if (ma) { slMass(ma.getAttribute('data-sl-massact')); return; }
           var pr = t.closest('[data-sl-print]');
           if (pr) { slBanner('Стоп-лист отправлен на печать'); return; }
-          /* «В стоп» в строке — полный стоп одной позиции (у позиции с размерами — все размеры) */
+          /* «В стоп» / «Снять ограничение» в строке — для блюда или отдельного размера (ключ «i:si») */
           var rstop = t.closest('[data-sl-rowstop]');
           if (rstop) {
             e.preventDefault();
-            var rsi = +rstop.getAttribute('data-sl-rowstop');
-            var rit = slData()[rsi];
+            var rk = String(rstop.getAttribute('data-sl-rowstop')).split(':');
+            var ri = +rk[0], rsz = rk.length > 1 ? +rk[1] : null;
+            var rit = slData()[ri];
             if (rit) {
-              if (rit.sizes && rit.sizes.length) rit.sizes.forEach(function (sz) { sz.stop = true; sz.rest = ''; });
-              else { rit.stop = true; rit.rest = ''; }
-              refreshSl();
-              slBanner('В стопе: ' + rit.name);
+              if (rsz != null && rit.sizes && rit.sizes[rsz]) {
+                rit.sizes[rsz].stop = true; rit.sizes[rsz].rest = '';
+                refreshSl();
+                slBanner('В стопе: ' + rit.name + ' ' + rit.sizes[rsz].s);
+              } else {
+                if (rit.sizes && rit.sizes.length) rit.sizes.forEach(function (sz) { sz.stop = true; sz.rest = ''; });
+                else { rit.stop = true; rit.rest = ''; }
+                refreshSl();
+                slBanner('В стопе: ' + rit.name);
+              }
             }
             return;
           }
-          /* «Снять ограничение» в строке — позиция уходит из стоп-листа */
+          /* «Снять ограничение» в строке: у размера — только его ограничение, у блюда — позиция уходит из стоп-листа */
           var runstop = t.closest('[data-sl-rowunstop]');
           if (runstop) {
             e.preventDefault();
-            var usi = +runstop.getAttribute('data-sl-rowunstop');
-            var uit = slData()[usi];
+            var uk = String(runstop.getAttribute('data-sl-rowunstop')).split(':');
+            var ui = +uk[0], usz = uk.length > 1 ? +uk[1] : null;
+            var uit = slData()[ui];
             if (uit) {
-              slData().splice(usi, 1);
-              RT.sl.checks = {};
-              refreshSl();
-              slBanner('Снято ограничение: ' + uit.name);
+              if (usz != null && uit.sizes && uit.sizes[usz]) {
+                var uszName = uit.sizes[usz].s;
+                uit.sizes[usz].stop = false; uit.sizes[usz].rest = null;
+                if (!uit.sizes.some(function (s) { return s.stop || s.rest; })) slData().splice(ui, 1);
+                RT.sl.checks = {};
+                refreshSl();
+                slBanner('Снято ограничение: ' + uit.name + ' ' + uszName);
+              } else {
+                slData().splice(ui, 1);
+                RT.sl.checks = {};
+                refreshSl();
+                slBanner('Снято ограничение: ' + uit.name);
+              }
             }
             return;
           }
