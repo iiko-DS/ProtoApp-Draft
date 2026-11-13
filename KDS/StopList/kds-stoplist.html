@@ -898,27 +898,24 @@
   @keyframes kds-mic { 0%, 100% { color: var(--kds-ic-negative); } 50% { color: var(--ds-palette-negative-400, #ff8585); } }
   /* Кнопки стоп-листа: цвета — ТОЛЬКО переменные КДС (--kds-ic-accent / negative / positive),
      заливка — в тоне кнопок строк --kds-btn; обводка — --kds-line */
-  .kds-btn-acc, .kds-btn-acc-out, .kds-btn-out, .kds-btn-neutral, .kds-btn-warn, .kds-btn-neg, .kds-btn-neg-out { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  .kds-btn-acc, .kds-btn-out, .kds-btn-neutral, .kds-btn-warn, .kds-btn-warn-out, .kds-btn-neg, .kds-btn-neg-out { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 48px; padding: 14px 16px; border-radius: 12px; flex: 0 0 auto;
     font-size: 14px; font-weight: 500; line-height: 20px; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
   /* Неактивная кнопка любого вида — ВСЯ кнопка в состоянии Disable (Button/Disable в ДС):
      текст Text/Disable, рамка нейтральная вместо цветной, иконка тоже гаснет */
-  .kds-btn[disabled], .kds-btn-out[disabled], .kds-btn-neutral[disabled], .kds-btn-warn[disabled], .kds-btn-acc-out[disabled], .kds-btn-neg-out[disabled],
+  .kds-btn[disabled], .kds-btn-out[disabled], .kds-btn-neutral[disabled], .kds-btn-warn[disabled], .kds-btn-warn-out[disabled], .kds-btn-neg-out[disabled],
   .kds-btn-quiet[disabled], .kds-srow__clear[disabled], .kds-footer__btn[disabled] {
     color: var(--kds-text-2); border-color: var(--kds-line); cursor: default; }
   .kds-btn[disabled] .material-icons, .kds-btn-out[disabled] .material-icons,
-  .kds-btn-acc-out[disabled] .material-icons, .kds-btn-neg-out[disabled] .material-icons,
+  .kds-btn-warn-out[disabled] .material-icons, .kds-btn-neg-out[disabled] .material-icons,
   .kds-btn-quiet[disabled] .material-icons { color: var(--kds-text-2); }
   /* Disable важнее цветных вариантов рамки (Warning/Accent/Negative) */
   .kds-btn-acc { border: 0; background: var(--kds-btn-accent); color: var(--kds-text); }
   .kds-btn-acc .material-icons { font-size: 20px; color: var(--kds-text); }
-  /* Акцентная кнопка-обводка: рамка — В ЦВЕТ ТЕКСТА, текст и иконка Accent #448aff (как на экране 1) */
-  .kds-btn-acc-out { border: 1px solid currentColor; background: transparent; color: var(--kds-btn-accent); }
-  .kds-btn-acc-out .material-icons { font-size: 20px; color: var(--kds-btn-accent); }
-  .kds-btn-acc-out:active { background: rgba(68, 138, 255, .12); }
-  /* Warning-обводка: рамка — в цвет текста, текст и иконка #ffab40 (как на экране 1) */
-  .kds-btn-warn-out { color: var(--kds-btn-warning); border-color: currentColor; }
-  .kds-btn-warn-out .material-icons { color: var(--kds-btn-warning); }
+  /* Warning-обводка: самостоятельный вариант — свой border, прозрачный фон,
+     текст и иконка #ffab40 (как на экране 1). Без второго класса акцента */
+  .kds-btn-warn-out { border: 1px solid currentColor; background: transparent; color: var(--kds-btn-warning); }
+  .kds-btn-warn-out .material-icons { font-size: 20px; color: var(--kds-btn-warning); }
   .kds-btn-warn-out:active { background: rgba(255, 171, 64, .12); }
   /* Экран 7а (cfg.accNoBorder): у панелей раскрытия нет рамки — только заливка шапки и разделители */
   .kds-view--accnoborder .kds-sgrp--acc { border: 0; }
@@ -1803,7 +1800,7 @@
       /* 6. Копия списка: без шагов «− / +» и без крестика в поле (правка только тапом в поле) */
       'list-clean': {
         nw: 1280, nh: 800, mode: 'slist', pill: 'Стоп-лист', stat: '', noSteps: true, noClear: true, acc: true, noWork: true, rowStop: true,
-        anno: 'Копия списка стоп-листа: категории и позиции с размерами — панели раскрытия (expansion panel) по Figma: рамка 1px #616161, радиус 12, шапка 12/16 с шевроном 20 и заголовком 16/24 Medium #ffab40; у каждой строки блюда и размера справа две иконочные кнопки — «Снять ограничение» (акцентный аутлайн) и «В стоп» (красный аутлайн), как на 8-м экране.',
+        anno: 'Копия списка стоп-листа: категории и позиции с размерами — панели раскрытия (expansion panel) по Figma: рамка 1px #616161, радиус 12, шапка 12/16 с шевроном 20 и заголовком 16/24 Medium #ffab40; у каждой строки блюда и размера справа две иконочные кнопки — «Снять ограничение» (нейтральный аутлайн) и «В стоп» (красный аутлайн), как на 8-м экране.',
         items: (function () {
           var a = slBase();
           a[3] = { name: 'Тирамису', nodata: true };
@@ -2536,7 +2533,7 @@
             (merged ? '' : fieldHtml) +
             (RT.cfg.rowAdd ? '</div>' : '') +
             (RT.cfg.rowAdd
-              ? '<button class="kds-btn-acc-out kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + i + '"' + (it._fail ? ' disabled' : '') + '>В стоп-лист</button>'
+              ? '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + i + '"' + (it._fail ? ' disabled' : '') + '>В стоп-лист</button>'
               : '') +
           '</div>' + slErrHtml() + '</div>';
       }
@@ -2686,7 +2683,7 @@
     function slEmptyHtml() {
       return '<div class="kds-sempty"><div class="kds-sempty__t">Ограничений нет</div>' +
         '<div class="kds-sempty__d">Нажмите «Добавить позицию», чтобы задать остаток</div>' +
-        '<button class="kds-btn-acc-out kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button></div>';
+        '<button class="kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button></div>';
     }
     function slScreen(cfg) {
       var items = slData();
@@ -2695,7 +2692,7 @@
          Button/Outlined рядом с выбранными, 3) «Добавить позицию» — единственная главная (filled).
          Между полем и группой кнопок — 24, внутри группы — 8. */
       var selAll = slSelAllHtml(items);
-      var addBtn = '<button class="kds-btn-acc-out kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button>';
+      var addBtn = '<button class="kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button>';
       /* «Снять выбор» — иконочная кнопка с крестиком на всех экранах (как на 5 и 8):
          48×48, от счётчика 8, до пары действий 16 — отступы задаёт .kds-mass__x */
       var unselBtn = '<button class="kds-btn-out kds-mass__x" type="button" data-sl-unselect aria-label="Снять выбор" title="Снять выбор"><span class="material-icons">close</span></button>';
