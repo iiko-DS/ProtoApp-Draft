@@ -183,15 +183,20 @@
     --kds-bg: #121212;            /* фон экрана — как в макете */
     --kds-surface: #121212;       /* карточка, шапка, футер, пилюли */
     --kds-row: #212121;           /* строка блюда / коробка группы */
-    --kds-btn: #424242;           /* кнопка 52×52 у строки — Button food icon/Background default */
+    --kds-btn: #3b3b43;           /* фон кнопок-плашек — как у кнопок экрана 1 (Button_Check, Figma 10585:7549) */
     --kds-line: #616161;          /* рамки, разделители */
     --kds-divider: var(--ds-palette-neutral-800, #424242);  /* разделитель строк в панелях — Neutral/800 из ДС, тише рамки */
-    /* Цвета кнопок — из Figma «Component» (узел 7079:36488): у кнопок с текстом СВОИ тёмные тона,
-       яркие --kds-ic-* ниже — только для иконочных кнопок/иконок статусов */
-    --kds-btn-accent: #2651b5;    /* Button/Accent — Filled и Outlined */
-    --kds-btn-negative: #de1a12;  /* Button/Negative — Filled и Outlined */
-    --kds-btn-warning: #ea7806;   /* Button/Warning — Filled и Outlined (Figma «Button», узел 7272:20057) */
-    --kds-btn-neutral: #616161;   /* Button/Neutral/Outlined — рамка, текст, иконка */
+    /* Всплывающие поверхности — меню/настройки, диалог клавиатуры, плашка действий.
+       Один тон на всех: темнее #424242 (чтобы не выглядело светлым) и светлее #333333
+       (чтобы не сливалось с фоном экрана). В токенах ДС такого уровня нет — значение локальное */
+    --kds-pop: #3a3a3a;
+    --kds-pop-shadow: 0 12px 40px rgba(0, 0, 0, .75);
+    /* Цвета кнопок — как у кнопок экрана 1 (карточка заказа, Figma 10585:7549):
+       иконки/текст статусов #9E9E9E, #FFAB40, #448AFF, #14B456, #FF5252 */
+    --kds-btn-accent: #448aff;    /* Accent — как Icon accent на экране 1 */
+    --kds-btn-negative: #ff5252;  /* Negative — как Icon negative на экране 1 */
+    --kds-btn-warning: #ffab40;   /* Warning — как Icon warning на экране 1 */
+    --kds-btn-neutral: var(--kds-btn);   /* Neutral/Filled — тот же фон, что у всех нейтральных кнопок (#3B3B43) */
     --kds-text: #ffffff;
     --kds-text-2: #9e9e9e;
     --kds-text-3: #d6d6d6;
@@ -354,12 +359,15 @@
   .kds-view--narrow.kds-view--mob .kds-tb-lists { gap: 8px; }
 
   /* ── Карточка заказа (обновлённый вид, 1:1 с макетом) ── */
-  .kds-card { display: flex; flex-direction: column; width: 360px; flex: 0 0 auto; background: transparent; border-radius: 8px; }
+  /* Карточка — как в макете «Экран повара» (10585:7549): рамка 1px #616161 и тинт
+     только у шапки (узел 10585:7550, 360×150); строки лежат под ней вне рамки */
+  .kds-card { display: flex; flex-direction: column; width: 360px; flex: 0 0 auto;
+    background: transparent; border-radius: 8px; }
   .kds-view--narrow .kds-card { width: 326px; }
   .kds-card__head {
     border: 0; box-shadow: inset 0 0 0 1px var(--kds-line);
     border-top: 8px solid var(--st-band, #616161);
-    border-radius: 8px; background: var(--st-tint, var(--ds-palette-neutral-900, #333333));
+    border-radius: 8px; background: var(--st-tint, rgba(97, 97, 97, .12));
   }
   /* Шапка: полоса 8 + блок «номер/канал» 60 (пад 4/6, без зазора между строками) + подвал
      20 (+4) 20 (+4) комментарий 30 и 4 px снизу — итого 92 / 126 / 150 как в макете */
@@ -454,7 +462,9 @@
   .kds-row--kt-warn { border-right: 1px solid #ffab40; }
   .kds-btn {
     flex: 0 0 52px; width: 52px; border: 0; border-radius: 8px;
-    background: var(--kds-btn); display: flex; align-items: center; justify-content: center;
+    /* Фон — из макета «Обновленная версия_Экран повара» (Figma 10497:3361):
+       кнопка Button_Check 52×52, заливка #3B3B43, r8, иконка 28 */
+    background: #3b3b43; display: flex; align-items: center; justify-content: center;
     color: var(--kds-ic-neutral); transition: background-color .15s ease;
   }
   @media (hover: hover) and (pointer: fine) { .kds-btn:hover { background: #4d4d4d; } }
@@ -476,7 +486,7 @@
         выглядают одинаково — заливка #424242, белый текст. Курс — кнопка: нажатие бампает весь курс (DS-534) ── */
   .kds-course {
     display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-    flex: 0 0 auto; height: 36px; border: 1px solid #424242; border-radius: 12px; background: #424242;
+    flex: 0 0 auto; height: 36px; border: 1px solid var(--kds-btn); border-radius: 12px; background: var(--kds-btn);
     font-size: 14px; line-height: 20px; letter-spacing: .25px; color: #ffffff;
     margin-top: var(--ds-space-3x, 12px);
   }
@@ -529,7 +539,8 @@
     border-top: 1px dashed var(--kds-line); padding: 3px 0 0; }
   .kds-kit__comment .material-icons { font-size: 16px; line-height: 1; color: var(--kds-ic-warning); padding-top: 4px; }
   .kds-kit__comment .kds-comment__text { font-size: 16px; line-height: 24px; letter-spacing: .5px; color: #d6d6d6; }
-  .kds-kit__btn { flex: 0 0 52px; width: 52px; border: 0; padding: 0; background: var(--kds-btn); border-radius: 8px;
+  /* Высокая кнопка статуса (52×162/200) — та же плашка #3B3B43 (Figma 10585:7549, узел 10585:7602) */
+  .kds-kit__btn { flex: 0 0 52px; width: 52px; border: 0; padding: 0; background: #3b3b43; border-radius: 8px;
     display: flex; align-items: center; justify-content: center; color: var(--kds-ic-neutral); transition: background-color .15s ease; }
   .kds-kit__btn .material-icons { font-size: 28px; }
   .kds-kit__btn:active { background: #4d4d4d; }
@@ -656,11 +667,11 @@
      совпадал с центром первой строки текста 16/24 (жёлтая, `--kds-ic-warning`) */
   .kds-dl-comment .material-icons { font-size: 16px; line-height: 1; padding-top: 4px; color: var(--kds-ic-warning); }
   .kds-dl-comment__text { font-size: 16px; line-height: 24px; color: #d6d6d6; }
-  .kds-dl-btn { flex: 0 0 52px; width: 52px; border: 0; border-radius: 8px; background: #424242; color: #9e9e9e;
+  .kds-dl-btn { flex: 0 0 52px; width: 52px; border: 0; border-radius: 8px; background: var(--kds-btn); color: #9e9e9e;
     display: flex; align-items: center; justify-content: center; }
   .kds-dl-btn .material-icons { font-size: 28px; }
-  .kds-dl-btn.kds-btn--cancelled { background: #424242; color: var(--kds-ic-negative); }
-  .kds-dl-btn.kds-btn--ready { background: #424242; color: var(--kds-ic-positive); }
+  .kds-dl-btn.kds-btn--cancelled { background: var(--kds-btn); color: var(--kds-ic-negative); }
+  .kds-dl-btn.kds-btn--ready { background: var(--kds-btn); color: var(--kds-ic-positive); }
   .kds-ditem { font-size: 12px; line-height: 16px; color: var(--kds-text-2); white-space: nowrap; }
   .kds-drow__sub { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
   /* Подпись связи модификатора — как счётчик «2 из 3 блюд»: 14/20, medium, #BDBDBD */
@@ -783,8 +794,8 @@
 
   /* меню: контейнер 360, #333333, r12, рамка 1px #616161, пад 12/4, пункт 48 */
   .kds-menu { position: absolute; z-index: 30; display: none; width: 360px; padding: 12px 4px;
-    background: #333333; border: 1px solid #616161; border-radius: 12px;
-    box-shadow: 0 8px 24px var(--ds-palette-neutral-990, #121212); }
+    background: var(--kds-pop); border: 1px solid var(--kds-line); border-radius: 12px;
+    box-shadow: var(--kds-pop-shadow); }
   .kds-menu.is-open { display: block; }
   .kds-menu--metrics { width: 360px; }
   .kds-menu__title { display: flex; align-items: center; gap: 8px; padding: 12px 0 12px 12px;
@@ -809,7 +820,7 @@
   .kds-set__label { font-size: 16px; font-weight: 400; line-height: 24px; letter-spacing: .5px; color: #fff; }
   /* Toogle mode 92×44: пад 4/6, r16, иконки 36×36 r16 */
   .kds-toggle { display: flex; gap: 8px; padding: 4px 6px; background: #121212; border-radius: 16px; }
-  .kds-toggle__i { width: 36px; height: 36px; border: 0; border-radius: 16px; background: #424242; color: #fff;
+  .kds-toggle__i { width: 36px; height: 36px; border: 0; border-radius: 16px; background: var(--kds-btn); color: #fff;
     display: flex; align-items: center; justify-content: center; }
   .kds-toggle__i.is-on { background: #ffffff; color: #121212; }
   .kds-toggle__i .material-icons { font-size: 28px; }
@@ -901,14 +912,14 @@
   /* Disable важнее цветных вариантов рамки (Warning/Accent/Negative) */
   .kds-btn-acc { border: 0; background: var(--kds-btn-accent); color: var(--kds-text); }
   .kds-btn-acc .material-icons { font-size: 20px; color: var(--kds-text); }
-  /* Акцентная кнопка-обводка (Button/Outlined Accent): рамка — В ЦВЕТ ТЕКСТА, текст и иконка Accent #2651b5 */
+  /* Акцентная кнопка-обводка: рамка — В ЦВЕТ ТЕКСТА, текст и иконка Accent #448aff (как на экране 1) */
   .kds-btn-acc-out { border: 1px solid currentColor; background: transparent; color: var(--kds-btn-accent); }
   .kds-btn-acc-out .material-icons { font-size: 20px; color: var(--kds-btn-accent); }
-  .kds-btn-acc-out:active { background: rgba(38, 81, 181, .12); }
-  /* Warning-обводка (Button/Outlined Warning): рамка — в цвет текста, текст и иконка #ea7806 */
+  .kds-btn-acc-out:active { background: rgba(68, 138, 255, .12); }
+  /* Warning-обводка: рамка — в цвет текста, текст и иконка #ffab40 (как на экране 1) */
   .kds-btn-warn-out { color: var(--kds-btn-warning); border-color: currentColor; }
   .kds-btn-warn-out .material-icons { color: var(--kds-btn-warning); }
-  .kds-btn-warn-out:active { background: rgba(234, 120, 6, .12); }
+  .kds-btn-warn-out:active { background: rgba(255, 171, 64, .12); }
   /* Экран 7а (cfg.accNoBorder): у панелей раскрытия нет рамки — только заливка шапки и разделители */
   .kds-view--accnoborder .kds-sgrp--acc { border: 0; }
   .kds-btn-acc:active { filter: brightness(.92); }
@@ -921,18 +932,19 @@
   /* «В стоп» — красный аутлайн (Button/Negative/Outlined): рамка — в цвет текста, текст и иконка Negative */
   .kds-btn-neg-out { border: 1px solid currentColor; background: transparent; color: var(--kds-btn-negative); }
   .kds-btn-neg-out .material-icons { font-size: 20px; color: inherit; }
-  .kds-btn-neg-out:active { background: rgba(222, 26, 18, .12); }
+  .kds-btn-neg-out:active { background: rgba(255, 82, 82, .12); }
   .kds-btn-neg-out[disabled] { border-color: var(--kds-text-2); color: var(--kds-text-2); cursor: default; }
   /* Рамка нейтральной обводки — Neutral/500 #9e9e9e: заметна, но не белая и не как у Disable (#616161) */
   .kds-btn-out { border: 1px solid var(--ds-palette-neutral-500, #9e9e9e); background: transparent; color: var(--kds-text); }
   .kds-btn-out .material-icons { font-size: 20px; color: var(--kds-text); }
   .kds-btn-out:active, .kds-btn-out.is-on { background: rgba(255, 255, 255, .08); }
-  /* Warning filled (Button/Warning/Filled из Figma): заливка #ea7806, текст и иконка белые */
-  .kds-btn-warn { border: 0; background: var(--kds-btn-warning); color: var(--kds-text); }
-  .kds-btn-warn .material-icons { font-size: 20px; color: var(--kds-text); }
+  /* Warning filled: заливка #ffab40, текст и иконка тёмные (#121212) — белый на оранжевом нечитаем */
+  .kds-btn-warn { border: 0; background: var(--kds-btn-warning); color: var(--kds-bg); }
+  .kds-btn-warn .material-icons { font-size: 20px; color: var(--kds-bg); }
   .kds-btn-warn:active { filter: brightness(.92); }
   /* Neutral filled (Button/Neutral/Filled из Figma): заливка #616161, текст и иконка белые */
-  .kds-btn-neutral { border: 0; background: var(--kds-btn-neutral); color: var(--kds-text); }
+  /* Neutral outlined: на тёмной плашке заливка #3B3B43 не видна — делаем обводку, как у остальных outlined */
+  .kds-btn-neutral { border: 1px solid var(--ds-palette-neutral-500, #9e9e9e); background: transparent; color: var(--kds-text); }
   .kds-btn-neutral .material-icons { font-size: 20px; color: var(--kds-text); }
   .kds-btn-neutral:active { filter: brightness(.92); }
   /* Текстовая кнопка: служебные действия списка — без обводки и заливки */
@@ -1010,9 +1022,9 @@
   .kds-sgrp--acc > .kds-srow:not(.kds-srow--sub) + .kds-srow--sub { padding-top: var(--ds-space-1x, 4px); }
   /* Экран 8 (cfg.accNoDivider): разделителей между строками нет — остаются только отступы 4 */
   .kds-view--accnodiv .kds-sgrp--acc > .kds-srow { border-top: 0 !important; border-bottom: 0 !important; }
-  /* Экран 8 (cfg.dishBg): рамка 1px (Neutral/800 #424242), панель без своего фона,
-     блюда — Neutral/950 (#212121) — у ВСЕХ панелей (как у «Пиццы») */
-  .kds-view--dishbg .kds-sgrp--acc { border: 1px solid var(--ds-palette-neutral-800, #424242);
+  /* Экран 8 (cfg.dishBg): рамка панели — та же, что у обычной панели (#616161, --kds-line),
+     панель без своего фона, блюда — Neutral/950 (#212121) */
+  .kds-view--dishbg .kds-sgrp--acc { border: 1px solid var(--kds-line);
     background: transparent;
     --picca-dish: var(--ds-palette-neutral-950, #212121); }
   /* Контент — как Expansion panel/Content ДС: padding 16 со всех сторон, внутри блюда */
@@ -1031,9 +1043,10 @@
     padding-right: var(--ds-expansion-panel-content-pad-right, 16px); }
   .kds-view--dishbg .kds-sgrp--acc > .kds-sgroup--acc + .kds-srow {
     padding-top: var(--ds-space-2x, 8px); }
-  /* Шапка — без фона в раскрытом, Neutral/900 #333333 в свёрнутом; текст жёлтый, шапка 48 */
+  /* Шапка — без фона в раскрытом, Neutral/900 #212121 в свёрнутом; текст жёлтый, шапка 48.
+     Радиус шапки — такой же, как у панели (12 сверху), на всех экранах */
   .kds-view--dishbg .kds-sgrp--acc .kds-sgroup--acc { background: transparent;
-    border: 0; outline: 0; border-radius: 0; color: var(--kds-ic-warning); }
+    border: 0; outline: 0; border-radius: 12px 12px 0 0; color: var(--kds-ic-warning); }
   .kds-view--dishbg .kds-sgrp--acc.is-collapsed .kds-sgroup--acc {
     background: var(--kds-row); }
   .kds-view--dishbg .kds-sgrp--acc .kds-srow__box { background: transparent; }
@@ -1109,10 +1122,12 @@
   .kds-sgroup__stopn { margin-left: var(--ds-space-4x, 16px); color: var(--kds-ic-negative); }
   /* Шеврон раскрытия — 20, цвет варнинга (в Figma он единственный цветной элемент шапки) */
   .kds-sgroup__ico { flex: 0 0 auto; font-size: 20px; color: var(--kds-ic-warning); }
-  /* Шеврон позиции с размерами — ПОСЛЕ заголовка, отдельным блоком 48×48 (минимум для пальца в КДС).
-     Название при этом не растягивается на всю строку, а стоит по своему тексту — шеврон идёт сразу за ним */
-  .kds-sgrp--acc .kds-srow__fold { flex: 0 0 48px; width: 48px; height: 48px;
+  /* Шеврон позиции с размерами — 52×52, как все кнопки, стоящие в строчке блюда */
+  .kds-sgrp--acc .kds-srow__fold { flex: 0 0 52px; width: 52px; height: 52px;
     margin: 0; padding: 0; border-radius: 8px; color: var(--kds-ic-warning); }
+  /* Строка блюда с шевроном — тоже 52: шеврон задаёт высоту, вертикальные паддинги убираем
+     (иначе 52 + 4 + 4 = 60 и строка выше остальных) */
+  .kds-view .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) { padding-top: 0; padding-bottom: 0; }
   .kds-sgrp--acc .kds-srow__fold .material-icons { font-size: 20px; }
   .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) .kds-srow__namecol { flex: 0 1 auto; }
   .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) .kds-srow__meta { order: 1; margin-left: auto; }
@@ -1365,8 +1380,8 @@
   /* Цифровая панель — над панелью внесения (z 8): поле остатка открывает её прямо из панели */
   .kds-numpad { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 9;
     width: 560px; padding: 16px 24px; display: flex; flex-direction: column; gap: 8px;
-    background: #333333; border: 1px solid var(--kds-line); border-radius: 12px;
-    box-shadow: 0 8px 24px var(--ds-palette-neutral-990, #121212); }
+    background: var(--kds-pop); border: 1px solid var(--kds-line); border-radius: 12px;
+    box-shadow: var(--kds-pop-shadow); }
   .kds-numpad[hidden] { display: none; }
   /* Отступ до кнопок: поле → сетка 8 (gap панели) + 8 = 16, сетка → «Готово» остаётся 8 */
   .kds-numpad__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: var(--ds-space-2x, 8px); }
@@ -1427,7 +1442,7 @@
   /* Шапка экрана стоп-листа: «К заказам»/«Стоп-лист» — видимая кнопка: заливка --kds-btn (#424242),
      без обводки, белый текст. Место — шапка слева (ТЗ §5.2), не переносим. */
   .kds-sl-back { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    height: 52px; padding: 0 16px; border: 1px solid transparent; border-radius: 12px; background: var(--kds-btn);
+    height: 48px; padding: 14px 16px; border: 1px solid transparent; border-radius: 12px; background: var(--kds-btn);
     color: var(--kds-text); font-style: normal; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: .5px;
     text-transform: uppercase; white-space: nowrap; cursor: pointer; }
   .kds-sl-back .material-icons { flex: 0 0 20px; width: 20px; height: 20px; font-size: 20px; color: var(--kds-text); }
@@ -1461,8 +1476,8 @@
      кадра, футер занимает 56 → до футера 16, значит от списка вниз 8 + 16 = 24) */
   .kds-mass { position: absolute; left: 50%; transform: translateX(-50%); bottom: var(--ds-space-2x, 8px); z-index: 4;
     display: flex; align-items: center; gap: var(--ds-space-2x, 8px);
-    padding: var(--ds-space-3x, 12px) var(--ds-space-4x, 16px); background: #333333; border: 1px solid var(--kds-line); border-radius: 12px;
-    box-shadow: 0 8px 24px var(--ds-palette-neutral-990, #121212); }
+    padding: var(--ds-space-3x, 12px) var(--ds-space-4x, 16px); background: var(--kds-pop); border: 1px solid var(--kds-line); border-radius: 12px;
+    box-shadow: var(--kds-pop-shadow); }
   .kds-mass[hidden] { display: none; }
   .kds-mass__n { font-size: 16px; font-weight: 500; line-height: 24px; letter-spacing: .5px;
     color: var(--kds-text); white-space: nowrap; }
@@ -1493,12 +1508,13 @@
   /* Disable кнопки футера — вся кнопка, а не только текст: подложка Neutral/800,
      текст и иконка — Text/Disable (как Button/Disable в ДС) */
   .kds-footer__btn:disabled,
-  .kds-view:not(.kds-view--mob) .kds-footer__btn:disabled { background: var(--ds-palette-neutral-800, #424242); }
+  .kds-view:not(.kds-view--mob) .kds-footer__btn:disabled { background: var(--kds-btn); }
   .kds-footer__btn:disabled .material-icons { color: var(--ds-color-text-disable, #9e9e9e); }
   /* Сообщение — КОМПОНЕНТ Snackbar ДС: разметка и стили ds-snackbar* (Single · Dark:
      паддинг 12, ширина по контенту, r8, #424242, текст 14/20, Progress 4 px r8 #448aff).
      Здесь только размещение и анимация Progress как таймера авто-скрытия (3 с). */
   .kds-sbanner.ds-snackbar { position: absolute; left: 50%; transform: translateX(-50%); bottom: 64px; z-index: 20; display: none; }
+  /* Если видна плашка действий, смещение считается в JS (slBanner): снекбар встаёт над ней + 8 */
   .kds-sbanner__bar { transform-origin: right center; animation: kds-snack-bar 3s linear forwards; }
   @keyframes kds-snack-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
   /* Диалог очистки — анатомия Dialog ДС: шапка (заголовок 20/24 + ×), описание 16/24, подвал с кнопками справа */
@@ -2664,7 +2680,7 @@
     function slEmptyHtml() {
       return '<div class="kds-sempty"><div class="kds-sempty__t">Ограничений нет</div>' +
         '<div class="kds-sempty__d">Нажмите «Добавить позицию», чтобы задать остаток</div>' +
-        '<button class="kds-btn-acc-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button></div>';
+        '<button class="kds-btn-acc-out kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button></div>';
     }
     function slScreen(cfg) {
       var items = slData();
@@ -2674,10 +2690,9 @@
          Между полем и группой кнопок — 24, внутри группы — 8. */
       var selAll = slSelAllHtml(items);
       var addBtn = '<button class="kds-btn-acc-out kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button>';
-      /* Экран панелей раскрытия (cfg.acc): «Снять выбор» — иконочная кнопка с крестиком */
-      var unselBtn = (RT.cfg && RT.cfg.acc)
-        ? '<button class="kds-btn-out kds-mass__x" type="button" data-sl-unselect aria-label="Снять выбор" title="Снять выбор"><span class="material-icons">close</span></button>'
-        : '<button class="kds-btn-out" type="button" data-sl-unselect>Снять выбор</button>';
+      /* «Снять выбор» — иконочная кнопка с крестиком на всех экранах (как на 5 и 8):
+         48×48, от счётчика 8, до пары действий 16 — отступы задаёт .kds-mass__x */
+      var unselBtn = '<button class="kds-btn-out kds-mass__x" type="button" data-sl-unselect aria-label="Снять выбор" title="Снять выбор"><span class="material-icons">close</span></button>';
       /* Вариант экрана выбора без плашки: счётчик и «Снять выбор» — слева, действия — справа.
          «Снять выбор» — это левая кнопка полосы (переименовывается из «Выбрать все»), её не дублируем */
       var headMass = cfg.massInHead
@@ -2730,12 +2745,31 @@
         slConfirmHtml() +
       '</div>';
     }
+    /* Положение снекбара относительно плашки действий.
+       Вызывается и при показе сообщения, и при каждом обновлении экрана:
+       плашка может появиться/исчезнуть, пока сообщение ещё висит (3 с) */
+    function slPosBanner() {
+      var b = RT.view && RT.view.querySelector('[data-sl-banner]');
+      if (!b || b.style.display === 'none' || getComputedStyle(b).display === 'none') return;
+      var mass = RT.view.querySelector('.kds-mass');
+      var zoom = b.parentElement;
+      if (!zoom) return;
+      if (mass && !mass.hidden) {
+        var zr = zoom.getBoundingClientRect(), mr = mass.getBoundingClientRect();
+        b.style.bottom = Math.round(zr.bottom - mr.top + 8) + 'px';
+      } else {
+        b.style.bottom = '';
+      }
+    }
     function slBanner(text) {
       var b = RT.view && RT.view.querySelector('[data-sl-banner]');
       if (!b) return;
       var t = b.querySelector('[data-sl-banner-text]');
       if (t) t.textContent = text; else b.textContent = text;
+      /* Снекбар — в координатах кадра (.kds-zoom), а плашка действий — в координатах .kds-slist.
+         Пока плашка видна, поднимаем снекбар ровно над её верхним краем + 8 зазора */
       b.style.display = 'flex';
+      slPosBanner();
       /* Progress-полоса компонента = таймер авто-скрытия: перезапускаем анимацию с нуля */
       var bar = b.querySelector('.kds-sbanner__bar');
       if (bar) { bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; }
@@ -2846,6 +2880,8 @@
         b.disabled = !canStop;
       });
       slSyncSteps();
+      /* Плашка могла показаться/скрыться, пока висит сообщение — пересчитываем его позицию */
+      slPosBanner();
     }
     /* Позиция уже в полном стопе: сама стопнута, либо стопнуты все её размеры */
     function slIsStopped(it) {
@@ -3693,7 +3729,7 @@
         var comment = o.comment
           ? '<div class="kds-comment"><div class="kds-comment__inner"><span class="material-icons">' + (COMMENT_ICO[o.comment[0]] || o.comment[0]) + '</span><span class="kds-comment__text">' + esc(o.comment[1]) + '</span></div></div>'
           : '';
-        head = '<div class="kds-card__head" style="--st-band:' + s.band + ';--st-tint:' + s.tint + ';--st-timer:' + (o.timerNeg ? '#ff5252' : s.timer) + ';--st-num:' + s.num + (o.headPad ? ';padding-bottom:' + o.headPad + 'px' : '') + '">' +
+        head = '<div class="kds-card__head"' + (o.headPad ? ' style="padding-bottom:' + o.headPad + 'px"' : '') + '>' +
           '<div class="kds-card__headtop">' +
             '<div class="kds-card__slot"><span class="kds-card__num">' + esc(o.num) + '</span>' +
               (o.brand ? '<span class="kds-card__brand">' + esc(o.brand) + '</span>' : '') +
@@ -3714,7 +3750,7 @@
         (o.st === 'cancelled' ? ' kds-card--cancelled' : '') +
         (o.st === 'ready' || o.st === 'cancelled' ? ' kds-card--wico' : '') +
         (o.partTop ? ' kds-card--partTop' : '') + (o.partBottom ? ' kds-card--partBottom' : '') + '"' +
-        (o.cardBg ? ' style="background:' + o.cardBg + '"' : '') +
+        ' style="--st-band:' + s.band + ';--st-tint:' + s.tint + ';--st-timer:' + (o.timerNeg ? '#ff5252' : s.timer) + ';--st-num:' + s.num + ';' + (o.cardBg ? 'background:' + o.cardBg : '') + '"' +
         (o._cid ? ' data-cid="' + o._cid + '"' : '') + ' data-st="' + o.st + '">' + head +
         (o.contTop ? '<div class="kds-cap"></div>' : '') +
         '<div class="kds-card__body' + (o.contentTint ? ' kds-card__body--tint' : '') + (o.contTop ? ' kds-card__body--flush' : '') + '">' +
