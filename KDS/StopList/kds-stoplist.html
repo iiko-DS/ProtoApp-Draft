@@ -1132,11 +1132,13 @@
   .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) .kds-srow__namecol { flex: 0 1 auto; }
   .kds-sgrp--acc .kds-srow__main:has(.kds-srow__fold) .kds-srow__meta { order: 1; margin-left: auto; }
   .kds-sgrp--acc .kds-srow__main { gap: var(--ds-space-2x, 8px); }
-  /* Строки размеров — вложены на 80 (margin, а не padding): дивидер тянется только по ширине
-     самой строки размера. Правый край при этом совпадает с краем строк блюд (иначе поля «шт»
-     у размеров стояли на 8 px левее, чем у блюд) */
+  /* Строки размеров — вложены на 24 (--ds-space-6x) от края КОНТЕНТА блюда, как на 8-м экране
+     и как в базе (kds-nest): паддинг строки блюда + 24. margin, а не padding — дивидер
+     тянется только по ширине самой строки размера. Правый край при этом совпадает
+     с краем строк блюд (иначе поля «шт» у размеров стояли левее, чем у блюд) */
   .kds-sbody .kds-sgrp--acc .kds-srow--sub {
-    width: calc(100% - var(--ds-space-20x, 80px)); margin-left: var(--ds-space-20x, 80px);
+    width: calc(100% - var(--ds-space-2x, 8px) - var(--ds-space-6x, 24px));
+    margin-left: calc(var(--ds-space-2x, 8px) + var(--ds-space-6x, 24px));
     padding-left: 0; padding-right: var(--ds-space-2x, 8px); }
   /* Кликабельна вся строка панели, поэтому и курсор-указатель — на всей строке,
      кроме поля ввода (там правка числа) и заблокированной позиции */
@@ -1796,8 +1798,8 @@
 
       /* 6. Копия списка: без шагов «− / +» и без крестика в поле (правка только тапом в поле) */
       'list-clean': {
-        nw: 1280, nh: 800, mode: 'slist', pill: 'Стоп-лист', stat: '', noSteps: true, noClear: true, acc: true, noWork: true,
-        anno: 'Копия списка стоп-листа: категории и позиции с размерами — панели раскрытия (expansion panel) по Figma: рамка 1px #616161, радиус 12, шапка 12/16 с шевроном 20 и заголовком 16/24 Medium #ffab40; сами строки блюд остались прежними.',
+        nw: 1280, nh: 800, mode: 'slist', pill: 'Стоп-лист', stat: '', noSteps: true, noClear: true, acc: true, noWork: true, rowStop: true,
+        anno: 'Копия списка стоп-листа: категории и позиции с размерами — панели раскрытия (expansion panel) по Figma: рамка 1px #616161, радиус 12, шапка 12/16 с шевроном 20 и заголовком 16/24 Medium #ffab40; у каждой строки блюда и размера справа две иконочные кнопки — «Снять ограничение» (акцентный аутлайн) и «В стоп» (красный аутлайн), как на 8-м экране.',
         items: (function () {
           var a = slBase();
           a[3] = { name: 'Тирамису', nodata: true };
