@@ -923,12 +923,16 @@
   /* Экран 7а (cfg.accNoBorder): у панелей раскрытия нет рамки — только заливка шапки и разделители */
   .kds-view--accnoborder .kds-sgrp--acc { border: 0; }
   .kds-btn-acc:active { filter: brightness(.92); }
-  .kds-btn-acc[disabled] { color: var(--kds-text-2); cursor: default; }
+  /* Disable залитой кнопки — вся кнопка в состоянии Button/Disable: нейтральная плашка (#3B3B43)
+     и текст Text/Disable #9E9E9E; цветная заливка (Accent/Negative/Warning) в disable не остаётся */
+  .kds-btn-acc[disabled], .kds-btn-neg[disabled], .kds-btn-warn[disabled] {
+    background: var(--kds-btn); color: var(--kds-text-2); border: 0; cursor: default; }
+  .kds-btn-acc[disabled] .material-icons, .kds-btn-neg[disabled] .material-icons,
+  .kds-btn-warn[disabled] .material-icons { color: var(--kds-text-2); }
   /* Negative filled: действия, которые ведут к красному состоянию */
   .kds-btn-neg { border: 0; background: var(--kds-btn-negative); color: var(--kds-text); }
   .kds-btn-neg .material-icons { font-size: 20px; color: var(--kds-text); }
   .kds-btn-neg:active { filter: brightness(.92); }
-  .kds-btn-neg[disabled] { color: var(--kds-text-2); cursor: default; }
   /* «В стоп» — красный аутлайн (Button/Negative/Outlined): рамка — в цвет текста, текст и иконка Negative */
   .kds-btn-neg-out { border: 1px solid currentColor; background: transparent; color: var(--kds-btn-negative); }
   .kds-btn-neg-out .material-icons { font-size: 20px; color: inherit; }
@@ -2574,7 +2578,7 @@
           ? '<button class="kds-srow__fold' + (foldOn ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (foldOn ? 'chevron_right' : 'expand_more') + '</span></button>'
           : '') +
       '</div>';
-      var chk = '<button class="kds-srow__check' + (RT.sl.checks[i] ? ' is-on' : '') + '" type="button" data-sl-check="' + i + '"><span class="material-icons">' + (RT.sl.checks[i] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
+      var chk = '<button class="kds-srow__check' + (RT.sl.checks[i] ? ' is-on' : '') + '" type="button" data-sl-check="' + i + '"' + (it.excluded ? ' disabled' : '') + '><span class="material-icons">' + (RT.sl.checks[i] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
       /* Input number — ЗА коробкой блюда, справа; у строки с размерами место значения резервируется.
          Исключённая из меню позиция остаётся в списке, но остаток у неё не редактируется —
          всё поле в состоянии Disable (data-sl-failfield: иконки шагов и сброса тоже недоступны) */
@@ -2608,7 +2612,7 @@
         var stopLine = sz.stop ? slStopLine(it.name + ' ' + sz.s) : '';
         /* У размера — свой ключ отметки (index:размер): размер выбирается отдельно от блюда */
         var szKey = i + ':' + si;
-        var szChk = '<button class="kds-srow__check' + (RT.sl.checks[szKey] ? ' is-on' : '') + '" type="button" data-sl-check="' + szKey + '"><span class="material-icons">' + (RT.sl.checks[szKey] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
+        var szChk = '<button class="kds-srow__check' + (RT.sl.checks[szKey] ? ' is-on' : '') + '" type="button" data-sl-check="' + szKey + '"' + (it.excluded ? ' disabled' : '') + '><span class="material-icons">' + (RT.sl.checks[szKey] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
         return '<div class="kds-srow kds-srow--sub' + (RT.sl.checks[szKey] ? ' is-sel' : '') + (sz.stop ? ' is-stop' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-key="' + szKey + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '"' +
           (foldOn ? ' style="display:none"' : '') + '>' +
           '<div class="kds-srow__top">' + (RT.cfg.rowStop ? '<div class="kds-srow__plate">' : '') +
@@ -2793,6 +2797,12 @@
       });
       return out;
     }
+    /* Отмеченные ключи КАК ЕСТЬ: «14» — блюдо, «2:1» — конкретный размер.
+       Нужны массовым действиям: отмеченный размер меняется отдельно от блюда — так же,
+       как кнопки «В стоп / Снять ограничение» в самой строке размера */
+    function slCheckedKeys() {
+      return Object.keys(RT.sl.checks).filter(function (k) { return !!RT.sl.checks[k]; });
+    }
     /* Позиции в полном стопе — ОДНО правило для общего счётчика и для шапок панелей:
        каждый размер со стопом — одна позиция; блюдо без размеров со стопом — одна позиция.
        Если задана категория — считаем только её. */
@@ -2875,11 +2885,32 @@
       var pr = RT.view.querySelector('.kds-shead [data-sl-print]');
       if (pr) { pr.disabled = pr.hasAttribute('data-sl-lock') || !(slFooterCount() > 0); }
       /* «В стоп» бессмысленна, если все отмеченные уже в полном стопе — неактивна.
-         Проверяем и плашку, и вариант с действиями в шапке */
+         Симметрично «Снять ограничения»: неактивна, если ни у одной отмеченной позиции
+         ограничения нет. Проверяем и плашку, и вариант с действиями в шапке */
       var items = slData();
-      var canStop = slChecked().some(function (i) { return !slIsStopped(items[i]); });
+      /* Считаем по отмеченным КЛЮЧАМ: отмечен размер в стопе — «В стоп» уже нечего делать,
+         даже если у блюда остальные размеры не в стопе */
+      var canStop = slCheckedKeys().some(function (k) {
+        var p = String(k).split(':');
+        var i = +p[0], si = p.length > 1 ? +p[1] : null;
+        var it = items[i];
+        if (!it) return false;
+        if (si != null && it.sizes && it.sizes[si]) return !it.sizes[si].stop;
+        return !slIsStopped(it);
+      });
+      var canClear = slCheckedKeys().some(function (k) {
+        var p = String(k).split(':');
+        var i = +p[0], si = p.length > 1 ? +p[1] : null;
+        var it = items[i];
+        if (!it) return false;
+        if (si != null && it.sizes && it.sizes[si]) return !!(it.sizes[si].stop || it.sizes[si].rest);
+        return slRestricted(it);
+      });
       Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-massact="stop"]'), function (b) {
         b.disabled = !canStop;
+      });
+      Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-massact="clear"]'), function (b) {
+        b.disabled = !canClear;
       });
       slSyncSteps();
       /* Плашка могла показаться/скрыться, пока висит сообщение — пересчитываем его позицию */
@@ -2920,7 +2951,7 @@
         if (r.style.display === 'none') return;
         var k = +r.getAttribute('data-sl-row');
         var it = slData()[k];
-        if (it && it._fail) return;      /* исключённые из меню в выбор и в «Выбрать все» не входят */
+        if (it && (it._fail || it.excluded)) return;      /* исключённые из меню в выбор и в «Выбрать все» не входят */
         if (out.indexOf(k) === -1) out.push(k);
       });
       return out;
@@ -3036,7 +3067,7 @@
       key = String(key);
       var i = +key.split(':')[0];
       var cur = slData()[i];
-      if (cur && cur._fail) return;   /* исключённую из меню позицию выбрать нельзя (§5.10 п.5) */
+      if (cur && (cur._fail || cur.excluded)) return;   /* исключённую из меню позицию выбрать нельзя (§5.10 п.5) */
       var on = !RT.sl.checks[key];
       var rows = RT.view ? Array.prototype.slice.call(RT.view.querySelectorAll('[data-sl-row="' + i + '"]')) : [];
       var allKeys = rows.map(function (r) { return r.getAttribute('data-sl-key'); }).filter(Boolean);
@@ -3215,33 +3246,75 @@
         return;
       }
       if (k === 'stop') {
-        checked.forEach(function (i) {
+        /* Массовое «В стоп» идёт по ОТМЕЧЕННЫМ ключам: отмечен размер — стопим только его,
+           отмечено блюдо — всё блюдо. Позиция, которая уже в полном стопе, пропускается:
+           в итоге пишем, сколько применено и что пропущено (как на экране массового снятия) */
+        var done = 0, skipped = [];
+        slCheckedKeys().forEach(function (key) {
+          var p = String(key).split(':');
+          var i = +p[0], si = p.length > 1 ? +p[1] : null;
           var it = items[i];
           if (!it) return;
-          if (it.sizes && it.sizes.length) it.sizes.forEach(function (sz) { sz.stop = true; sz.rest = ''; });
-          else { it.stop = true; it.rest = ''; }
+          if (si != null && it.sizes && it.sizes[si]) {
+            var sz = it.sizes[si];
+            if (sz.stop) { skipped.push(it.name + ' ' + sz.s); return; }
+            sz.stop = true; sz.rest = '';
+            done++;
+            return;
+          }
+          if (it.sizes && it.sizes.length) {
+            if (slIsStopped(it)) { skipped.push(it.name); return; }
+            it.sizes.forEach(function (s) { s.stop = true; s.rest = ''; });
+            done++;
+          } else {
+            if (it.stop) { skipped.push(it.name); return; }
+            it.stop = true; it.rest = '';
+            done++;
+          }
         });
         RT.sl.checks = {};
         refreshSl();
-        /* Результат массового действия — как в §3.5 ТЗ */
-        slBanner('В стопе: ' + checked.length);
+        /* Результат массового действия — как в §3.5 ТЗ: применено + пропущено с названием */
+        slBanner('В стоп: ' + done + (skipped.length
+          ? ' · пропущено: ' + skipped.length + ' (' + skipped.join(', ') + ' — уже в стопе)'
+          : ''));
         return;
       }
       if (k === 'clear') {
-        var done = 0, skipped = 0;
-        checked.forEach(function (i) {
-          if (!slRestricted(items[i])) { skipped++; return; }
+        /* Массовое снятие тоже идёт по отмеченным ключам: отмечен размер — снимаем ограничение
+           только у него, отмечено блюдо — блюдо уходит из стоп-листа. Позиция без ограничения
+           пропускается и называется в итоге */
+        var done = 0, skipped = [];
+        var removeAll = {}, touched = {};
+        slCheckedKeys().forEach(function (key) {
+          var p = String(key).split(':');
+          var i = +p[0], si = p.length > 1 ? +p[1] : null;
+          var it = items[i];
+          if (!it) return;
+          if (si != null && it.sizes && it.sizes[si]) {
+            if (removeAll[i]) return;                 /* блюдо уже уходит целиком — не считаем дважды */
+            var sz = it.sizes[si];
+            if (!(sz.stop || sz.rest)) { skipped.push(it.name + ' ' + sz.s); return; }
+            sz.stop = false; sz.rest = null;
+            touched[i] = 1;
+            done++;
+            return;
+          }
+          if (!slRestricted(it)) { skipped.push(it.name); return; }
+          removeAll[i] = 1;
           done++;
         });
-        var removed = checked.filter(function (i) { return slRestricted(items[i]); })
-          .sort(function (a, b) { return b - a; });
-        removed.forEach(function (i) {
-          items.splice(i, 1);
-        });
+        for (var n = items.length - 1; n >= 0; n--) {
+          if (removeAll[n]) { items.splice(n, 1); continue; }
+          /* От размера осталось пусто — позиции в стоп-листе больше нет */
+          if (touched[n] && !slRestricted(items[n])) items.splice(n, 1);
+        }
         RT.sl.checks = {};
         RT.sl.folds = {};
         refreshSl();
-        slBanner('Снято ограничений: ' + done + (skipped ? ' · пропущено: ' + skipped + ' (не было ограничения)' : ''));
+        slBanner('Снято ограничений: ' + done + (skipped.length
+          ? ' · пропущено: ' + skipped.length + ' (' + skipped.join(', ') + ' — не было ограничения)'
+          : ''));
         return;
       }
     }
