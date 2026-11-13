@@ -190,7 +190,7 @@
        яркие --kds-ic-* ниже — только для иконочных кнопок/иконок статусов */
     --kds-btn-accent: #2651b5;    /* Button/Accent — Filled и Outlined */
     --kds-btn-negative: #de1a12;  /* Button/Negative — Filled и Outlined */
-    --kds-btn-warning: #ea7806;   /* Button/Warning — Filled и Outlined */
+    --kds-btn-warning: #ea7806;   /* Button/Warning — Filled и Outlined (Figma «Button», узел 7272:20057) */
     --kds-btn-neutral: #616161;   /* Button/Neutral/Outlined — рамка, текст, иконка */
     --kds-text: #ffffff;
     --kds-text-2: #9e9e9e;
@@ -326,7 +326,7 @@
   .kds-view--mob .kds-footer__ver { display: none; }
   .kds-view--mob .kds-footer__status { font-size: 0; gap: 0; }
   .kds-view--mob .kds-footer__total { display: block; font-size: 16px; line-height: 20px; color: #fff; }
-  .kds-view--mob .kds-footer__btn { width: 52px; height: 56px; padding: 0; border: 1px solid var(--kds-line); border-radius: 12px;
+  .kds-view--mob .kds-footer__btn { width: 52px; height: 56px; padding: 0; border: 1px solid var(--ds-palette-neutral-500, #9e9e9e); border-radius: 12px;
     background: transparent; font-size: 0; gap: 0; }
   .kds-view--mob .kds-footer__btn .material-icons { font-size: 24px; color: #fff; }
   /* ── Контент мобильного кадра (Figma PB-6623): одна колонка, карточка во всю ширину,
@@ -887,12 +887,12 @@
   @keyframes kds-mic { 0%, 100% { color: var(--kds-ic-negative); } 50% { color: var(--ds-palette-negative-400, #ff8585); } }
   /* Кнопки стоп-листа: цвета — ТОЛЬКО переменные КДС (--kds-ic-accent / negative / positive),
      заливка — в тоне кнопок строк --kds-btn; обводка — --kds-line */
-  .kds-btn-acc, .kds-btn-acc-out, .kds-btn-out, .kds-btn-neutral, .kds-btn-neg, .kds-btn-neg-out { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  .kds-btn-acc, .kds-btn-acc-out, .kds-btn-out, .kds-btn-neutral, .kds-btn-warn, .kds-btn-neg, .kds-btn-neg-out { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 48px; padding: 14px 16px; border-radius: 12px; flex: 0 0 auto;
     font-size: 14px; font-weight: 500; line-height: 20px; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
   /* Неактивная кнопка любого вида — ВСЯ кнопка в состоянии Disable (Button/Disable в ДС):
      текст Text/Disable, рамка нейтральная вместо цветной, иконка тоже гаснет */
-  .kds-btn[disabled], .kds-btn-out[disabled], .kds-btn-neutral[disabled], .kds-btn-acc-out[disabled], .kds-btn-neg-out[disabled],
+  .kds-btn[disabled], .kds-btn-out[disabled], .kds-btn-neutral[disabled], .kds-btn-warn[disabled], .kds-btn-acc-out[disabled], .kds-btn-neg-out[disabled],
   .kds-btn-quiet[disabled], .kds-srow__clear[disabled], .kds-footer__btn[disabled] {
     color: var(--kds-text-2); border-color: var(--kds-line); cursor: default; }
   .kds-btn[disabled] .material-icons, .kds-btn-out[disabled] .material-icons,
@@ -906,7 +906,7 @@
   .kds-btn-acc-out .material-icons { font-size: 20px; color: var(--kds-btn-accent); }
   .kds-btn-acc-out:active { background: rgba(38, 81, 181, .12); }
   /* Warning-обводка (Button/Outlined Warning): рамка — в цвет текста, текст и иконка #ea7806 */
-  .kds-btn-warn-out { color: var(--kds-btn-warning); }
+  .kds-btn-warn-out { color: var(--kds-btn-warning); border-color: currentColor; }
   .kds-btn-warn-out .material-icons { color: var(--kds-btn-warning); }
   .kds-btn-warn-out:active { background: rgba(234, 120, 6, .12); }
   /* Экран 7а (cfg.accNoBorder): у панелей раскрытия нет рамки — только заливка шапки и разделители */
@@ -923,9 +923,14 @@
   .kds-btn-neg-out .material-icons { font-size: 20px; color: inherit; }
   .kds-btn-neg-out:active { background: rgba(222, 26, 18, .12); }
   .kds-btn-neg-out[disabled] { border-color: var(--kds-text-2); color: var(--kds-text-2); cursor: default; }
-  .kds-btn-out { border: 1px solid currentColor; background: transparent; color: var(--kds-text); }
+  /* Рамка нейтральной обводки — Neutral/500 #9e9e9e: заметна, но не белая и не как у Disable (#616161) */
+  .kds-btn-out { border: 1px solid var(--ds-palette-neutral-500, #9e9e9e); background: transparent; color: var(--kds-text); }
   .kds-btn-out .material-icons { font-size: 20px; color: var(--kds-text); }
   .kds-btn-out:active, .kds-btn-out.is-on { background: rgba(255, 255, 255, .08); }
+  /* Warning filled (Button/Warning/Filled из Figma): заливка #ea7806, текст и иконка белые */
+  .kds-btn-warn { border: 0; background: var(--kds-btn-warning); color: var(--kds-text); }
+  .kds-btn-warn .material-icons { font-size: 20px; color: var(--kds-text); }
+  .kds-btn-warn:active { filter: brightness(.92); }
   /* Neutral filled (Button/Neutral/Filled из Figma): заливка #616161, текст и иконка белые */
   .kds-btn-neutral { border: 0; background: var(--kds-btn-neutral); color: var(--kds-text); }
   .kds-btn-neutral .material-icons { font-size: 20px; color: var(--kds-text); }
@@ -1100,6 +1105,8 @@
   /* Счётчик позиций категории — сразу после названия, той же типографикой, что у заголовка */
   .kds-sgroup__n { flex: 0 0 auto; margin-right: auto; font: inherit; letter-spacing: inherit;
     color: inherit; }
+  /* «В стопе N» — после счётчика категории, красным; пустой, если в стопе ничего нет */
+  .kds-sgroup__stopn { margin-left: var(--ds-space-4x, 16px); color: var(--kds-ic-negative); }
   /* Шеврон раскрытия — 20, цвет варнинга (в Figma он единственный цветной элемент шапки) */
   .kds-sgroup__ico { flex: 0 0 auto; font-size: 20px; color: var(--kds-ic-warning); }
   /* Шеврон позиции с размерами — ПОСЛЕ заголовка, отдельным блоком 48×48 (минимум для пальца в КДС).
@@ -1340,7 +1347,7 @@
     background: #212121; border-top: 1px solid var(--kds-line); }
   .kds-kbd[hidden] { display: none; }
   .kds-kbd__row { display: flex; gap: 6px; justify-content: center; }
-  .kds-kbd__k { flex: 1 1 0; min-width: 0; height: 52px; padding: 0 4px; border: 0; border-radius: 8px;
+  .kds-kbd__k { flex: 1 1 0; min-width: 0; height: 52px; padding: 0 4px; border: 1px solid var(--ds-palette-neutral-500, #9e9e9e); border-radius: 8px;
     background: var(--kds-btn); color: var(--kds-text);
     font: 400 20px/28px 'Roboto', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .5px;
     display: flex; align-items: center; justify-content: center; }
@@ -1363,7 +1370,7 @@
   .kds-numpad[hidden] { display: none; }
   /* Отступ до кнопок: поле → сетка 8 (gap панели) + 8 = 16, сетка → «Готово» остаётся 8 */
   .kds-numpad__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: var(--ds-space-2x, 8px); }
-  .kds-numpad__k { height: 60px; padding: 0; border: 1px solid var(--kds-line); border-radius: 12px;
+  .kds-numpad__k { height: 60px; padding: 0; border: 1px solid var(--ds-palette-neutral-500, #9e9e9e); border-radius: 12px;
     background: transparent; color: #fff; display: flex; align-items: center; justify-content: center;
     font: 500 24px/32px 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
   .kds-numpad__k .material-icons { font-size: 26px; color: #fff; }
@@ -1417,8 +1424,8 @@
   .kds-sempty__d { font-size: 16px; line-height: 24px; letter-spacing: .25px; color: var(--kds-text-3); margin-bottom: 8px; }
   /* Поиск ничего не нашёл */
   .kds-snone { padding: 24px 16px; text-align: center; font-size: 16px; line-height: 24px; letter-spacing: .25px; color: var(--kds-text-2); }
-  /* Шапка экрана стоп-листа: «К заказам» — кнопка высотой 52 в том же виде, что кнопки футера
-     (заливка --kds-btn, без обводки, белый текст). Место — шапка слева (ТЗ §5.2), не переносим. */
+  /* Шапка экрана стоп-листа: «К заказам»/«Стоп-лист» — видимая кнопка: заливка --kds-btn (#424242),
+     без обводки, белый текст. Место — шапка слева (ТЗ §5.2), не переносим. */
   .kds-sl-back { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     height: 52px; padding: 0 16px; border: 1px solid transparent; border-radius: 12px; background: var(--kds-btn);
     color: var(--kds-text); font-style: normal; font-weight: 500; font-size: 14px; line-height: 20px; letter-spacing: .5px;
@@ -2417,9 +2424,9 @@
             '<span class="material-icons">unfold_less</span>' +
             '<span data-sl-gfoldall-t>Свернуть все</span></button>'
         : '';
-      var stopN = (RT.cfg && RT.cfg.acc && !(RT.sl && RT.sl.addMode))
-        ? '<span class="kds-shead__n kds-shead__stopn" data-sl-stopn></span>'
-        : '';
+      /* Общий счётчик «Всего в полном стопе» временно скрыт (разметка пустая);
+         вернуть: заменить '' на <span class="kds-shead__n kds-shead__stopn" data-sl-stopn></span> */
+      var stopN = '';
       return foldAll +
         '<button class="kds-btn-out kds-shead__selall" type="button" data-sl-selall>' +
         '<span data-sl-selall-t>Выбрать все</span></button>' + stopN;
@@ -2466,7 +2473,9 @@
                 ? '<button class="kds-sgroup kds-sgroup--acc" type="button" data-sl-gfold="' + esc(c) + '" aria-expanded="' + (gOff ? 'false' : 'true') + '">' +
                     '<span class="material-icons kds-sgroup__ico">' + (gOff ? 'chevron_right' : 'expand_more') + '</span>' +
                     '<span class="kds-sgroup__t">' + esc(c) + '</span>' +
-                    '<span class="kds-sgroup__n">' + buckets[c].length + '</span>' +
+                    '<span class="kds-sgroup__n">' + buckets[c].length +
+                      '<span class="kds-sgroup__stopn" data-sl-gstopn="' + esc(c) + '"></span>' +
+                    '</span>' +
                   '</button>'
                 : '<div class="kds-sgroup">' + esc(c) + '</div>')
             : '');
@@ -2713,7 +2722,7 @@
           '<span class="kds-mass__sp"></span>' +
           unselBtn +
           (RT.sl.addMode
-            ? '<button class="' + (RT.cfg.rowAdd ? 'kds-btn-acc-out kds-btn-warn-out' : 'kds-btn-acc') + '" type="button" data-sl-massact="addsel">' + (RT.cfg.rowAdd ? 'В стоп-лист' : 'Добавить в стоп-лист') + '</button>'
+            ? '<button class="' + (RT.cfg.rowAdd ? 'kds-btn-warn' : 'kds-btn-acc') + '" type="button" data-sl-massact="addsel">' + (RT.cfg.rowAdd ? 'В стоп-лист' : 'Добавить в стоп-лист') + '</button>'
             : '<button class="kds-btn-neutral" type="button" data-sl-massact="clear">Снять ограничения</button>' +
               '<button class="kds-btn-neg" type="button" data-sl-massact="stop">В стоп</button>') +
         '</div>' +
@@ -2748,17 +2757,38 @@
       });
       return out;
     }
+    /* Позиции в полном стопе — ОДНО правило для общего счётчика и для шапок панелей:
+       каждый размер со стопом — одна позиция; блюдо без размеров со стопом — одна позиция.
+       Если задана категория — считаем только её. */
+    function slStopPositions(items, cat) {
+      var n = 0;
+      (items || []).forEach(function (it) {
+        if (cat !== undefined && slCat(it) !== cat) return;
+        if (it.sizes && it.sizes.length) {
+          it.sizes.forEach(function (sz) { if (sz.stop) n++; });
+        } else if (it.stop) {
+          n++;
+        }
+      });
+      return n;
+    }
     function syncSl() {
       if (!RT.view) return;
       var checked = slChecked().length;
       var f = RT.view.querySelector('.kds-footer__total');
       if (f) f.textContent = slFootText();
-      /* Счётчик «В полном стопе: N» рядом с «Выбрать все» — позиции, у которых стопнуты все размеры */
+      /* Счётчик «Всего в полном стопе: N» рядом с «Выбрать все» и подписи «В стопе N» в шапках панелей
+         считаются ОДНОЙ функцией — иначе суммы по панелям не сходятся с общим счётчиком */
+      var stopBase = (RT.sl && RT.sl.addMode) ? slLiveItems() : slData();
       var stopN = RT.view.querySelector('[data-sl-stopn]');
       if (stopN) {
-        var stopBase = (RT.sl && RT.sl.addMode) ? slLiveItems() : slData();
-        stopN.textContent = 'В полном стопе: ' + stopBase.filter(function (it) { return slIsStopped(it); }).length;
+        stopN.textContent = 'Всего в полном стопе: ' + slStopPositions(stopBase);
       }
+      /* «В стопе N» в шапке каждой панели — по той же логике, но в границах категории */
+      Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-gstopn]'), function (el) {
+        var n = slStopPositions(stopBase, el.getAttribute('data-sl-gstopn'));
+        el.textContent = n ? 'В стопе ' + n : '';
+      });
       var n = RT.view.querySelector('[data-sl-tb-n]');
       if (n) {
         n.textContent = 'Выбрано: ' + checked;
