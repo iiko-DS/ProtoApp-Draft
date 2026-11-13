@@ -2592,7 +2592,7 @@
           (RT.cfg.rowStop ? '</div>' : '') +
           (RT.cfg.rowStop
             ? '<span class="kds-srow__acts">' +
-                '<button class="kds-btn-acc-out kds-srow__unstop" type="button" data-sl-rowunstop="' + i + '" aria-label="Снять ограничение" title="Снять ограничение"' + ((!slRestricted(it) || it.excluded) ? ' disabled' : '') + '>' +
+                '<button class="kds-btn-out kds-srow__unstop" type="button" data-sl-rowunstop="' + i + '" aria-label="Снять ограничение" title="Снять ограничение"' + ((!slRestricted(it) || it.excluded) ? ' disabled' : '') + '>' +
                   '<span class="material-icons">lock_open</span></button>' +
                 '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + i + '" aria-label="В стоп" title="В стоп"' + ((slIsStopped(it) || it.excluded) ? ' disabled' : '') + '>' +
                   '<span class="material-icons">do_not_disturb_on</span></button>' +
@@ -2632,7 +2632,7 @@
             (RT.cfg.rowStop ? '</div>' : '') +
             (RT.cfg.rowStop
               ? '<span class="kds-srow__acts">' +
-                  '<button class="kds-btn-acc-out kds-srow__unstop" type="button" data-sl-rowunstop="' + szKey + '" aria-label="Снять ограничение" title="Снять ограничение"' + ((!slRestricted(sz) || it.excluded) ? ' disabled' : '') + '>' +
+                  '<button class="kds-btn-out kds-srow__unstop" type="button" data-sl-rowunstop="' + szKey + '" aria-label="Снять ограничение" title="Снять ограничение"' + ((!slRestricted(sz) || it.excluded) ? ' disabled' : '') + '>' +
                     '<span class="material-icons">lock_open</span></button>' +
                   '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + szKey + '" aria-label="В стоп" title="В стоп"' + ((sz.stop || it.excluded) ? ' disabled' : '') + '>' +
                     '<span class="material-icons">do_not_disturb_on</span></button>' +
