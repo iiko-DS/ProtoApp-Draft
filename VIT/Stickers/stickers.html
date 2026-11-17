@@ -615,7 +615,7 @@
     if (st.label) {
       return '<span class="st-thumb" style="--st-c:' + esc(st.color) + ';--st-t:' + esc(st.textColor) + '">' + esc(st.label) + '</span>';
     }
-    return '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>';
+    return '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">photo</span></span>';
   }
   /* ── рендер строк ── */
   function rowHtml(st) {
@@ -917,7 +917,7 @@
     previewBody.innerHTML =
       (st.label
         ? '<span class="st-thumb st-thumb--lg" style="--st-c:' + esc(st.color || '#e0e0e0') + ';--st-t:' + esc(st.textColor || '#ffffff') + '">' + esc(st.label) + '</span>'
-        : '<span class="st-thumb st-thumb--icon st-thumb--lg"><span class="material-icons" aria-hidden="true">image</span></span>');
+        : '<span class="st-thumb st-thumb--icon st-thumb--lg"><span class="material-icons" aria-hidden="true">photo</span></span>');
     /* подпись — только когда показать нечего: нет ни картинки, ни плашки-подписи (label);
        у стикеров с цветной плашкой плашка и есть предпросмотр — подпись не выводим */
     if (!st.img && !st.label) {

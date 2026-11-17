@@ -654,10 +654,10 @@
   function versionName(mId, vId) { var m = menuById(mId); if (!m) return ''; var v = (m.versions || []).filter(function (x) { return x.id === vId; })[0]; return v ? v.name : ''; }
   function thumbHtml(st, combo) {
     var inner = !st
-      ? '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>'
+      ? '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">photo</span></span>'
       : (st.label
         ? '<span class="st-thumb" style="--st-c:' + esc(st.color || '#e0e0e0') + ';--st-t:' + esc(st.textColor || '#ffffff') + '">' + esc(st.label) + '</span>'
-        : '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">image</span></span>');
+        : '<span class="st-thumb st-thumb--icon"><span class="material-icons" aria-hidden="true">photo</span></span>');
     if (!combo) return inner;
     /* бейдж-статус «Отображать на итоговой картинке комбо»: Badge Positive + Icon size 4x (check).
        В ДС бейджа с иконкой нет — пробел ДС №271 (собран из компонентов: Badge 18×18 + Icon size) */
@@ -1400,7 +1400,7 @@
       var sec = document.createElement('div');
       sec.className = 'el-sec';
       var preview = '<div class="el-prev">' +
-        '<div class="el-prev__box"><span class="material-icons" aria-hidden="true">image</span>' +
+        '<div class="el-prev__box"><span class="material-icons" aria-hidden="true">photo</span>' +
           elState.rows[sz].map(function (rr) {
             var s = stickerById(rr.sticker);
             /* превью — ВСЕ размещённые стикеры (D-07); тумблер «Отображать… комбо» на превью не влияет */

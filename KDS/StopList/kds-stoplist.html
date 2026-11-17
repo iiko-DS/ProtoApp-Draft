@@ -2490,7 +2490,7 @@
           (c
             ? (acc
                 ? '<button class="kds-sgroup kds-sgroup--acc" type="button" data-sl-gfold="' + esc(c) + '" aria-expanded="' + (gOff ? 'false' : 'true') + '">' +
-                    '<span class="material-icons kds-sgroup__ico">' + (gOff ? 'chevron_right' : 'expand_more') + '</span>' +
+                    '<span class="material-icons kds-sgroup__ico">' + (gOff ? 'keyboard_arrow_right' : 'expand_more') + '</span>' +
                     '<span class="kds-sgroup__t">' + esc(c) + '</span>' +
                     '<span class="kds-sgroup__n">' + buckets[c].length +
                       '<span class="kds-sgroup__stopn" data-sl-gstopn="' + esc(c) + '"></span>' +
@@ -2572,7 +2572,7 @@
         '<div class="kds-srow__meta">' + metaHtml + '</div>' +
         /* Аккордеон позиции: шеврон раскрывает/скрывает строки размеров (только экран с cfg.acc) */
         (RT.cfg.acc && sized
-          ? '<button class="kds-srow__fold' + (foldOn ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (foldOn ? 'chevron_right' : 'expand_more') + '</span></button>'
+          ? '<button class="kds-srow__fold' + (foldOn ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (foldOn ? 'keyboard_arrow_right' : 'expand_more') + '</span></button>'
           : '') +
       '</div>';
       var chk = '<button class="kds-srow__check' + (RT.sl.checks[i] ? ' is-on' : '') + '" type="button" data-sl-check="' + i + '"' + (it.excluded ? ' disabled' : '') + '><span class="material-icons">' + (RT.sl.checks[i] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
@@ -4962,7 +4962,7 @@
         row('run', svgIco('clock_loader_40'), '#448aff', 'В работе') +
         row('over', '<span class="material-icons">info</span>', '#ff5252', 'Просрочено') +
         row('done', '<span class="material-icons">check_circle</span>', '#14b456', 'Вовремя') +
-        row('avg', '<span class="material-icons">hourglass_empty</span>', '#9e9e9e', 'Ср. время');
+        row('avg', '<span class="material-icons">hourglass</span>', '#9e9e9e', 'Ср. время');
       openPop(anchor, 'kds-menu--metrics', html);
     }
     /* панель «Настройки»: шапка с заголовком и ×, «Тема», «Масштаб» */
@@ -5180,7 +5180,7 @@
             if (grp) grp.classList.toggle('is-collapsed', gOff);
             gfoldBtn.setAttribute('aria-expanded', gOff ? 'false' : 'true');
             var gIco = gfoldBtn.querySelector('.kds-sgroup__ico');
-            if (gIco) gIco.textContent = gOff ? 'chevron_right' : 'expand_more';
+            if (gIco) gIco.textContent = gOff ? 'keyboard_arrow_right' : 'expand_more';
             slSyncFoldAll();
             /* Высота списка изменилась — полоса прокрутки может стать не нужной (и наоборот) */
             slScrollSync();
@@ -5200,7 +5200,7 @@
               var nm = hb.getAttribute('data-sl-gfold');
               hb.setAttribute('aria-expanded', anyOpen ? 'false' : 'true');
               var hi = hb.querySelector('.kds-sgroup__ico');
-              if (hi) hi.textContent = anyOpen ? 'chevron_right' : 'expand_more';
+              if (hi) hi.textContent = anyOpen ? 'keyboard_arrow_right' : 'expand_more';
               if (nm) RT.sl.gfolds[nm] = anyOpen;
             });
             slSyncFoldAll();
@@ -5213,7 +5213,7 @@
             var foldOff = foldBtn.classList.toggle('is-collapsed');
             if (RT.sl.folds) RT.sl.folds[foldIdx] = foldOff;
             var foldIco = foldBtn.querySelector('.material-icons');
-            if (foldIco) foldIco.textContent = foldOff ? 'chevron_right' : 'expand_more';
+            if (foldIco) foldIco.textContent = foldOff ? 'keyboard_arrow_right' : 'expand_more';
             var foldSubs = RT.view.querySelectorAll('.kds-srow--sub[data-sl-row="' + foldIdx + '"]');
             Array.prototype.forEach.call(foldSubs, function (sr) { sr.style.display = foldOff ? 'none' : ''; });
             slScrollSync();
