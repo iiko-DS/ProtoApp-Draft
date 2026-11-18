@@ -228,17 +228,17 @@
   .kds-topbar { position: absolute; top: 0; left: 0; right: 0; height: 44px; padding: 12px 16px 8px; display: flex; align-items: center; gap: 32px; z-index: 6; }
   .kds-tb-lists { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 24px; }
   .kds-tb-list { display: flex; align-items: center; gap: 8px; height: 24px; flex: 0 0 auto; font-size: 16px; font-weight: 500; line-height: 24px; letter-spacing: .5px; color: #fff; white-space: nowrap; }
-  .kds-tb-list .material-icons { font-size: 20px; width: 24px; text-align: center; color: var(--kds-text-2); flex: 0 0 auto; }
+  .kds-tb-list .material-icons { font-size: 20px; width: 20px; text-align: center; color: var(--kds-text-2); flex: 0 0 auto; }
   /* Адаптив (как Figma «Header»): название ресторана — сжимаемый слот, обрезается с эллипсисом
      и не наезжает на счётчики; остальные элементы списка не сжимаются */
   .kds-tb-rest { flex: 0 1 auto; min-width: 0; overflow: hidden; }
   .kds-tb-pick { min-width: 0; }
   .kds-tb-pick [data-val] { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .kds-tb-chev { font-size: 20px !important; width: 24px !important; margin-left: 0; flex: 0 0 auto; }
+  .kds-tb-chev { font-size: 20px !important; width: 20px !important; margin-left: 0; flex: 0 0 auto; }
   .kds-tb-states { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; margin-left: auto; }
   .kds-tb-state { display: flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 500; line-height: 24px; letter-spacing: .5px; white-space: nowrap; }
-  .kds-tb-state .material-icons { font-size: 20px; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
-  .kds-tb-ico { flex: 0 0 24px; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+  .kds-tb-state .material-icons { font-size: 20px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
+  .kds-tb-ico { flex: 0 0 20px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; }
   .kds-svg-ico { width: 20px; height: 20px; flex: 0 0 auto; display: block; }
   .kds-tb-state--clock .kds-svg-ico { color: #616161; }
   .kds-tb-state--accent { color: var(--kds-ic-accent); }
@@ -261,14 +261,14 @@
   .kds-view--mob .kds-tb-list [data-val] { display: none; }
   .kds-view--mob .kds-tb-list.kds-tb-pick { background: transparent; }
   .kds-view--mob .kds-tb-list.kds-tb-rest { width: auto; flex: 0 0 auto; padding: 0; gap: 8px; }
-  /* все иконки шапки — 24×24 на любом экране (и шрифтовые, и SVG) */
-  .kds-topbar .material-icons { width: 24px; height: 24px; font-size: 24px; }
+  /* все иконки шапки — 20×20 на любом экране (и маски ДС, и SVG) */
+  .kds-topbar .material-icons { width: 20px; height: 20px; font-size: 20px; }
   /* внутри счётчиков и иконочных кнопок свои правила — перебиваем их тем же размером */
   .kds-topbar .kds-tb-state .material-icons,
-  .kds-topbar .kds-iconbtn .material-icons { width: 24px; height: 24px; font-size: 24px; }
-  .kds-topbar .kds-tb-chev { width: 24px !important; height: 24px; font-size: 24px !important; }
+  .kds-topbar .kds-iconbtn .material-icons { width: 20px; height: 20px; font-size: 20px; }
+  .kds-topbar .kds-tb-chev { width: 20px !important; height: 20px; font-size: 20px !important; }
   .kds-topbar .kds-svg-ico { width: 20px !important; height: 20px !important; }
-  .kds-topbar .kds-tb-ico { flex: 0 0 24px; width: 24px; height: 24px; }
+  .kds-topbar .kds-tb-ico { flex: 0 0 20px; width: 20px; height: 20px; }
   .kds-view--mob .kds-tb-chev { display: none; }
   .kds-view--mob .kds-tb-states [data-filter] { display: none; }
   .kds-view--mob .kds-tb-states .kds-tb-state--clock { width: auto; height: 40px; margin-left: auto;
@@ -277,14 +277,13 @@
   .kds-view--mob .kds-tb-icons .kds-iconbtn { width: 24px; height: 40px; padding: 0; background: transparent; }
   .kds-iconbtn {
     position: relative;
-    flex: 0 0 auto; width: 24px; height: 24px; border: 0; border-radius: 0;
+    flex: 0 0 auto; width: 24px; height: 24px; border: 0; padding: 0; border-radius: 0;
     background: transparent; color: var(--kds-text-2); display: flex; align-items: center; justify-content: center;
   }
-  /* видимая иконка 24, но цель нажатия 44×44 — как требует тач */
+  /* видимая иконка 20, но цель нажатия 44×44 — как требует тач */
   .kds-iconbtn::after { content: ''; position: absolute; inset: -10px; }
   .kds-iconbtn:active { background: rgba(255, 255, 255, .1); border-radius: 8px; }
-  .kds-iconbtn .material-icons { font-size: 20px; }
-  .kds-iconbtn--power .material-icons { font-size: 18px; }
+  .kds-iconbtn .material-icons { font-size: 20px; flex: 0 0 auto; }
   .kds-iconbtn--power { color: var(--kds-ic-accent); }
 
   /* ── Лента карточек ── */
@@ -1079,6 +1078,16 @@
   .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow .kds-srow__top .kds-srow__val .ds-input__frame:hover,
   .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow .kds-srow__top .kds-srow__val .ds-input__frame:focus-within {
     border-color: var(--kds-line) !important; }
+  /* Поле цифровой панели — всегда в состоянии Focus: акцентная обводка Input/Focus ДС.
+     Ошибка важнее фокуса — красная рамка Input/Error */
+  .kds-view .kds-numpad .kds-numpad__field .ds-input__frame,
+  .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame,
+  .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame:hover,
+  .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame:focus-within {
+    border-color: var(--kds-ic-accent) !important; }
+  .kds-view .kds-numpad .kds-numpad__field.ds-input--error > .ds-input__frame,
+  .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field.ds-input--error > .ds-input__frame {
+    border-color: var(--kds-ic-negative) !important; }
   /* Разделителей на экране нет (accnodiv) — значит нет и верхнего отступа строки под линию.
      Шаг между блюдами = 4 (padding-bottom строки), как в исходном ритме, а не 4 + 4 = 8 */
   .kds-view--accnodiv .kds-sgrp--acc > .kds-srow + .kds-srow { padding-top: 0 !important; }
@@ -1417,8 +1426,10 @@
   .kds-numpad__field .ds-input { width: 100%; }
   /* поле в фокусе — акцентная обводка, как у Input M в состоянии Focus */
   .kds-numpad__field .ds-input__frame { background: var(--kds-row); border-color: var(--kds-ic-accent); }
-  /* поле только показывает ввод — на себя фокус не забирает */
-  .kds-numpad__field .ds-input__field { pointer-events: none; }
+  /* ошибка ввода — внутри панели, под полем: Support/Error text ДС */
+  .kds-numpad__err { display: none; margin-top: var(--ds-space-1x, 4px);
+    font-size: 16px; line-height: 24px; letter-spacing: .25px; color: var(--kds-ic-negative); }
+  .kds-numpad__err.is-on { display: block; }
   /* Уровень ограничения переключается не в строке блюда — служебного сегмент-контрола в блоке
      позиции нет; показ размеров задаёт экран */
   /* Единица — колонка постоянной ширины (по самому длинному «порц»), текст мельче значения:
@@ -1569,6 +1580,13 @@
       { name: 'Соус чесночный' },
       { name: 'Соус барбекю' },
       { name: 'Соус сырный' },
+      /* Пиццы с размерами — на экранах внесения блюдо показывается заголовком,
+         под ним раскрыты строки размеров (как в стоп-листе) */
+      { name: 'Маргарита', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
+      { name: 'Мясная', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
+      { name: 'Пепперони', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
+      { name: 'Четыре сыра', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
+      { name: 'Гавайская', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
       /* Закуски */
       { name: 'Куриные крылья' },
       { name: 'Картофель фри', unit: 'порц' },
@@ -1598,6 +1616,8 @@
        Отказ показывается баннером, если позиция перестала подходить уже после открытия списка */
     var SL_EXCLUDED = ['Суп дня', 'Салат цезарь', 'Соус чесночный'];
     function slMenuAdd() {
+      /* Позиции с размерами отдаём блюдом целиком: размеры разворачиваются уже в строках
+         экрана — заголовок блюда и под ним раскрытые строки размеров, как в стоп-листе */
       return SL_MENU
         .filter(function (x) { return SL_EXCLUDED.indexOf(x.name) === -1; })
         .map(function (x) { return JSON.parse(JSON.stringify(x)); });
@@ -2055,7 +2075,7 @@
     function slCount() { return slData().length; }
     /* Категории позиций для группировки списка (в iikoFront приходят из меню) */
     var SL_CATS = {
-      'Фокачча': 'Пицца', 'Маргарита': 'Пицца', 'Дьябло': 'Пицца',
+      'Фокачча': 'Пицца', 'Маргарита': 'Пицца', 'Дьябло': 'Пицца', 'Мясная': 'Пицца',
       'Пепперони': 'Пицца', 'Четыре сыра': 'Пицца', 'Гавайская': 'Пицца',
       'Тирамису': 'Десерты', 'Панна котта': 'Десерты', 'Чизкейк': 'Десерты',
       'Наполеон': 'Десерты', 'Медовик': 'Десерты', 'Профитроли': 'Десерты',
@@ -2221,6 +2241,22 @@
       if (nameEl) nameEl.textContent = (RT.sl && RT.sl.padName) || '';
       var unitEl = padEl.querySelector('[data-sl-pad-unit]');
       if (unitEl) unitEl.textContent = (RT.sl && RT.sl.padUnit) || '';
+      slPadValidate();
+    }
+    /* Валидация значения в панели: 0 — полный стоп, пусто — ограничения нет,
+       иначе 0,001…999,999 и не больше 3 знаков. Красная рамка — состояние Input/Error ДС */
+    function slPadValidate() {
+      var padEl = RT.view && RT.view.querySelector('[data-sl-numpad]');
+      if (!padEl) return true;
+      var f = padEl.querySelector('[data-sl-pad-val]');
+      var pr = parseRest(f ? f.value : '');
+      var ok = pr.ok && (pr.empty || pr.val === 0 || (pr.val >= 0.001 && pr.val <= 999.999));
+      var box = f && f.closest ? f.closest('.ds-input') : null;
+      if (box) box.classList.toggle('ds-input--error', !ok);
+      /* ошибка показывается ВНУТРИ панели, под полем */
+      var errEl = padEl.querySelector('[data-sl-pad-err]');
+      if (errEl) errEl.classList.toggle('is-on', !ok);
+      return ok;
     }
     function slPadKey(k) {
       var inp = RT.sl && RT.sl.padInp;
@@ -2232,6 +2268,7 @@
           inp.value = '0';
           inp.dispatchEvent(new Event('input', { bubbles: true }));
         }
+        if (!slPadValidate()) { slRowErr(inp, true); return; }   /* невалидно — панель не закрываем */
         var ok = slCommit(inp);
         if (!ok) return;                      /* ошибка осталась на месте — панель не закрываем */
         slPadHide();
@@ -2254,7 +2291,9 @@
       else if (k === ',') {
         if (v.indexOf(',') === -1 && v.indexOf('.') === -1) v = (v ? v + ',' : '0,');
       } else v = v + k;
-      /* Длиннее девяти знаков не набирается: 999,999 — предел по ТЗ */
+      /* Длиннее девяти знаков не набирается: 999,999 — предел по ТЗ;
+         после запятой — не больше трёх знаков */
+      v = slClampRest(v);
       if (v.length > 9) return;
       /* Ведущие нули не копим: «02» → «2» */
       v = v.replace(/^0+(?=\d)/, '');
@@ -2490,10 +2529,12 @@
           (c
             ? (acc
                 ? '<button class="kds-sgroup kds-sgroup--acc" type="button" data-sl-gfold="' + esc(c) + '" aria-expanded="' + (gOff ? 'false' : 'true') + '">' +
-                    '<span class="material-icons kds-sgroup__ico">' + (gOff ? 'keyboard_arrow_right' : 'expand_more') + '</span>' +
+                    '<span class="material-icons kds-sgroup__ico">' + (gOff ? 'chevron_right' : 'expand_more') + '</span>' +
                     '<span class="kds-sgroup__t">' + esc(c) + '</span>' +
                     '<span class="kds-sgroup__n">' + buckets[c].length +
-                      '<span class="kds-sgroup__stopn" data-sl-gstopn="' + esc(c) + '"></span>' +
+                      /* «В стопе N» — только в стоп-листе: на внесении счётчик относился бы к стоп-листу,
+                         а не к списку внесения, и путал */
+                      (RT.sl && RT.sl.addMode ? '' : '<span class="kds-sgroup__stopn" data-sl-gstopn="' + esc(c) + '"></span>') +
                     '</span>' +
                   '</button>'
                 : '<div class="kds-sgroup">' + esc(c) + '</div>')
@@ -2511,6 +2552,35 @@
         var mChk = RT.cfg.multi
           ? '<button class="kds-srow__check' + (RT.sl.checks[i] ? ' is-on' : '') + (it._fail ? ' is-off' : '') + '" type="button" data-sl-check="' + i + '"' + (it._fail ? ' disabled aria-disabled="true"' : '') + '><span class="material-icons">' + (RT.sl.checks[i] ? 'check_box' : 'check_box_outline_blank') + '</span></button>'
           : '';
+        /* Позиция с размерами — как в стоп-листе: строка блюда-заголовка, под ней раскрыты
+           строки размеров (своё поле у каждого). В заголовке поля нет — значения живут у размеров */
+        if (it.sizes && it.sizes.length) {
+          var szCap = it.sizes.length + ' ' + slSizePlur(it.sizes.length);
+          var szFoldOff = !!RT.sl.folds[i];
+          var szFold = RT.cfg.acc
+            ? '<button class="kds-srow__fold' + (szFoldOff ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (szFoldOff ? 'chevron_right' : 'expand_more') + '</span></button>'
+            : '';
+          return '<div class="kds-srow' + (RT.sl.checks[i] ? ' is-sel' : '') + '" data-sl-row="' + i + '" data-sl-key="' + i + '" data-sl-name="' + esc(it.name) + '">' +
+            '<div class="kds-srow__top">' +
+              (RT.cfg.rowAdd ? '<div class="kds-srow__plate">' : '') +
+              '<div class="kds-srow__box">' + mChk +
+                '<div class="kds-srow__main' + (RT.cfg.multi ? '' : ' is-static') + '">' +
+                  '<div class="kds-srow__namecol">' +
+                    '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(it.name) + '</span></div>' +
+                    '<span class="kds-srow__cap">' + esc(szCap) + '</span>' +
+                  '</div>' +
+                  '<div class="kds-srow__meta"></div>' +
+                  szFold +
+                '</div>' +
+              '</div>' +
+              '<div class="kds-srow__val kds-srow__val--blank' + (RT.cfg.noClear ? ' kds-srow__val--compact' : '') + '"></div>' +
+              (RT.cfg.rowAdd ? '</div>' : '') +
+              (RT.cfg.rowAdd
+                ? '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + i + '">В стоп-лист</button>'
+                : '') +
+            '</div>' + slErrHtml() + '</div>' +
+            slAddSizesHtml(it, i);
+        }
         /* Проба: у одной позиции (cfg.mergeDish + cfg.mergeRow) блюдо и остаток — ОДИН блок,
            поле переезжает внутрь коробки названия; остальные строки остаются как были */
         var merged = !!(RT.cfg.mergeDish && i === (RT.cfg.mergeRow || 0));
@@ -2572,7 +2642,7 @@
         '<div class="kds-srow__meta">' + metaHtml + '</div>' +
         /* Аккордеон позиции: шеврон раскрывает/скрывает строки размеров (только экран с cfg.acc) */
         (RT.cfg.acc && sized
-          ? '<button class="kds-srow__fold' + (foldOn ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (foldOn ? 'keyboard_arrow_right' : 'expand_more') + '</span></button>'
+          ? '<button class="kds-srow__fold' + (foldOn ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (foldOn ? 'chevron_right' : 'expand_more') + '</span></button>'
           : '') +
       '</div>';
       var chk = '<button class="kds-srow__check' + (RT.sl.checks[i] ? ' is-on' : '') + '" type="button" data-sl-check="' + i + '"' + (it.excluded ? ' disabled' : '') + '><span class="material-icons">' + (RT.sl.checks[i] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
@@ -2597,6 +2667,35 @@
             : '') +
         '</div>' + slErrHtml() + '</div>' +
         (sized ? slSizesHtml(it, i, foldOn) : '');
+    }
+    /* Размеры позиции на экранах внесения — строки под заголовком блюда (Figma 10628:57825):
+       у каждого размера своё поле остатка, чекбокс (массовое внесение) и своя кнопка «В стоп-лист» */
+    function slAddSizesHtml(it, i) {
+      var foldOff = !!RT.sl.folds[i];
+      return it.sizes.map(function (sz, si) {
+        var szKey = i + ':' + si;
+        var chk = RT.cfg.multi
+          ? '<button class="kds-srow__check' + (RT.sl.checks[szKey] ? ' is-on' : '') + '" type="button" data-sl-check="' + szKey + '"><span class="material-icons">' + (RT.sl.checks[szKey] ? 'check_box' : 'check_box_outline_blank') + '</span></button>'
+          : '';
+        return '<div class="kds-srow kds-srow--sub' + (RT.sl.checks[szKey] ? ' is-sel' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-key="' + szKey + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '"' +
+          (foldOff ? ' style="display:none"' : '') + '>' +
+          '<div class="kds-srow__top">' +
+            (RT.cfg.rowAdd ? '<div class="kds-srow__plate">' : '') +
+            '<div class="kds-srow__box">' + chk +
+              '<div class="kds-srow__main' + (RT.cfg.multi ? '' : ' is-static') + '">' +
+                '<div class="kds-srow__namecol">' +
+                  '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(sz.s) + '</span></div>' +
+                '</div>' +
+                '<div class="kds-srow__meta"></div>' +
+              '</div>' +
+            '</div>' +
+            slFieldHtml(i, si, '', it.unit || 'шт', false, !!RT.cfg.noSteps, !!RT.cfg.rowAdd) +
+            (RT.cfg.rowAdd ? '</div>' : '') +
+            (RT.cfg.rowAdd
+              ? '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + szKey + '">В стоп-лист</button>'
+              : '') +
+          '</div>' + slErrHtml() + '</div>';
+      }).join('');
     }
     /* Размеры позиции — отдельные строки с отступом (Figma 10628:57825): название 22/28,
        остаток — своё поле в строке, справа */
@@ -2649,10 +2748,11 @@
             '<div class="kds-numpad__label">Остаток</div>' +
             '<div class="ds-input ds-input--m kds-numpad__field">' +
               '<div class="ds-input__frame"><div class="ds-input__content">' +
-                '<input class="ds-input__field" type="text" readonly tabindex="-1" placeholder="0"' +
+                '<input class="ds-input__field" type="text" inputmode="decimal" placeholder="0"' +
                   ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
               '</div></div>' +
             '</div>' +
+            '<div class="kds-numpad__err" data-sl-pad-err>Допустимо от 0,001 до 999,999, не больше 3 знаков после запятой</div>' +
           '</div>' +
         '</div>' +
         '<div class="kds-numpad__grid">' +
@@ -3132,8 +3232,10 @@
         /* На 8-м экране панель раскрывается/сворачивается и при открытой плашке действий */
         if (RT.cfg && RT.cfg.dishBg && b.hasAttribute('data-sl-gfold')) return;
         /* Количество остаётся управляемым: если при открытой плашке можно ставить чекбоксы,
-           то и остаток правится так же — шаги «−/+», поле и сброс работают как обычно */
+           то и остаток правится так же — шаги «−/+», поле и сброс работают как обычно.
+           Цифровая панель — часть этого ввода: её клавиши и «Готово»/«Отмена» тоже живые */
         if (b.closest('.kds-srow__val')) return;
+        if (b.closest('[data-sl-numpad]')) return;
         if (lockOthers) {
           if (!b.disabled) { b.disabled = true; b.setAttribute('data-sl-lock', ''); }
         } else if (b.hasAttribute('data-sl-lock')) {
@@ -3183,6 +3285,14 @@
       if (v === 0) return '0';
       return String(v).indexOf('.') !== -1 ? String(v).replace('.', ',') : String(v);
     }
+    /* Максимум три знака после запятой: лишние не НАБИРАЮТСЯ (а не просто не сохраняются).
+       Хвостовая запятая остаётся — пользователь ещё вводит дробную часть */
+    function slClampRest(v) {
+      var s = String(v == null ? '' : v).replace(/\./g, ',');
+      var i = s.indexOf(',');
+      if (i === -1) return s;
+      return s.slice(0, i + 1) + s.slice(i + 1).replace(/,/g, '').slice(0, 3);
+    }
     /* У позиции есть действующее ограничение? (с размерами — если ограничен хотя бы один размер) */
     function slRestricted(it) {
       if (!it) return false;
@@ -3197,24 +3307,50 @@
       var row = btn.closest('[data-sl-row]');
       if (!row) return;
       var i = +row.getAttribute('data-sl-row');
+      var si = row.hasAttribute('data-sl-si') ? +row.getAttribute('data-sl-si') : null;
       var it = slData()[i];
       if (!it || it._fail) return;
-      var inp = row.querySelector('[data-sl-in]');
-      var pr = inp ? parseRest(inp.value) : { ok: true, empty: true };
-      if (!pr.ok) { if (inp) slRowErr(inp, true); return; }
       var live = slLiveItems();
-      var row2 = { name: it.name, unit: it.unit || 'шт' };
-      if (!pr.empty && pr.val > 0) row2.rest = fmtRest(pr.val);
-      else row2.stop = true;
-      live.push(row2);
+      /* Какие строки вносим: размер — только он, блюдо с размерами — все его размеры,
+         позиция без размеров — сама строка */
+      var plans = [];
+      if (si != null && it.sizes && it.sizes[si]) {
+        plans.push({ sz: it.sizes[si], sj: si });
+      } else if (it.sizes && it.sizes.length) {
+        it.sizes.forEach(function (sz, sj) { plans.push({ sz: sz, sj: sj }); });
+      } else {
+        plans.push({ sz: null, sj: null });
+      }
+      /* Сначала проверяем все поля: ошибка хотя бы в одном не должна дать частичное внесение */
+      var added = [], bad = false;
+      plans.forEach(function (p) {
+        var inp = p.sj != null
+          ? RT.view.querySelector('[data-sl-in="' + i + '"][data-sl-si="' + p.sj + '"]')
+          : RT.view.querySelector('[data-sl-in="' + i + '"]');
+        var pr = inp ? parseRest(inp.value) : { ok: true, empty: true };
+        if (!pr.ok) { if (inp) slRowErr(inp, true); bad = true; return; }
+        /* Остаток — из поля строки; пустое поле = полный стоп (как в массовом внесении) */
+        var row2 = { name: p.sz ? it.name + ' ' + p.sz.s : it.name, unit: it.unit || 'шт' };
+        if (!pr.empty && pr.val > 0) row2.rest = fmtRest(pr.val);
+        else row2.stop = true;
+        added.push(row2);
+      });
+      if (bad) return;
+      added.forEach(function (r2) { live.push(r2); });
       /* Панель категории, куда добавили позицию, должна быть развёрнута в стоп-листе */
       var catAdded = slCat(it);
       if (catAdded) { RT.sl.gfolds = RT.sl.gfolds || {}; RT.sl.gfolds[catAdded] = false; }
-      /* Строка ушла в стоп-лист — из списка внесения её убираем */
-      RT.cfg.items.splice(i, 1);
+      /* Строка ушла в стоп-лист — из списка внесения её убираем.
+         У размера убираем только его; у блюда — всё блюдо */
+      if (si != null && it.sizes && it.sizes[si]) {
+        it.sizes.splice(si, 1);
+        if (!it.sizes.length) RT.cfg.items.splice(i, 1);
+      } else {
+        RT.cfg.items.splice(i, 1);
+      }
       RT.sl.checks = {};
       slRerender();
-      slBanner('Добавлено в стоп-лист: ' + it.name);
+      slBanner('Добавлено в стоп-лист: ' + (added.length > 1 ? added.length : added[0].name));
     }
     function slMass(k) {
       var items = slData();
@@ -3224,22 +3360,51 @@
          Остаток — из поля строки; пустое поле = полный стоп (проверено ТЗ: массовый полный стоп) */
       if (k === 'addsel') {
         var live = slLiveItems();
-        checked.slice().sort(function (a, b) { return a - b; }).forEach(function (i) {
-          var it = items[i];
-          if (!it || it._fail) return;   /* исключённые из меню не вносятся (§5.10 п.5) */
-          var inp = RT.view && RT.view.querySelector('[data-sl-in="' + i + '"]');
+        var addedN = 0;
+        var keys = slCheckedKeys();
+        /* Остаток — из поля строки; пустое поле = полный стоп (проверено ТЗ: массовый полный стоп) */
+        function addKeyRow(i, si, it) {
+          var inp = si != null
+            ? RT.view.querySelector('[data-sl-in="' + i + '"][data-sl-si="' + si + '"]')
+            : RT.view.querySelector('[data-sl-in="' + i + '"]');
           var pr = inp ? parseRest(inp.value) : { ok: true, empty: true };
           var row = { name: it.name, unit: it.unit || 'шт' };
+          if (si != null && it.sizes && it.sizes[si]) row.name = it.name + ' ' + it.sizes[si].s;
           if (pr.ok && !pr.empty && pr.val > 0) row.rest = fmtRest(pr.val);
           else row.stop = true;
           live.push(row);
-          /* Панель категории добавленных позиций — развёрнута */
+          addedN++;
+        }
+        /* Сначала отмеченные блюда: блюдо с размерами вносится целиком — все его размеры,
+           позиция без размеров — сама строка */
+        keys.filter(function (key) { return String(key).indexOf(':') === -1; }).forEach(function (key) {
+          var i = +key;
+          var it = items[i];
+          if (!it || it._fail) return;   /* исключённые из меню не вносятся (§5.10 п.5) */
+          if (it.sizes && it.sizes.length) {
+            it.sizes.forEach(function (sz, sj) { addKeyRow(i, sj, it); });
+          } else {
+            addKeyRow(i, null, it);
+          }
+        });
+        /* Затем отдельно отмеченные размеры; уже внесённое блюдо второй раз не считаем */
+        keys.filter(function (key) { return String(key).indexOf(':') !== -1; }).forEach(function (key) {
+          var p = String(key).split(':');
+          var i = +p[0], si = +p[1];
+          var it = items[i];
+          if (!it || it._fail) return;
+          if (keys.indexOf(String(i)) !== -1) return;   /* блюдо уже внесено целиком */
+          if (!(it.sizes && it.sizes[si])) return;
+          addKeyRow(i, si, it);
+        });
+        /* Панель категории добавленных позиций — развёрнута */
+        items.forEach(function (it) {
           var catAdd = slCat(it);
           if (catAdd) { RT.sl.gfolds = RT.sl.gfolds || {}; RT.sl.gfolds[catAdd] = false; }
         });
         RT.sl.checks = {};
         render('list-clean-copy');
-        slBanner('Добавлено в стоп-лист: ' + checked.length);
+        slBanner('Добавлено в стоп-лист: ' + addedN);
         return;
       }
       if (k === 'stop') {
@@ -3383,6 +3548,29 @@
         });
         syncSlClear();
       }
+      /* Поле цифровой панели — рабочий инпут: цифры и запятая, не больше 3 знаков после запятой,
+         значение сразу уходит в поле строки, ошибка — красной рамкой и подписью под строкой */
+      var padFieldEl = view.querySelector('[data-sl-pad-val]');
+      if (padFieldEl) {
+        padFieldEl.addEventListener('input', function () {
+          var inp = RT.sl && RT.sl.padInp;
+          if (!inp) return;
+          var v = String(padFieldEl.value || '').replace(/[^\d.,]/g, '').replace(/\./g, ',');
+          var parts = v.split(',');
+          if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join('');
+          v = slClampRest(v);                      /* максимум три знака после запятой */
+          v = v.replace(/^0+(?=\d)/, '');
+          if (v.length > 9) v = v.slice(0, 9);
+          if (padFieldEl.value !== v) padFieldEl.value = v;
+          inp.value = v;
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+          slPadValidate();
+        });
+        padFieldEl.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); slPadKey('done'); }
+          else if (e.key === 'Escape') { e.preventDefault(); slPadKey('cancel'); }
+        });
+      }
       view.addEventListener('focusin', function (e) {
         /* Тап в поле поиска — экранная клавиатура: на терминале системной нет */
         if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-sl-search')) slKbdShow();
@@ -3393,12 +3581,23 @@
           var rowEl = e.target.closest ? e.target.closest('.kds-srow') : null;
           var nmEl = rowEl && rowEl.querySelector('.kds-srow__name');
           var unEl = rowEl && rowEl.querySelector('.kds-srow__unit');
-          RT.sl.padName = nmEl ? nmEl.textContent.replace(/s+/g, ' ').trim() : '';
+          /* На внесении в строке размера название — только «25 см», поэтому берём
+             полное «Маргарита 25 см» из атрибута строки */
+          RT.sl.padName = (RT.sl.addMode && rowEl && rowEl.getAttribute('data-sl-name')) ||
+            (nmEl ? nmEl.textContent.replace(/\s+/g, ' ').trim() : '');
           RT.sl.padUnit = unEl ? unEl.textContent.trim() : '';
           var padEl = view.querySelector('[data-sl-numpad]');
-          if (padEl) { padEl.hidden = false; RT.sl.padShownAt = Date.now(); slPadSync(); }
+          if (padEl) {
+            padEl.hidden = false; RT.sl.padShownAt = Date.now(); slPadSync();
+            /* Поле панели — рабочее: на десктопе фокус и выделение переходят в него,
+               чтобы ввод с клавиатуры шёл туда, а не в поле строки под панелью */
+            var padField = padEl.querySelector('[data-sl-pad-val]');
+            if (padField && !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) {
+              padField.focus(); padField.select();
+            }
+          }
           /* на десктопе заодно всё значение выделено — удобно перепечатать (§5.12.7) */
-          if (!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) e.target.select();
+          if (!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) && document.activeElement !== view.querySelector('[data-sl-pad-val]')) e.target.select();
         }
       });
       /* Ввод остатка в строке: ведущие нули не копятся, ошибка — сразу под строкой */
@@ -3408,6 +3607,7 @@
         inp.__slDone = false;                     /* новое значение — новый цикл сохранения */
         var v = String(inp.value);
         var norm = v.replace(/^0+(?=\d)/, '');
+        norm = slClampRest(norm);                 /* не больше трёх знаков после запятой */
         if (norm.length > 9) norm = norm.slice(0, 9);
         if (norm !== v) inp.value = norm;
         slRowErr(inp, inp.value !== '' && !parseRest(inp.value).ok);
@@ -4133,10 +4333,28 @@
         cfg.__live = true;
         cfg.items = JSON.parse(JSON.stringify(slLiveItems()));
       }
-      /* В список внесения не попадают позиции, которые уже в стоп-листе */
+      /* В список внесения не попадают позиции, которые уже в стоп-листе.
+         У позиции с размерами блюдо остаётся, пока есть размеры, которых нет в стопе:
+         размеры в полном стопе уже внесены — повторно их не предлагаем */
       if (RT.sl && RT.sl.addMode) {
-        var taken = slLiveItems().map(function (x) { return x.name; });
-        cfg.items = (cfg.items || []).filter(function (it) { return taken.indexOf(it.name) === -1; });
+        var takenNames = {}, takenStop = {};
+        slLiveItems().forEach(function (x) {
+          takenNames[x.name] = 1;
+          if (x.sizes && x.sizes.length) {
+            x.sizes.forEach(function (sz) {
+              takenNames[x.name + ' ' + sz.s] = 1;
+              if (sz.stop) takenStop[x.name + ' ' + sz.s] = 1;
+            });
+          }
+        });
+        cfg.items = (cfg.items || []).map(function (it) {
+          if (it.sizes && it.sizes.length) {
+            var keep = JSON.parse(JSON.stringify(it));
+            keep.sizes = keep.sizes.filter(function (sz) { return !takenStop[it.name + ' ' + sz.s]; });
+            return keep.sizes.length ? keep : null;
+          }
+          return takenNames[it.name] ? null : it;
+        }).filter(Boolean);
       }
       prep(cfg);
       var body;
@@ -4962,7 +5180,7 @@
         row('run', svgIco('clock_loader_40'), '#448aff', 'В работе') +
         row('over', '<span class="material-icons">info</span>', '#ff5252', 'Просрочено') +
         row('done', '<span class="material-icons">check_circle</span>', '#14b456', 'Вовремя') +
-        row('avg', '<span class="material-icons">hourglass</span>', '#9e9e9e', 'Ср. время');
+        row('avg', '<span class="material-icons">hourglass_empty</span>', '#9e9e9e', 'Ср. время');
       openPop(anchor, 'kds-menu--metrics', html);
     }
     /* панель «Настройки»: шапка с заголовком и ×, «Тема», «Масштаб» */
@@ -5180,7 +5398,7 @@
             if (grp) grp.classList.toggle('is-collapsed', gOff);
             gfoldBtn.setAttribute('aria-expanded', gOff ? 'false' : 'true');
             var gIco = gfoldBtn.querySelector('.kds-sgroup__ico');
-            if (gIco) gIco.textContent = gOff ? 'keyboard_arrow_right' : 'expand_more';
+            if (gIco) gIco.textContent = gOff ? 'chevron_right' : 'expand_more';
             slSyncFoldAll();
             /* Высота списка изменилась — полоса прокрутки может стать не нужной (и наоборот) */
             slScrollSync();
@@ -5200,7 +5418,7 @@
               var nm = hb.getAttribute('data-sl-gfold');
               hb.setAttribute('aria-expanded', anyOpen ? 'false' : 'true');
               var hi = hb.querySelector('.kds-sgroup__ico');
-              if (hi) hi.textContent = anyOpen ? 'keyboard_arrow_right' : 'expand_more';
+              if (hi) hi.textContent = anyOpen ? 'chevron_right' : 'expand_more';
               if (nm) RT.sl.gfolds[nm] = anyOpen;
             });
             slSyncFoldAll();
@@ -5213,7 +5431,7 @@
             var foldOff = foldBtn.classList.toggle('is-collapsed');
             if (RT.sl.folds) RT.sl.folds[foldIdx] = foldOff;
             var foldIco = foldBtn.querySelector('.material-icons');
-            if (foldIco) foldIco.textContent = foldOff ? 'keyboard_arrow_right' : 'expand_more';
+            if (foldIco) foldIco.textContent = foldOff ? 'chevron_right' : 'expand_more';
             var foldSubs = RT.view.querySelectorAll('.kds-srow--sub[data-sl-row="' + foldIdx + '"]');
             Array.prototype.forEach.call(foldSubs, function (sr) { sr.style.display = foldOff ? 'none' : ''; });
             slScrollSync();
@@ -5290,7 +5508,7 @@
             if (t.closest('[data-sl-in]')) return;
             /* строка размера — сразу в своё поле */
             /* на экране с панелями (7) размеры ведут себя как блюдо: тап по строке отмечает позицию */
-            if (srow.hasAttribute('data-sl-si') && !(RT.cfg && RT.cfg.acc)) { return; }
+            if (srow.hasAttribute('data-sl-si') && !(RT.cfg && RT.cfg.acc) && !(RT.sl.addMode && RT.cfg.multi)) { return; }
             /* Кликабельна вся строка целиком, а не только плашка с названием:
                поле ввода выходит отдельно (обработано выше), остальное — отметка строки */
             /* Исключённая из меню строка не кликабельна (pointer-events: none у блока блюда):
