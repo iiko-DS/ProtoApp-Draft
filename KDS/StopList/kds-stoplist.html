@@ -261,14 +261,16 @@
   .kds-view--mob .kds-tb-list [data-val] { display: none; }
   .kds-view--mob .kds-tb-list.kds-tb-pick { background: transparent; }
   .kds-view--mob .kds-tb-list.kds-tb-rest { width: auto; flex: 0 0 auto; padding: 0; gap: 8px; }
-  /* все иконки шапки — 20×20 на любом экране (и маски ДС, и SVG) */
-  .kds-topbar .material-icons { width: 20px; height: 20px; font-size: 20px; }
+  /* все иконки шапки — 24×24 на любом экране (и маски ДС, и SVG) */
+  .kds-topbar .material-icons { width: 24px; height: 24px; font-size: 24px; }
   /* внутри счётчиков и иконочных кнопок свои правила — перебиваем их тем же размером */
   .kds-topbar .kds-tb-state .material-icons,
-  .kds-topbar .kds-iconbtn .material-icons { width: 20px; height: 20px; font-size: 20px; }
-  .kds-topbar .kds-tb-chev { width: 20px !important; height: 20px; font-size: 20px !important; }
-  .kds-topbar .kds-svg-ico { width: 20px !important; height: 20px !important; }
-  .kds-topbar .kds-tb-ico { flex: 0 0 20px; width: 20px; height: 20px; }
+  .kds-topbar .kds-iconbtn .material-icons { width: 24px; height: 24px; font-size: 24px; }
+  .kds-topbar .kds-tb-chev { width: 24px !important; height: 24px; font-size: 24px !important; }
+  .kds-topbar .kds-svg-ico { width: 24px !important; height: 24px !important; }
+  .kds-topbar .kds-tb-ico { flex: 0 0 24px; width: 24px; height: 24px; }
+  /* Search — компонент ДС: слот иконки 20×20 (--ds-size-5x), размер не растягиваем */
+  .kds-topbar .kds-ssearch .material-icons { width: 20px; height: 20px; font-size: 20px; }
   .kds-view--mob .kds-tb-chev { display: none; }
   .kds-view--mob .kds-tb-states [data-filter] { display: none; }
   .kds-view--mob .kds-tb-states .kds-tb-state--clock { width: auto; height: 40px; margin-left: auto;
@@ -283,7 +285,7 @@
   /* видимая иконка 20, но цель нажатия 44×44 — как требует тач */
   .kds-iconbtn::after { content: ''; position: absolute; inset: -10px; }
   .kds-iconbtn:active { background: rgba(255, 255, 255, .1); border-radius: 8px; }
-  .kds-iconbtn .material-icons { font-size: 20px; flex: 0 0 auto; }
+  .kds-iconbtn .material-icons { font-size: 24px; flex: 0 0 auto; }
   .kds-iconbtn--power { color: var(--kds-ic-accent); }
 
   /* ── Лента карточек ── */
@@ -3654,10 +3656,10 @@
           '<button class="kds-tb-list kds-tb-pick kds-tb-rest" type="button" data-select="rest"><span class="material-icons">person</span><span data-val>Константинопольский</span><span class="kds-tb-chev material-icons">keyboard_arrow_down</span></button>' +
           '<span class="kds-tb-states">' +
             (cfg.stopBtn ? '<button class="kds-tb-list kds-tb-pick" type="button" data-stopbtn><span class="material-icons">block</span><span data-val>Стоп-лист</span></button>' : '') +
-            (cfg.stat ? '<button class="kds-tb-state kds-tb-state--accent" type="button" data-filter="run"><span class="kds-tb-ico">' + svgIco('clock_loader_40', 20) + '</span><b data-cnt="run">12</b></button>' +
-              '<button class="kds-tb-state kds-tb-state--negative" type="button" data-filter="over"><span class="material-icons">info</span><b data-cnt="over">2</b></button>' +
-              '<button class="kds-tb-state kds-tb-state--positive" type="button" data-filter="done"><span class="material-icons">check_circle</span><b data-cnt="done">8</b></button>' : '') +
-            '<button class="kds-tb-state kds-tb-state--clock" type="button" data-pop="metrics"><span class="kds-tb-ico">' + svgIco('schedule_time', 20) + '</span><b data-cnt="avg">14:32</b></button>' +
+            (cfg.stat ? '<button class="kds-tb-state kds-tb-state--accent" type="button" data-filter="run"><span class="kds-tb-ico">' + svgIco('clock_loader_40', 24, 2) + '</span><b data-cnt="run">12</b></button>' +
+              '<button class="kds-tb-state kds-tb-state--negative" type="button" data-filter="over"><span class="kds-tb-ico"><span class="material-icons">info</span></span><b data-cnt="over">2</b></button>' +
+              '<button class="kds-tb-state kds-tb-state--positive" type="button" data-filter="done"><span class="kds-tb-ico"><span class="material-icons">check_circle</span></span><b data-cnt="done">8</b></button>' : '') +
+            '<button class="kds-tb-state kds-tb-state--clock" type="button" data-pop="metrics"><span class="kds-tb-ico">' + svgIco('schedule_time', 24, 2) + '</span><b data-cnt="avg">14:32</b></button>' +
           '</span>' +
         '</div>' +
         '<div class="kds-tb-icons">' +
@@ -3973,14 +3975,23 @@
     SVG_PATHS.moped_package = { vb: 20, t: [1.67, 2.33], d: 'M 0.83 4.17 L 0.83 0 L 6.67 0 L 6.67 4.17 L 0.83 4.17 Z M 2.5 2.5 L 5 2.5 L 5 1.67 L 2.5 1.67 L 2.5 2.5 Z M 4.17 13.33 C 3.47 13.33 2.88 13.09 2.4 12.6 C 1.91 12.12 1.67 11.53 1.67 10.83 L 0 10.83 L 0 8.33 C 0 7.42 0.33 6.63 0.98 5.98 C 1.63 5.33 2.42 5 3.33 5 L 6.67 5 L 6.67 9.17 L 9.58 9.17 L 12.5 5.54 L 12.5 3.33 L 10 3.33 L 10 1.67 L 12.5 1.67 C 12.96 1.67 13.35 1.83 13.68 2.16 C 14 2.48 14.17 2.87 14.17 3.33 L 14.17 6.12 L 10.42 10.83 L 6.67 10.83 C 6.67 11.53 6.42 12.12 5.94 12.6 C 5.45 13.09 4.86 13.33 4.17 13.33 Z M 4.17 11.67 C 4.4 11.67 4.6 11.59 4.76 11.43 C 4.92 11.27 5 11.07 5 10.83 L 3.33 10.83 C 3.33 11.07 3.41 11.27 3.57 11.43 C 3.73 11.59 3.93 11.67 4.17 11.67 Z M 14.17 13.33 C 13.47 13.33 12.88 13.09 12.4 12.6 C 11.91 12.12 11.67 11.53 11.67 10.83 C 11.67 10.14 11.91 9.55 12.4 9.06 C 12.88 8.58 13.47 8.33 14.17 8.33 C 14.86 8.33 15.45 8.58 15.94 9.06 C 16.42 9.55 16.67 10.14 16.67 10.83 C 16.67 11.53 16.42 12.12 15.94 12.6 C 15.45 13.09 14.86 13.33 14.17 13.33 Z M 14.17 11.67 C 14.4 11.67 14.6 11.59 14.76 11.43 C 14.92 11.27 15 11.07 15 10.83 C 15 10.6 14.92 10.4 14.76 10.24 C 14.6 10.08 14.4 10 14.17 10 C 13.93 10 13.73 10.08 13.57 10.24 C 13.41 10.4 13.33 10.6 13.33 10.83 C 13.33 11.07 13.41 11.27 13.57 11.43 C 13.73 11.59 13.93 11.67 14.17 11.67 Z M 1.67 9.17 L 5 9.17 L 5 6.67 L 3.33 6.67 C 2.87 6.67 2.48 6.83 2.16 7.16 C 1.83 7.48 1.67 7.87 1.67 8.33 L 1.67 9.17 Z' };
     SVG_PATHS.deployed_code_update = { vb: 20, t: [2.5, 1.83], d: 'M 12.5 16.67 L 15 14.17 L 14.42 13.58 L 12.92 15.08 L 12.92 11.67 L 12.08 11.67 L 12.08 15.08 L 10.58 13.58 L 10 14.17 L 12.5 16.67 Z M 7.5 1.67 L 2.56 4.52 L 7.5 7.37 L 12.44 4.52 L 7.5 1.67 Z M 0 11.65 L 0 5.02 C 0 4.72 0.07 4.44 0.22 4.19 C 0.36 3.94 0.57 3.74 0.83 3.58 L 6.67 0.23 C 6.81 0.16 6.94 0.1 7.07 0.06 C 7.2 0.02 7.35 0 7.5 0 C 7.65 0 7.8 0.02 7.94 0.06 C 8.08 0.1 8.21 0.16 8.33 0.23 L 14.17 3.58 C 14.43 3.74 14.64 3.94 14.78 4.19 C 14.93 4.44 15 4.72 15 5.02 L 15 8.33 L 13.33 8.33 L 13.33 5.92 L 7.48 9.29 L 1.67 5.92 L 1.67 11.62 L 6.67 14.52 L 6.67 16.44 L 0.83 13.08 C 0.57 12.93 0.36 12.73 0.22 12.48 C 0.07 12.23 0 11.95 0 11.65 Z M 12.5 18.33 C 11.35 18.33 10.36 17.93 9.55 17.11 C 8.74 16.3 8.33 15.32 8.33 14.17 C 8.33 13.01 8.74 12.03 9.55 11.22 C 10.36 10.41 11.35 10 12.5 10 C 13.65 10 14.64 10.41 15.45 11.22 C 16.26 12.03 16.67 13.01 16.67 14.17 C 16.67 15.32 16.26 16.3 15.45 17.11 C 14.64 17.93 13.65 18.33 12.5 18.33 Z' };
     SVG_PATHS.fastfood = { vb: 24, d: 'M13.325 13C12.7917 12.25 12.0875 11.7292 11.2125 11.4375C10.3375 11.1458 9.43333 11 8.5 11C7.56667 11 6.6625 11.1458 5.7875 11.4375C4.9125 11.7292 4.20833 12.25 3.675 13H13.325ZM1 15C1 13.1833 1.75833 11.7292 3.275 10.6375C4.79167 9.54583 6.53333 9 8.5 9C10.4667 9 12.2083 9.54583 13.725 10.6375C15.2417 11.7292 16 13.1833 16 15H1ZM1 19V17H16V19H1ZM18 23V21H19.4L20.8 7H11.25L11 5H16V1H18V5H23L21.35 21.55C21.3 21.9667 21.1167 22.3125 20.8 22.5875C20.4833 22.8625 20.1167 23 19.7 23H18ZM2 23C1.71667 23 1.47917 22.9042 1.2875 22.7125C1.09583 22.5208 1 22.2833 1 22V21H16V22C16 22.2833 15.9042 22.5208 15.7125 22.7125C15.5208 22.9042 15.2833 23 15 23H2Z' };
-    function svgIco(name, size) {
+    /* Иконки счётчиков шапки: все четыре — SVG 20×20, глиф занимает весь бокс (без полей внутри),
+       поэтому выглядят одинаково; info и check_circle взяты из библиотеки ДС и обрезаны
+       с 24-сетки до 20 (сдвиг −2) — иначе они выглядели мельче часов */
+    SVG_PATHS.info20 = { vb: 20, t: [-2, -2], d: 'M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z' };
+    SVG_PATHS.check_circle20 = { vb: 20, t: [-2, -2], d: 'M10.6 16.6L17.65 9.55L16.25 8.15L10.6 13.8L7.75 10.95L6.35 12.35L10.6 16.6ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z' };
+    function svgIco(name, size, pad) {
       var it = SVG_PATHS[name];
       if (!it) return '';
       if (typeof it === 'string') it = { vb: 20, d: it };
       var s = size || 20;
       var tr = it.t ? ' transform="translate(' + it.t[0] + ' ' + it.t[1] + ')"' : '';
       var fr = it.evenodd ? ' fill-rule="evenodd"' : '';
-      return '<svg class="kds-svg-ico" data-ico="' + name + '" viewBox="0 0 ' + it.vb + ' ' + it.vb + '" width="' + s + '" height="' + s +
+      /* pad — поля вокруг глифа внутри бокса (как у иконок из библиотеки ДС):
+         глиф занимает vb, а виджет — vb + 2*pad, поэтому визуально он такой же, как маски ДС */
+      var p = pad || 0;
+      var viewBox = p ? (-p) + ' ' + (-p) + ' ' + (it.vb + p * 2) + ' ' + (it.vb + p * 2) : '0 0 ' + it.vb + ' ' + it.vb;
+      return '<svg class="kds-svg-ico" data-ico="' + name + '" viewBox="' + viewBox + '" width="' + s + '" height="' + s +
         '" style="width:' + s + 'px;height:' + s + 'px" fill="currentColor" aria-hidden="true" focusable="false">' +
         '<path' + fr + tr + ' d="' + it.d + '"/></svg>';
     }
