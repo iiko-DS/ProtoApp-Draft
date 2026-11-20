@@ -4120,13 +4120,18 @@
         refreshSl();
         return;
       }
-      var vis = slVisibleIdx().filter(function (k) {
-        /* Уже внесённые позиции и размеры в выбор не попадают */
-        var p = String(k).split(':');
-        var it = slData()[+p[0]];
-        if (!it) return false;
-        return !slLiveInStop(it, p.length > 1 ? +p[1] : null);
-      });
+      var vis = slVisibleIdx();
+      /* На экране внесения уже добавленные позиции в выбор не попадают: они недоступны.
+         В стоп-листе (в том числе в левой колонке экрана 7) выбирать можно всё — здесь
+         все строки и так с ограничением */
+      if (RT.sl && RT.sl.addMode) {
+        vis = vis.filter(function (k) {
+          var p = String(k).split(':');
+          var it = slData()[+p[0]];
+          if (!it) return false;
+          return !slLiveInStop(it, p.length > 1 ? +p[1] : null);
+        });
+      }
       var full = vis.length > 0 && vis.every(function (k) { return RT.sl.checks[k]; });
       var checks = {};
       Object.keys(RT.sl.checks).forEach(function (k) { if (RT.sl.checks[k]) checks[k] = true; });
