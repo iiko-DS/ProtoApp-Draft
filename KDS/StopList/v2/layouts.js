@@ -14,16 +14,13 @@ window.dsLayouts = {
      по контракту ДС «адаптив: false» секцию не выводит */
   адаптив: false,
   шаги: [
-    { file: 'kds-stoplist-v2.html', state: 'base-noaccess', title: '1. Экран заказов · нет прав, кнопки входа нет' },
-    { file: 'kds-stoplist-v2.html', state: 'base', title: '2. Экран заказов · вход в стоп-лист' },
-    { file: 'kds-stoplist-v2.html', state: 'list-empty', title: '3. Стоп-лист пуст · ограничений нет' },
-    { file: 'kds-stoplist-v2.html', state: 'add-row', title: '4. Добавить в стоп-лист · своя кнопка в каждой строке' },
-    { file: 'kds-stoplist-v2.html', state: 'list-clean-copy', title: '5. Стоп-лист · панели раскрытия · рабочий вид' },
-    { file: 'kds-stoplist-v2.html', state: 'list-clean-copy-2', title: '6. Стоп-лист · копия экрана 5' },
-    { file: 'kds-stoplist-v2.html', state: 'split', title: '7. Стоп-лист и добавление · две панели 60/40' },
-    { file: 'kds-stoplist-v2.html', state: 'multi-head', title: '8. Выбор позиций · действия в шапке' },
-    { file: 'kds-stoplist-v2.html', state: 'multi-partial', title: '9. Массовое снятие · результат с пропуском' },
-    { file: 'kds-stoplist-v2.html', state: 'clear-confirm', title: '10. Очистить стоп-лист · подтверждение' },
-    { file: 'kds-stoplist-v2.html', state: 'shift-off', title: '11. Смена выключена · возврат к заказам' }
+    { file: 'kds-stoplist-v2.html', state: 'base', title: '1. Экран заказов · вход в стоп-лист' },
+    { file: 'kds-stoplist-v2.html', state: 'list-empty', title: '2. Стоп-лист пуст · ограничений нет' },
+    { file: 'kds-stoplist-v2.html', state: 'add-row', title: '3. Добавить в стоп-лист · своя кнопка в каждой строке' },
+    { file: 'kds-stoplist-v2.html', state: 'list-clean-copy', title: '4. Стоп-лист · панели раскрытия · рабочий вид' },
+    { file: 'kds-stoplist-v2.html', state: 'list-clean-copy-2', title: '5. Стоп-лист · копия экрана 4' },
+    { file: 'kds-stoplist-v2.html', state: 'split', title: '6. Стоп-лист и добавление · две панели 60/40' },
+    { file: 'kds-stoplist-v2.html', state: 'multi-partial', title: '7. Массовое снятие · результат с пропуском' },
+    { file: 'kds-stoplist-v2.html', state: 'shift-off', title: '8. Смена выключена · возврат к заказам' }
   ]
 };
