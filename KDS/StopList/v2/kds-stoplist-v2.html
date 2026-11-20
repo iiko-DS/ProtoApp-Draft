@@ -2416,6 +2416,20 @@
       if (padEl) padEl.hidden = true;
       if (RT.sl) { RT.sl.padInp = null; RT.sl.padDish = null; RT.sl.padPick = null; }
     }
+    /* Esc — закрыть всё, что открыто: панель цифр, диалог подтверждения, попап */
+    function slEscClose() {
+      var padEl = RT.view && RT.view.querySelector('[data-sl-numpad]');
+      if (padEl && !padEl.hidden) {
+        var inp = RT.sl && RT.sl.padInp;
+        if (inp) {
+          if (RT.cfg && RT.cfg.flatSizes && RT.sl.padDirty && RT.sl.padDish != null && slPadValidate()) slPadApply();
+          else slCommit(inp);
+          inp.blur();
+        }
+        slPadHide();
+      }
+      closePop(); closeSlConfirm();
+    }
     /* Панель закрывает строку — вводимое значение дублируем в ней (название, число, единица) */
     function slPadSync() {
       var padEl = RT.view && RT.view.querySelector('[data-sl-numpad]');
@@ -3687,6 +3701,7 @@
       }, 3000);
     }
     function slChecked() {
+      if (!RT.sl || !RT.sl.checks) return [];
       /* Экран 6 (плоские размеры): каждая отмеченная строка размера — отдельная позиция,
          иначе «Выбрано: N» считало бы блюда и не совпадало с числом отмеченных строк */
       if (RT.cfg && RT.cfg.flatSizes) {
@@ -3708,6 +3723,7 @@
        Нужны массовым действиям: отмеченный размер меняется отдельно от блюда — так же,
        как кнопки «В стоп / Снять ограничение» в самой строке размера */
     function slCheckedKeys() {
+      if (!RT.sl || !RT.sl.checks) return [];
       return Object.keys(RT.sl.checks).filter(function (k) { return !!RT.sl.checks[k]; });
     }
     /* Позиции в полном стопе — ОДНО правило для общего счётчика и для шапок панелей:
@@ -3726,7 +3742,7 @@
       return n;
     }
     function syncSl() {
-      if (!RT.view) return;
+      if (!RT.view || !RT.sl) return;
       var checked = slChecked().length;
       var f = RT.view.querySelector('.kds-footer__total');
       if (f) f.textContent = slFootText();
@@ -4039,13 +4055,17 @@
        Отметка блюда тянет за собой все его размеры; снятие размера снимает блюдо,
        а отметка всех размеров отмечает и блюдо — состояние позиции всегда согласовано */
     function toggleSlCheck(key) {
+      if (!RT.sl) return;
       key = String(key);
       var i = +key.split(':')[0];
       var cur = slData()[i];
       if (cur && (cur._fail || cur.excluded)) return;   /* исключённую из меню позицию выбрать нельзя (§5.10 п.5) */
-      /* Позиция (или её размер), уже в внесённая в стоп-лист, недоступна — отметить её нельзя */
-      var keySize = key.indexOf(':') !== -1 ? +key.split(':')[1] : null;
-      if (cur && slLiveInStop(cur, keySize)) return;
+      /* Только на экране внесения: позиция (или размер), уже в стоп-листе, недоступна для отметки.
+         В самом стоп-листе все строки и так с ограничением — там отмечается всё */
+      if (RT.sl && RT.sl.addMode) {
+        var keySize = key.indexOf(':') !== -1 ? +key.split(':')[1] : null;
+        if (cur && slLiveInStop(cur, keySize)) return;
+      }
       var on = !RT.sl.checks[key];
       var rows = RT.view ? Array.prototype.slice.call(RT.view.querySelectorAll('[data-sl-row="' + i + '"]')) : [];
       var allKeys = rows.map(function (r) { return r.getAttribute('data-sl-key'); }).filter(Boolean);
@@ -4088,7 +4108,7 @@
       syncMass();
     }
     function syncMass() {
-      if (!RT.view) return;
+      if (!RT.view || !RT.sl) return;
       var n = slChecked().length;
       /* При выборе шапка полосы переключается на действия: счётчик «Выбрано: N» слева,
          действия справа. Плашки у футера нет — остальные кнопки экрана не блокируются,
@@ -4114,6 +4134,7 @@
     }
     /* «Выбрать все»: отметить видимые позиции; если выбор уже есть — снять его */
     function slSelectAll() {
+      if (!RT.sl) return;
       /* Та же кнопка — выход из выбора: подпись «Снять выбор» говорит сама за себя */
       if (slChecked().length) {
         RT.sl.checks = {};
@@ -6711,12 +6732,12 @@
         closePop();
       });
       view.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closePop(); closeSlConfirm(); }
+        if (e.key === 'Escape') { slEscClose(); }
       });
       if (!RT.escBound) {
         RT.escBound = true;
         document.addEventListener('keydown', function (e) {
-          if (e.key === 'Escape') { closePop(); closeSlConfirm(); }
+          if (e.key === 'Escape') { slEscClose(); }
         });
       }
       bindThumb(view);
