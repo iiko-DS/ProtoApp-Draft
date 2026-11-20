@@ -874,6 +874,85 @@
   /* ── Стоп-лист (PB-8111): отдельный интерфейс вместо экрана заказов, каркас тот же ── */
   /* Область стоп-листа — уже кадра: по 80 слева и справа, низ — над футером (56) с зазором 16 */
   .kds-slist { position: absolute; top: 60px; left: 80px; right: 80px; bottom: 72px; z-index: 1; display: flex; flex-direction: column; }
+  /* Экран 7: две панели — стоп-лист (60%) и добавление в стоп-лист (40%).
+     Отступы по 8, а не 80: экран использует всю ширину кадра */
+  .kds-slist--split { left: var(--ds-space-2x, 8px); right: var(--ds-space-2x, 8px); }
+  .kds-split { flex: 1 1 auto; min-height: 0; display: flex; }
+  /* Между колонками — видимая граница в палитре КДС (как разделители строк): 1px #616161 */
+  .kds-split__pane { flex: 0 0 60%; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding-right: var(--ds-space-4x, 16px); }
+  .kds-split__pane--add { flex: 1 1 auto; padding-right: 0; padding-left: var(--ds-space-4x, 16px); border-left: 1px solid var(--kds-line); }
+  /* Подпись панели — типографика заголовка категории (Medium 16/24, warning).
+     Строка высотой 48 — списки обеих панелей начинаются на одной линии */
+  .kds-split__caprow { flex: 0 0 48px; height: 48px; display: flex; align-items: center; gap: var(--ds-space-2x, 8px); padding: 0 var(--ds-space-2x, 8px); }
+  .kds-split__cap { flex: 1 1 auto; min-width: 0; font: 500 16px/24px 'Roboto', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .5px; color: var(--kds-text); }
+  .kds-split__foldall { flex: 0 0 auto; }
+  /* ── Экран 7: всё, что можно сжать без потери смысла, сжимаем только здесь —
+     место отдаём названиям блюд (на остальных экранах вид прежний) ── */
+  .kds-split .kds-srow__check { flex: 0 0 44px; width: 44px; }
+  .kds-split .kds-srow__top { gap: var(--ds-space-2x, 8px); }
+  .kds-split .kds-srow__main, .kds-split .kds-srow__plate { gap: var(--ds-space-2x, 8px); }
+  /* Поле остатка: 152 → 104. Единица измерения живёт ВНУТРИ поля справа, а не отдельной
+     колонкой 40 + зазор 4 — эти 44 отданы названию блюда, а колонка полей остаётся ровной */
+  .kds-split .kds-srow__val { padding-right: var(--ds-space-1x, 4px); gap: var(--ds-space-1x, 4px); }
+  .kds-split .kds-srow__val .ds-input { width: 104px; }
+  .kds-split .kds-srow__val .ds-input__frame { gap: 4px; }
+  .kds-split .kds-srow__unit--in { flex: 0 0 34px; width: 34px; min-width: 34px; text-align: right;
+    font: 400 14px/20px 'Roboto', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .25px;
+    color: var(--kds-text-2); }
+  /* Иконочные кнопки строки — 52×52, как в остальных списках (цель пальцем по ДС) */
+  .kds-split .kds-srow__acts { margin-left: var(--ds-space-1x, 4px); gap: var(--ds-space-1x, 4px); }
+  /* Кнопка «В стоп-лист» в правой панели — 52×52, отступ 4 */
+  .kds-split .kds-srow__add { width: 52px; height: 52px; margin-left: var(--ds-space-1x, 4px); }
+  /* Экран 7: аккордеон остаётся, рамки панелей убраны — блоки читаются по заливке шапки
+     и отступу между ними. Селектор сильнее .kds-view--dishbg .kds-sgrp--acc */
+  .kds-view .kds-slist--split .kds-sgrp--acc { border: 0; border-radius: 0; }
+  /* Свёрнутая шапка без рамки — самостоятельная плашка: радиус со всех сторон, а не только сверху */
+  .kds-view .kds-slist--split .kds-sgrp--acc.is-collapsed .kds-sgroup--acc { border-radius: 12px; }
+  /* Экран 7, левая колонка: заголовки категорий скрыты — все блюда одним списком.
+     Ряды категорий остаются контейнерами, поэтому шаг между строками везде одинаковый (4) */
+  .kds-view .kds-slist--split [data-sl-body] { gap: 0; }
+  .kds-view .kds-slist--split [data-sl-body] .kds-sgroup--acc { display: none; }
+  /* Один ритм без панелей: 4 между блюдами — как в правой панели, где строки идут через 4.
+     Отступы строк обнулены — расстояние задают только margin'ы, поэтому оно ровное */
+  .kds-view .kds-slist--split .kds-sbody[data-sl-body] .kds-sgrp--acc { padding-bottom: 0; }
+  .kds-view .kds-slist--split .kds-sbody[data-sl-body] .kds-sgrp--acc > .kds-srow { padding: 0; }
+  .kds-view .kds-slist--split .kds-sbody[data-sl-body] > .kds-sgrp + .kds-sgrp { margin-top: 4px; }
+  .kds-view .kds-slist--split .kds-sbody[data-sl-body] .kds-sgrp--acc > .kds-srow + .kds-srow { margin-top: 4px; }
+  /* Экран 7, правая панель: у недоступной строки плашка чуть бледнее — Neutral/900 из палитры ДС */
+  /* Экран 7, правая панель: у недоступной строки нет заливки — вместо неё рамка Stroke/Default
+     (#616161), как у недоступной кнопки справа. Промежуточного тона в палитре между
+     Neutral/950 и фоном нет, поэтому состояние даёт обводка, а не заливка */
+  .kds-view .kds-slist--split .kds-split__pane--add .kds-srow.is-off-row > .kds-srow__top > .kds-srow__plate {
+    background: transparent;
+    border: 1px solid var(--kds-line);
+    box-sizing: border-box; }
+  /* Экран 7, правая панель: строки без боковых отступов 16 — плашка и кнопка идут от края до края */
+  .kds-view .kds-slist--split .kds-split__pane--add .kds-sgrp--acc > .kds-srow { padding-left: 0; padding-right: 0; }
+  /* Экран 7, правая панель: значение — обычный текст (цифра + единица), без поля
+     и без состояний наведения; редактируется через панель цифр по тапу на строку */
+  .kds-split__pane--add .kds-srow__val--read { gap: 0; padding-right: 8px; position: relative; }
+  .kds-split__pane--add .kds-srow__ro { display: inline-flex; align-items: baseline; gap: 12px; cursor: default; }
+  .kds-split__pane--add .kds-srow__ro-val { font: 500 22px/28px 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: .25px; color: var(--kds-text); }
+  .kds-split__pane--add .kds-srow__ro .kds-srow__unit { flex: 0 0 auto; width: auto; min-width: 0;
+    font: 400 16px/24px 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: .25px; color: var(--kds-text-2); }
+  /* Поле-держатель значения: невидимо, нужно только для фокуса и хранения цифры */
+  .kds-split__pane--add .kds-srow__ro-inp { position: absolute; left: 0; top: 50%; width: 1px; height: 1px;
+    min-width: 0; padding: 0; margin: 0; border: 0; opacity: 0; pointer-events: none; }
+  /* «Свернуть все» остаётся только у правой панели: в левой списке сворачивать нечего */
+  .kds-view .kds-slist--split .kds-shead [data-sl-gfoldall] { display: none; }
+  /* Экран 7: «Полный стоп» — подпись ПОД названием, компонент Caption L ДС (400 12/16, трекинг .5),
+     как .kds-srow__cap в строках панели добавления; цвет — Negative. Название занимает свою строку */
+  .kds-view .kds-slist--split [data-sl-body] .kds-srow__l1 { flex-wrap: wrap; row-gap: 0; }
+  .kds-view .kds-slist--split [data-sl-body] .kds-sstop {
+    flex: 1 0 100%; margin: 0; white-space: nowrap;
+    font: var(--ds-font-caption-l-12-normal-regular, 400 12px/16px 'Roboto');
+    letter-spacing: var(--ds-font-caption-l-12-normal-regular-spacing, .5px); }
+  /* Подписи-капшены в левом списке — тоже Caption L, чтобы совпадали с «Полный стоп» */
+  .kds-view .kds-slist--split [data-sl-body] .kds-srow__cap {
+    font: var(--ds-font-caption-l-12-normal-regular, 400 12px/16px 'Roboto');
+    letter-spacing: var(--ds-font-caption-l-12-normal-regular-spacing, .5px); }
   /* Полоса над списком: поле поиска + кнопки («Добавить позицию» — акцент, «Печать» — обводка) */
   /* Полоса действий — на всю ширину области списка */
   .kds-shead { display: flex; align-items: center; gap: var(--ds-space-2x, 8px);
@@ -1210,6 +1289,8 @@
   /* «Полный стоп» — после названия, мельче (16/24) и с отступами */
   .kds-sstop { flex: 0 0 auto; margin: 0 8px; font-size: 16px; font-weight: 500; line-height: 24px; letter-spacing: .4px;
     color: var(--kds-ic-negative); }
+  /* Время постановки в стоп внутри подписи — цвет служебного текста, не красный */
+  .kds-sstop__when { color: var(--kds-text-2); }
   /* Название + метка состояния — в одну строку, выровнены по НИЖНЕМУ краю (не по центру) */
   .kds-srow__l1 { display: flex; align-items: flex-end; gap: 4px; min-width: 0; }
   /* Полный стоп — состояние под названием, красным (как раньше красная подпись в строке) */
@@ -1714,6 +1795,29 @@
         .filter(function (x) { return SL_EXCLUDED.indexOf(x.name) === -1; })
         .map(function (x) { return JSON.parse(JSON.stringify(x)); });
     }
+    /* Меню для внесения: уже внесённые позиции не предлагаем повторно.
+       У позиции с размерами блюдо остаётся, пока есть размеры, которых нет в стоп-листе */
+    function slMenuAvail(stopItems) {
+      var taken = {};
+      (stopItems || []).forEach(function (x) {
+        taken[x.name] = 1;
+        if (x.sizes && x.sizes.length) {
+          x.sizes.forEach(function (sz) { taken[x.name + ' ' + sz.s] = 1; });
+        }
+      });
+      return slMenuAdd().map(function (it) {
+        if (it.sizes && it.sizes.length) {
+          var keep = JSON.parse(JSON.stringify(it));
+          keep.sizes = keep.sizes.filter(function (sz) { return !taken[it.name + ' ' + sz.s]; });
+          if (!keep.sizes.length) return null;
+          /* Полный размерный ряд — подпись покажет «2 из 3 размеров»,
+             если часть размеров уже в стоп-листе */
+          if (keep.sizes.length < it.sizes.length) keep.sizesTotal = it.sizes.length;
+          return keep;
+        }
+        return taken[it.name] ? null : it;
+      }).filter(Boolean);
+    }
     /* Демо-набор стоп-листа: 10 позиций в 5 категориях. Каждый экран берёт СВОЮ копию (slBase()),
        чтобы правка остатка на одном экране не меняла данные других */
     var SL_BASE = [
@@ -2030,6 +2134,22 @@
        править вариант, не трогая экран 5 */
     SCREENS['list-clean-copy-2'] = JSON.parse(JSON.stringify(SCREENS['list-clean-copy']));
 
+    /* Экран 7: стоп-лист и добавление в стоп-лист на одном экране — две панели 60/40.
+       Левая — тот же список, что на экране 6 (каждый размер отдельной строкой),
+       правая — внесение строками, как на экране 4 (поле + кнопка «В стоп-лист») */
+    SCREENS['split'] = JSON.parse(JSON.stringify(SCREENS['list-clean-copy-2']));
+    SCREENS['split'].split = true;
+    /* Демо-набор ТОЛЬКО экрана 7 — короткий: 6 позиций в 5 категориях.
+       У экранов 5 и 6 остаётся свой полный набор, их живой список отдельный */
+    SCREENS['split'].items = [
+      { name: 'Суп дня', rest: '3', unit: 'порц', excluded: true },
+      { name: 'Фокачча', rest: '2,5', unit: 'шт' },
+      { name: 'Маргарита', sizes: [ { s: '25 см', rest: '12' }, { s: '30 см', rest: '4' }, { s: '35 см', stop: true } ] },
+      { name: 'Тирамису', stop: true },
+      { name: 'Брускетта', rest: '6', unit: 'шт' },
+      { name: 'Морс', rest: '5', unit: 'порц' }
+    ];    SCREENS['split'].anno = 'Стоп-лист и добавление на одном экране: слева (60%) — позиции с ограничениями, размеры отдельными строками, как на экране 6; справа (40%) — «Добавить в стоп-лист»: категории-панели и строки с полем остатка и своей кнопкой «В стоп-лист» (как на экране 4). Поиск в шапке ищет по правой панели по всем блюдам меню. Внесение сразу появляется в левом списке, строка уходит из правой панели, снекбар сообщает результат.';
+
     /* ── Стоп-лист: модель, рендер, интерактив (PB-8111) ── */
     function slPlur(n) {
       var m = Math.abs(n) % 100, m1 = m % 10;
@@ -2078,13 +2198,23 @@
        ФИО не выводим: в КДС это лишний шум, а дата важна — стоп может висеть с прошлых суток.
        Демо-данные прототипа: в боевой системе приходят из журнала изменений стоп-листа */
     var SL_STOP_INFO = {
-      'Тирамису': { date: '12 ноября', since: '12:40' },
-      'Маргарита 35 см': { date: '12 ноября', since: '13:05' }
+      'Тирамису': { date: '12 ноября', num: '12.11.2026', since: '12:40' },
+      'Маргарита 35 см': { date: '12 ноября', num: '12.11.2026', since: '13:05' }
     };
-    function slStopLine(key) {
+    function slStopLine(key, journal) {
       var s = SL_STOP_INFO[key];
-      /* «Стоп с 12 ноября в 13:05»: дата — словом, время — после «в» */
-      return s ? 'Стоп с ' + s.date + ' в ' + s.since : '';
+      if (!s) return '';
+      /* Экран 7 — как в журнале внесения (таблица «Время внесения»): просто «12.11.2026 12:40».
+         На остальных экранах — «Стоп с 12 ноября в 13:05»: дата словом читается легче */
+      if (journal) return s.num + ' ' + s.since;
+      return 'Стоп с ' + s.date + ' в ' + s.since;
+    }
+    /* Метка «Полный стоп»: на экране 7 время постановки — в той же подписи через «: »,
+       цветом служебного текста: красным остаётся только состояние */
+    function slSstopInner(t, key) {
+      var when = (t === 'Полный стоп' && key && RT.cfg && RT.cfg.split) ? slStopLine(key, true) : '';
+      /* Двоеточие — часть красного состояния, серым идёт только дата и время */
+      return esc(t) + (when ? ': <span class="kds-sstop__when">' + esc(when) + '</span>' : '');
     }
     /* Сколько порций сейчас в заказах — чтобы не закрыть стопом то, что уже готовится.
        Демо-данные прототипа: в боевой системе — из активных заказов */
@@ -2114,6 +2244,9 @@
       var attrs = ' data-sl-in="' + i + '"' + (si != null ? ' data-sl-si="' + si + '"' : '') + (extra || '');
       /* dis — блок ввода недоступен целиком (позиция исключена из меню): «−», поле, «+», сброс */
       var da = dis ? ' disabled' : '';
+      /* Экран 7: единица измерения — внутри поля справа (вместо иконочного слота),
+         внешней колонки нет — место уходит названию блюда */
+      var unitIn = !!(RT.cfg && RT.cfg.split);
       return '<div class="kds-srow__val' + (dis ? ' is-off' : '') + (noClear ? ' kds-srow__val--compact' : '') + '"' + (dis ? ' data-sl-failfield' : '') + '>' +
         (noStep ? '' : '<button class="kds-btn" type="button" data-sl-step="-1" aria-label="Уменьшить остаток"' + da + '><span class="material-icons">remove</span></button>') +
         '<div class="ds-input ds-input--m kds-srow__num">' +
@@ -2123,12 +2256,13 @@
                 ' autocomplete="off" spellcheck="false" placeholder="' + esc(ph == null ? '0' : ph) + '"' + attrs +
                 ' value="' + esc(val) + '" aria-label="' + (extra && extra.indexOf('data-sl-group') !== -1 ? 'Количество для всех размеров' : 'Количество') + '"' + da + '>' +
             '</div>' +
+            (unitIn ? '<span class="kds-srow__unit kds-srow__unit--in">' + esc(unit || '') + '</span>' : '') +
             /* Element right у Input ДС: сброс значения; показывается только при заполненном поле */
             (noClear ? '' : '<button class="ds-input__icon kds-srow__clear" type="button" data-sl-clear aria-label="Сбросить значение"' + da + '><span class="material-icons">close</span></button>') +
           '</div>' +
         '</div>' +
         (noStep ? '' : '<button class="kds-btn" type="button" data-sl-step="1" aria-label="Увеличить остаток"' + da + '><span class="material-icons">add</span></button>') +
-        '<span class="kds-srow__unit">' + esc(unit || '') + '</span>' +
+        (unitIn ? '' : '<span class="kds-srow__unit">' + esc(unit || '') + '</span>') +
       '</div>';
     }
     /* Сброс значения из поля (Element right у Input ДС): пустое поле = «ограничения нет» */
@@ -2273,11 +2407,23 @@
     }
     function slCommit(inp) {
       var i = +inp.getAttribute('data-sl-in');
-      var si = inp.hasAttribute('data-sl-si') ? +inp.getAttribute('data-sl-si') : null;
+      var si = inp.hasAttribute('data-sl-si') ? +inp.hasAttribute('data-sl-si') : null;
       /* Один и тот же ввод сохраняем ровно один раз: при перерисовке строки браузер
          присылает change уже снятому с документа полю — второй раз удалять/писать нельзя */
       if (inp.__slDone) return false;
       inp.__slDone = true;
+      /* Поле правой панели (экран 7): значение остаётся в панели, в список ничего не пишем —
+         позиция уходит в стоп-лист только кнопкой «В стоп-лист» */
+      if (inp.hasAttribute && inp.hasAttribute('data-sl-pane')) {
+        var prP = parseRest(inp.value);
+        if (!prP.ok) { slRowErr(inp, true); return false; }
+        slRowErr(inp, false);
+        inp.value = prP.empty ? '' : (prP.val === 0 ? '0' : fmtRest(prP.val));
+        if (RT.sl && RT.sl.pane && RT.sl.pane.vals) {
+          RT.sl.pane.vals[inp.getAttribute('data-sl-pane-key')] = inp.value;
+        }
+        return true;
+      }
       var it = slData()[i];
       if (!it) return false;
       var sz = si != null ? it.sizes[si] : it;
@@ -2337,6 +2483,11 @@
       if (nameEl) nameEl.textContent = (RT.sl && RT.sl.padName) || '';
       var unitEl = padEl.querySelector('[data-sl-pad-unit]');
       if (unitEl) unitEl.textContent = (RT.sl && RT.sl.padUnit) || '';
+      /* Строка правой панели (экран 7): значение показано текстом — обновляем подпись */
+      if (inp && inp.hasAttribute && inp.hasAttribute('data-sl-pane') && RT.view) {
+        var roEl = RT.view.querySelector('[data-sl-ro="' + inp.getAttribute('data-sl-pane-key') + '"] .kds-srow__ro-val');
+        if (roEl) roEl.textContent = v === '' ? '0' : v;
+      }
       slPadValidate();
     }
     /* Валидация значения в панели: 0 — полный стоп, пусто — ограничения нет,
@@ -2472,7 +2623,7 @@
         if (sz.stop && l1 && !badge) {
           badge = document.createElement('span');
           badge.className = 'kds-sstop';
-          badge.textContent = 'Полный стоп';
+          badge.innerHTML = slSstopInner('Полный стоп', it.name + ' ' + sz.s);
           l1.appendChild(badge);
         } else if (!sz.stop && badge) {
           badge.parentNode.removeChild(badge);
@@ -2480,7 +2631,7 @@
         var meta = row.querySelector('.kds-srow__meta');
         if (meta) {
           var mt = meta.querySelector('.kds-srow__meta-t');
-          var line = sz.stop ? slStopLine(it.name + ' ' + sz.s) : '';
+          var line = (sz.stop && !(RT.cfg && RT.cfg.split)) ? slStopLine(it.name + ' ' + sz.s) : '';
           if (line && !mt) { mt = document.createElement('span'); mt.className = 'kds-srow__meta-t'; meta.appendChild(mt); }
           if (mt) { if (line) mt.textContent = line; else mt.parentNode.removeChild(mt); }
         }
@@ -2545,7 +2696,7 @@
         if (sz.stop && l1 && !badge) {
           badge = document.createElement('span');
           badge.className = 'kds-sstop';
-          badge.textContent = 'Полный стоп';
+          badge.innerHTML = slSstopInner('Полный стоп', it.name + ' ' + sz.s);
           l1.appendChild(badge);
         } else if (!sz.stop && badge && badge.parentNode) {
           badge.parentNode.removeChild(badge);
@@ -2603,6 +2754,14 @@
         if (!slCommit(inp)) return;
         slPadHide();
         inp.blur();
+        /* Экран 7: строка правой панели — вносим её тем же путём, что и кнопка «+» в строке */
+        if (inp.hasAttribute('data-sl-pane')) {
+          var paneKey = inp.getAttribute('data-sl-pane-key');
+          var paneAddBtn = RT.view.querySelector('[data-sl-paneadd="' + paneKey + '"]');
+          if (RT.sl.pane && RT.sl.pane.vals) RT.sl.pane.vals[paneKey] = '';
+          if (paneAddBtn && !paneAddBtn.disabled) slPaneAdd(paneKey);
+          return;
+        }
         var addKey = siAdd != null ? iAdd + ':' + siAdd : String(iAdd);
         var addBtn = RT.view.querySelector('[data-sl-rowadd="' + addKey + '"]');
         if (addBtn) slAddRow(addBtn);
@@ -2639,6 +2798,14 @@
         return;
       }
       var v = String(inp.value == null ? '' : inp.value);
+      /* Крестик в сетке (экран 7) — сбрасывает ВСЁ значение сразу */
+      if (k === 'clear') {
+        inp.value = '';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        slPadSync();
+        slPadLiveGroup();
+        return;
+      }
       /* Только цифры, «,» и стирание: служебные клавиши панели (stop и т.п.) в число не попадают */
       if (k !== 'back' && k !== ',' && !/^\d$/.test(k)) return;
       if (k === 'back') v = v.slice(0, -1);
@@ -2847,15 +3014,22 @@
     /* Подпись и иконка кнопки «Свернуть/Раскрыть все» — по фактическому состоянию панелей */
     function slSyncFoldAll() {
       if (!RT.view) return;
-      var b = RT.view.querySelector('[data-sl-gfoldall]');
-      if (!b) return;
-      var grps = RT.view.querySelectorAll('.kds-sgrp--acc');
-      if (!grps.length) return;
-      var anyOpen = Array.prototype.some.call(grps, function (g) { return !g.classList.contains('is-collapsed'); });
-      var lbl = b.querySelector('[data-sl-gfoldall-t]');
-      var ico = b.querySelector('.material-icons');
-      if (lbl) lbl.textContent = anyOpen ? 'Свернуть все' : 'Раскрыть все';
-      if (ico) slMi(ico, anyOpen ? 'unfold_less' : 'unfold_more');
+      /* На экране 7 кнопок две — каждая отвечает за свою колонку, поэтому состояние
+         считаем отдельно для левого списка и для правой панели */
+      Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-gfoldall]'), function (b) {
+        var inPane = !!b.closest('.kds-split__pane--add');
+        var grps = inPane
+          ? RT.view.querySelectorAll('[data-sl-panegrp]')
+          : ((RT.cfg && RT.cfg.split)
+              ? RT.view.querySelectorAll('[data-sl-body] .kds-sgrp--acc')
+              : RT.view.querySelectorAll('.kds-sgrp--acc'));
+        if (!grps.length) return;
+        var anyOpen = Array.prototype.some.call(grps, function (g) { return !g.classList.contains('is-collapsed'); });
+        var lbl = b.querySelector('[data-sl-gfoldall-t]');
+        var ico = b.querySelector('.material-icons');
+        if (lbl) lbl.textContent = anyOpen ? 'Свернуть все' : 'Раскрыть все';
+        if (ico) slMi(ico, anyOpen ? 'unfold_less' : 'unfold_more');
+      });
     }
     /* Список по категориям: каждая категория — свой блок-контейнер (он и задаёт отступы),
        заголовок внутри — просто текст без паддингов */
@@ -2884,12 +3058,14 @@
         buckets[c].push({ it: it, i: i });
       });
       order.sort(function (a, b) { return String(a || '').localeCompare(String(b || ''), 'ru'); });
-      /* По умолчанию свёрнуты все панели, КРОМЕ первой в списке — она раскрыта */
+      /* По умолчанию свёрнуты все панели, КРОМЕ первой в списке — она раскрыта.
+         На экране 7 (две панели) список короткий, поэтому раскрыты все категории */
       if (acc && RT.sl && !RT.sl.gfoldsInit) {
         RT.sl.gfolds = RT.sl.gfolds || {};
         var firstCat = null;
+        var openAll = !!(RT.cfg && RT.cfg.split);
         order.forEach(function (c) { if (!firstCat && c) firstCat = c; });
-        order.forEach(function (c) { if (c) RT.sl.gfolds[c] = (c !== firstCat); });
+        order.forEach(function (c) { if (c) RT.sl.gfolds[c] = !openAll && (c !== firstCat); });
         RT.sl.gfoldsInit = true;
       }
       order.forEach(function (c) {
@@ -2997,7 +3173,7 @@
       var val = stopNow ? '0' : (it.rest != null ? String(it.rest) : '');
       /* Служебная подпись справа от названия: «В заказах: 3 · Стоп с 12.11 12:40».
          Под названием остаётся только то, чем позиция особенная (исключена, нет данных, размеры) */
-      var stopLine = stopNow ? slStopLine(it.name) : '';
+      var stopLine = (stopNow && !(RT.cfg && RT.cfg.split)) ? slStopLine(it.name) : '';
       var work = SL_WORK[it.name] || 0;
       var metaSegs = [];
       /* «В заказах: N» — только там, где это уместно (на экране с панелями раскрытия убрано) */
@@ -3006,7 +3182,8 @@
       /* Состояние позиции — в тот же слот справа, где стоит служебная подпись.
          Причина «Исключена из меню» — красным, как на экране «Добавить в стоп-лист».
          «Нет данных об остатке» не показываем: пустое поле говорит само за себя */
-      if (it.excluded) metaSegs.push({ t: 'Исключена из меню', red: true });
+      var exclCap = !!(RT.cfg && RT.cfg.split && it.excluded);
+      if (it.excluded && !exclCap) metaSegs.push({ t: 'Исключена из меню', red: true });
       var metaHtml = metaSegs.map(function (s, k) {
         return '<span class="kds-srow__meta-t' + (s.red ? ' kds-srow__meta-t--danger' : '') + '">' +
           (k ? ' · ' : '') + esc(s.t) + '</span>';
@@ -3029,8 +3206,10 @@
       var main = '<div class="kds-srow__main">' +
         '<div class="kds-srow__namecol">' +
           '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(it.name) + '</span>' +
-            (sstopT ? '<span class="kds-sstop">' + esc(sstopT) + '</span>' : '') + '</div>' +
+            (sstopT ? '<span class="kds-sstop">' + slSstopInner(sstopT, it.name) + '</span>' : '') + '</div>' +
           (cap ? '<span class="kds-srow__cap">' + esc(cap) + '</span>' : '') +
+          /* Экран 7: причина «Исключена из меню» — подписью под названием (Caption L), не справа */
+          (exclCap ? '<span class="kds-srow__cap is-stop">Исключена из меню</span>' : '') +
         '</div>' +
         '<div class="kds-srow__meta">' + metaHtml + '</div>' +
         /* Аккордеон позиции: шеврон раскрывает/скрывает строки размеров (только экран с cfg.acc) */
@@ -3110,7 +3289,7 @@
               '<div class="kds-srow__main">' +
                 '<div class="kds-srow__namecol">' +
                   '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(sz.s) + '</span>' +
-                    (sz.stop ? '<span class="kds-sstop">Полный стоп</span>' : '') + '</div>' +
+                    (sz.stop ? '<span class="kds-sstop">' + slSstopInner('Полный стоп', it.name + ' ' + sz.s) + '</span>' : '') + '</div>' +
                 '</div>' +
                 /* «Без ограничения» не показываем: пустое поле говорит само за себя */
                 '<div class="kds-srow__meta">' +
@@ -3137,7 +3316,7 @@
       return it.sizes.map(function (sz, si) {
         var szKey = i + ':' + si;
         var val = sz.stop ? '0' : (sz.rest != null ? String(sz.rest) : '');
-        var stopLine = sz.stop ? slStopLine(it.name + ' ' + sz.s) : '';
+        var stopLine = (sz.stop && !(RT.cfg && RT.cfg.split)) ? slStopLine(it.name + ' ' + sz.s) : '';
         var szChk = '<button class="kds-srow__check' + (RT.sl.checks[szKey] ? ' is-on' : '') + '" type="button" data-sl-check="' + szKey + '"' + (it.excluded ? ' disabled' : '') + '><span class="material-icons">' + (RT.sl.checks[szKey] ? 'check_box' : 'check_box_outline_blank') + '</span></button>';
         return '<div class="kds-srow' + (RT.sl.checks[szKey] ? ' is-sel' : '') + (sz.stop ? ' is-stop' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-key="' + szKey + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '">' +
           '<div class="kds-srow__top">' + (RT.cfg.rowStop ? '<div class="kds-srow__plate">' : '') +
@@ -3145,7 +3324,7 @@
               '<div class="kds-srow__main">' +
                 '<div class="kds-srow__namecol">' +
                   '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(it.name + ' ' + sz.s) + '</span>' +
-                    (sz.stop ? '<span class="kds-sstop">Полный стоп</span>' : '') + '</div>' +
+                    (sz.stop ? '<span class="kds-sstop">' + slSstopInner('Полный стоп', it.name + ' ' + sz.s) + '</span>' : '') + '</div>' +
                 '</div>' +
                 '<div class="kds-srow__meta">' +
                   (stopLine ? '<span class="kds-srow__meta-t">' + esc(stopLine) + '</span>' : '') +
@@ -3166,6 +3345,10 @@
       }).join('');
     }
     function slNumpadHtml() {
+      /* Экран 7: крестик живёт в сетке клавиш и сбрасывает ВСЁ значение — отдельный крестик
+         в поле не нужен; на остальных экранах — прежний вид с крестиком и «Стереть» */
+      var split = !!(RT.cfg && RT.cfg.split);
+      var lastKey = split ? 'clear' : 'back';
       return '<div class="kds-numpad" data-sl-numpad hidden>' +
         '<div class="kds-numpad__head">' +
           '<div class="kds-numpad__title">' +
@@ -3182,16 +3365,16 @@
                   ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
               '</div>' +
               /* Element right у Input ДС: быстро стереть значение (крестик 20, цель 48) */
-              '<button class="ds-input__icon kds-numpad__clear" type="button" data-sl-pad-clear aria-label="Очистить значение" title="Очистить значение"><span class="material-icons">close</span></button>' +
+              (split ? '' : '<button class="ds-input__icon kds-numpad__clear" type="button" data-sl-pad-clear aria-label="Очистить значение" title="Очистить значение"><span class="material-icons">close</span></button>') +
               '</div>' +
             '</div>' +
             '<div class="kds-numpad__err" data-sl-pad-err>Допустимо от 0,001 до 999,999, не больше 3 знаков после запятой</div>' +
           '</div>' +
         '</div>' +
         '<div class="kds-numpad__grid">' +
-          ['1','2','3','4','5','6','7','8','9',',','0','back'].map(function (k) {
-            return '<button class="kds-numpad__k" type="button" data-sl-k="' + k + '"' + (k === 'back' ? ' aria-label="Стереть"' : '') + '>' +
-              (k === 'back' ? '<span class="material-icons">backspace</span>' : k) + '</button>';
+          ['1','2','3','4','5','6','7','8','9',',','0',lastKey].map(function (k) {
+            return '<button class="kds-numpad__k" type="button" data-sl-k="' + k + '"' + (k === 'back' ? ' aria-label="Стереть"' : (k === 'clear' ? ' aria-label="Очистить значение" title="Очистить значение"' : '')) + '>' +
+              (k === 'back' ? '<span class="material-icons">backspace</span>' : (k === 'clear' ? '<span class="material-icons">close</span>' : k)) + '</button>';
           }).join('') +
         '</div>' +
         '<div class="kds-numpad__acts">' +
@@ -3216,10 +3399,207 @@
         '</div>' +
       '</div>';
     }
-    function slEmptyHtml() {
+    function slEmptyHtml(split) {
+      /* На экране с панелью добавления подсказка другая: позицию выбирают справа */
+      if (split) {
+        return '<div class="kds-sempty"><div class="kds-sempty__t">Ограничений нет</div>' +
+          '<div class="kds-sempty__d">Выберите позицию в панели «Добавить в стоп-лист»</div></div>';
+      }
       return '<div class="kds-sempty"><div class="kds-sempty__t">Ограничений нет</div>' +
         '<div class="kds-sempty__d">Нажмите «Добавить позицию», чтобы задать остаток</div>' +
         '<button class="kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button></div>';
+    }
+    /* ── Экран 7: правая панель «Добавить в стоп-лист» ──
+       Строки те же, что на экране внесения: название, поле остатка, кнопка «В стоп-лист».
+       Значения полей живут в RT.sl.pane.vals (ключ «i» / «i:si»), чтобы не пропадать
+       при поиске и перерисовке панели */
+    function slPaneFieldHtml(it, i, si) {
+      var key = si == null ? String(i) : i + ':' + si;
+      var v = (RT.sl.pane.vals && RT.sl.pane.vals[key]) || '';
+      var unit = it.unit || 'шт';
+      var extra = ' data-sl-pane="1" data-sl-pane-key="' + key + '"' + (si == null && it.sizes && it.sizes.length ? ' data-sl-group="' + i + '"' : '');
+      /* Поле-«невидимка»: держит значение для редактора и служит точкой фокуса для панели цифр,
+         но в разметке его не видно — на экране только «цифра + единица» обычным текстом */
+      var vv = v === '' ? '' : String(v);
+      return '<div class="kds-srow__val kds-srow__val--read">' +
+        '<span class="kds-srow__ro" data-sl-ro="' + esc(key) + '">' +
+          '<span class="kds-srow__ro-val">' + esc(vv === '' ? '0' : vv) + '</span>' +
+          '<span class="kds-srow__unit">' + esc(unit) + '</span>' +
+        '</span>' +
+        '<input class="kds-srow__ro-inp" type="text" inputmode="decimal" enterkeyhint="done"' +
+          ' data-sl-in="' + i + '"' + (si != null ? ' data-sl-si="' + si + '"' : '') +
+          ' autocomplete="off" spellcheck="false" value="' + esc(vv) + '" aria-label="Количество"' + extra + '>' +
+      '</div>';
+    }
+    /* Позиция панели, којая уже в стоп-листе: строка не исчезает, а становится недоступной.
+       Состояние считаем по САМОМУ стоп-листу, а не по отметке «добавлено» — если позицию
+       сняли слева, строка в панели снова окажется рабочей */
+    function slPaneInStop(it, si) {
+      var items = slData();
+      function hasSize(t, name) {
+        return !!(t && t.sizes && t.sizes.some(function (s) { return s.s === name; }));
+      }
+      for (var k = 0; k < items.length; k++) {
+        if (items[k].name !== it.name) continue;
+        if (si != null) {
+          if (!it.sizes || !it.sizes[si]) return false;
+          return hasSize(items[k], it.sizes[si].s);
+        }
+        if (it.sizes && it.sizes.length) {
+          var t = items[k];
+          return it.sizes.every(function (sz) { return hasSize(t, sz.s); });
+        }
+        return true;
+      }
+      return false;
+    }
+    function slPaneRowHtml(it, i) {
+      var hasSizes = !!(it.sizes && it.sizes.length);
+      var cap = hasSizes
+        ? ((it.sizesTotal && it.sizesTotal > it.sizes.length)
+            ? it.sizes.length + ' из ' + it.sizesTotal + ' размеров'
+            : it.sizes.length + ' ' + slSizePlur(it.sizes.length))
+        : '';
+      /* Внесённое в стоп-лист: строка остаётся, но без поля — остаток теперь живёт
+         в стоп-листе слева. Здесь только состояние «В стоп-листе» и недоступная кнопка */
+      var offDish = slPaneInStop(it, null);
+      var html = '<div class="kds-srow' + (offDish ? ' is-off-row' : '') + '" data-sl-pane-row="' + i + '" data-sl-name="' + esc(it.name) + '">' +
+        '<div class="kds-srow__top">' +
+          '<div class="kds-srow__plate">' +
+            '<div class="kds-srow__box">' +
+              '<div class="kds-srow__main is-static' + (offDish ? ' is-off' : '') + '">' +
+                '<div class="kds-srow__namecol">' +
+                  '<div class="kds-srow__l1"><span class="kds-srow__name">' + esc(it.name) + '</span></div>' +
+                  (offDish ? '' : (cap ? '<span class="kds-srow__cap">' + esc(cap) + '</span>' : '')) +
+                '</div>' +
+                '<div class="kds-srow__meta"></div>' +
+              '</div>' +
+            '</div>' +
+            (offDish ? '' : slPaneFieldHtml(it, i, null)) +
+          '</div>' +
+          '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-paneadd="' + i + '" aria-label="В стоп-лист" title="В стоп-лист"' + (offDish ? ' disabled aria-disabled="true"' : '') + '><span class="material-icons">add</span></button>' +
+        '</div></div>';
+      if (hasSizes) {
+        html += it.sizes.map(function (sz, si) {
+          var key = i + ':' + si;
+          var offSz = slPaneInStop(it, si);
+          return '<div class="kds-srow kds-srow--sub' + (offSz ? ' is-off-row' : '') + '" data-sl-pane-row="' + key + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '">' +
+            '<div class="kds-srow__top">' +
+              '<div class="kds-srow__plate">' +
+                '<div class="kds-srow__box">' +
+                  '<div class="kds-srow__main is-static' + (offSz ? ' is-off' : '') + '">' +
+                    '<div class="kds-srow__namecol"><div class="kds-srow__l1"><span class="kds-srow__name">' + esc(sz.s) + '</span></div></div>' +
+                    '<div class="kds-srow__meta"></div>' +
+                  '</div>' +
+                '</div>' +
+                (offSz ? '' : slPaneFieldHtml(it, i, si)) +
+              '</div>' +
+              '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-paneadd="' + key + '" aria-label="В стоп-лист" title="В стоп-лист"' + (offSz ? ' disabled aria-disabled="true"' : '') + '><span class="material-icons">add</span></button>' +
+            '</div></div>';
+        }).join('');
+      }
+      return html;
+    }
+    function slPaneRowsHtml() {
+      var pane = RT.sl && RT.sl.pane;
+      var items = (pane && pane.items) || [];
+      if (!items.length) {
+        return '<div class="kds-sempty"><div class="kds-sempty__t">Все позиции уже в стоп-листе</div>' +
+          '<div class="kds-sempty__d">Добавлять нечего</div></div>';
+      }
+      var q = (RT.sl.q || '').toLowerCase();
+      var visible = [];
+      items.forEach(function (it, i) {
+        var hay = (it.name + ' ' + (it.sizes || []).map(function (s) { return s.s; }).join(' ')).toLowerCase();
+        if (q && hay.indexOf(q) === -1) return;
+        visible.push({ it: it, i: i });
+      });
+      if (!visible.length) return '<div class="kds-snone">Ничего не найдено</div>';
+      var buckets = {}, order = [];
+      visible.forEach(function (e) {
+        var c = slCat(e.it);
+        if (!buckets[c]) { buckets[c] = []; order.push(c); }
+        buckets[c].push(e);
+      });
+      order.sort(function (a, b) { return String(a || '').localeCompare(String(b || ''), 'ru'); });
+      return order.map(function (c) {
+        var off = !!(pane.folds && pane.folds[c]);
+        return '<div class="kds-sgrp kds-sgrp--acc' + (off ? ' is-collapsed' : '') + '" data-sl-panegrp>' +
+          (c
+            ? '<button class="kds-sgroup kds-sgroup--acc" type="button" data-sl-panefold="' + esc(c) + '" aria-expanded="' + (off ? 'false' : 'true') + '">' +
+                '<span class="material-icons kds-sgroup__ico">' + (off ? 'chevron_right' : 'expand_more') + '</span>' +
+                '<span class="kds-sgroup__t">' + esc(c) + '</span>' +
+                '<span class="kds-sgroup__n">' + buckets[c].length + '</span>' +
+              '</button>'
+            : '') +
+          buckets[c].map(function (e) { return slPaneRowHtml(e.it, e.i); }).join('') +
+        '</div>';
+      }).join('');
+    }
+    function slPaneRender() {
+      var body = RT.view && RT.view.querySelector('[data-sl-panebody]');
+      if (!body) return;
+      var st = body.scrollTop;
+      body.innerHTML = slPaneRowsHtml();
+      body.scrollTop = st;
+    }
+    /* Запись в стоп-лист прямо из правой панели: позиция появляется в левом списке */
+    function slPanePut(src, szName, v) {
+      var items = slData();
+      var tgt = null;
+      for (var k = 0; k < items.length; k++) if (items[k].name === src.name) { tgt = items[k]; break; }
+      if (szName != null) {
+        if (!tgt) { tgt = { name: src.name, unit: src.unit || 'шт', sizes: [] }; items.push(tgt); }
+        if (!tgt.sizes) tgt.sizes = [];
+        var sz = null;
+        for (var j = 0; j < tgt.sizes.length; j++) if (tgt.sizes[j].s === szName) { sz = tgt.sizes[j]; break; }
+        if (!sz) { sz = { s: szName }; tgt.sizes.push(sz); }
+        if (v && v.stop) { sz.stop = true; sz.rest = ''; }
+        else { sz.stop = false; sz.rest = v.rest; }
+        return;
+      }
+      if (!tgt) { tgt = { name: src.name, unit: src.unit || 'шт' }; items.push(tgt); }
+      if (v && v.stop) { tgt.stop = true; tgt.rest = ''; }
+      else { tgt.stop = false; tgt.rest = v.rest; }
+    }
+    function slPaneAdd(key) {
+      var pane = RT.sl && RT.sl.pane;
+      if (!pane) return;
+      var p = String(key).split(':');
+      var i = +p[0], si = p.length > 1 ? +p[1] : null;
+      var it = pane.items[i];
+      if (!it) return;
+      var plans = [];
+      if (si != null && it.sizes && it.sizes[si]) plans.push({ sz: it.sizes[si], sj: si });
+      else if (it.sizes && it.sizes.length) it.sizes.forEach(function (sz, sj) { plans.push({ sz: sz, sj: sj }); });
+      else plans.push({ sz: null, sj: null });
+      var added = [], bad = false;
+      plans.forEach(function (pl) {
+        var k = pl.sj == null ? String(i) : i + ':' + pl.sj;
+        var inp = RT.view.querySelector('[data-sl-pane-key="' + k + '"]');
+        var pr = inp ? parseRest(inp.value) : { ok: true, empty: true };
+        if (!pr.ok) { if (inp) slRowErr(inp, true); bad = true; return; }
+        added.push((!pr.empty && pr.val > 0) ? { rest: fmtRest(pr.val) } : { stop: true });
+      });
+      if (bad) return;
+      if (si != null && it.sizes && it.sizes[si]) {
+        slPanePut(it, it.sizes[si].s, added[0]);
+      } else if (it.sizes && it.sizes.length) {
+        it.sizes.forEach(function (sz, sj) { slPanePut(it, sz.s, added[sj]); });
+        slCollapseInList(it.name);
+      } else {
+        slPanePut(it, null, added[0]);
+      }
+      var nm = (si != null && it.sizes && it.sizes[si]) ? it.name + ' ' + it.sizes[si].s : it.name;
+      /* Строка НЕ уходит из панели: остаётся на месте и становится недоступной (Disable),
+         а позиция появляется в стоп-листе слева */
+      /* Панель категории, куда внесли, в стоп-листе раскрыта */
+      var cat = slCat(it);
+      if (cat) { RT.sl.gfolds = RT.sl.gfolds || {}; RT.sl.gfolds[cat] = false; }
+      RT.sl.added = (RT.sl.added || 0) + 1;
+      slPaneRender();
+      slRerender();
+      slBanner('Добавлено в стоп-лист: ' + nm);
     }
     function slScreen(cfg) {
       var items = slData();
@@ -3228,7 +3608,8 @@
          Button/Outlined рядом с выбранными, 3) «Добавить позицию» — единственная главная (filled).
          Между полем и группой кнопок — 24, внутри группы — 8. */
       var selAll = slSelAllHtml(items);
-      var addBtn = '<button class="kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button>';
+      /* На экране с панелью добавления кнопка «Добавить позицию» не нужна: панель всегда открыта */
+      var addBtn = cfg.split ? '' : '<button class="kds-btn-warn-out" type="button" data-sl-add><span class="material-icons">add</span>Добавить позицию</button>';
           /* Массовые действия — ВСЕГДА в шапке полосы (заказчик 19.11.2026: плашку у футера убрать).
          При выборе слева появляется счётчик «Выбрано: N», а «Выбрать все» становится
          «Снять выбор»; справа — действия: у стоп-листа «Удалить из стоп-листа» и «В стоп»,
@@ -3236,14 +3617,16 @@
       var headMass = '<div class="kds-shead__mass" data-sl-head-mass hidden>' +
         (RT.sl.addMode
           ? '<button class="' + (cfg.rowAdd ? 'kds-btn-warn-out' : 'kds-btn-acc-out') + '" type="button" data-sl-massact="addsel">' + (cfg.rowAdd ? 'В стоп-лист' : 'Добавить в стоп-лист') + '</button>'
-          : '<button class="kds-btn-neutral" type="button" data-sl-massact="clear">Удалить из стоп-листа</button>' +
+          : '<button class="kds-btn-neutral" type="button" data-sl-massact="clear">' + (cfg.split ? 'Удалить' : 'Удалить из стоп-листа') + '</button>' +
             '<button class="kds-btn-neg-out" type="button" data-sl-massact="stop">В стоп</button>') +
       '</div>';
       var selAllBlock = selAll
         ? '<div class="kds-shead__left"><span class="kds-shead__n" data-sl-tb-n hidden>Выбрано: 0</span>' + selAll + '</div>'
         : selAll;
-      /* «Печать» — только у стоп-листа (§5.8: в шапке списка), на внесении её нет */
-      var printBtn = '<button class="kds-btn-out" type="button" data-sl-print>Печать</button>';
+      /* «Печать» — только у стоп-листа (§5.8: в шапке списка), на внесении её нет.
+         На экране 7 — с иконкой принтера */
+      var printBtn = '<button class="kds-btn-out" type="button" data-sl-print>' +
+        (cfg.split ? '<span class="material-icons">print</span>' : '') + 'Печать</button>';
       var headBtns = RT.sl.addMode
         ? '<div class="kds-shead__btns">' + selAllBlock + '<div class="kds-shead__right">' + headMass + '</div></div>'
         : '<div class="kds-shead__btns">' +
@@ -3263,7 +3646,30 @@
               '<div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>' +
             '</div>' +
           '</div>'
-        : slEmptyHtml();
+        : slEmptyHtml(cfg.split);
+      /* Экран 7: две панели — слева стоп-лист (60%), справа добавление в стоп-лист (40%) */
+      if (cfg.split) {
+        return '<div class="kds-slist kds-slist--split">' +
+          '<div class="kds-split">' +
+            '<div class="kds-split__pane">' + headBlock + rows + '</div>' +
+            '<div class="kds-split__pane kds-split__pane--add">' +
+              '<div class="kds-split__caprow">' +
+                '<div class="kds-split__cap">Добавить в стоп-лист</div>' +
+                /* «Свернуть все» есть в обеих колонках и управляет обеими панелями */
+                '<button class="kds-btn-out kds-split__foldall" type="button" data-sl-gfoldall><span class="material-icons">unfold_less</span><span data-sl-gfoldall-t>Свернуть все</span></button>' +
+              '</div>' +
+              '<div class="kds-sbody-wrap">' +
+                '<div class="kds-sbody" data-sl-panebody>' + slPaneRowsHtml() + '</div>' +
+                '<div class="ds-scroll ds-scroll--v ds-scroll--middle kds-sbody-scroll" aria-hidden="true" hidden>' +
+                  '<div class="ds-scroll__background"><div class="ds-scroll__knob"></div></div>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          slNumpadHtml() +
+          slConfirmHtml() +
+        '</div>';
+      }
       return '<div class="kds-slist">' +
         headBlock +
         rows +
@@ -3369,7 +3775,8 @@
       /* Пустой стоп-лист — искать нечего: поле поиска в шапке не нужно, остаётся только CTA в центре.
          Пустой РЕЗУЛЬТАТ поиска — не пустой список: поле поиска остаётся */
       var srch = RT.view.querySelector('[data-sl-search-wrap]');
-      if (srch) srch.style.display = (RT.sl.addMode || slCount() > 0) ? '' : 'none';
+      /* На экране 7 поиск нужен всегда: он ищет по правой панели, даже если стоп-лист пуст */
+      if (srch) srch.style.display = (RT.sl.addMode || slCount() > 0 || (RT.cfg && RT.cfg.split)) ? '' : 'none';
       var head = RT.view.querySelector('.kds-shead');
       if (head) head.style.display = (RT.sl.addMode || slCount() > 0) ? '' : 'none';
       /* Действия футера НИКОГДА не исчезают: когда действовать не с чем — они disabled,
@@ -3446,7 +3853,7 @@
         l1.appendChild(badge);
       }
       if (badge) {
-        if (t) badge.textContent = t;
+        if (t) badge.innerHTML = slSstopInner(t, it.name);
         else badge.parentNode.removeChild(badge);
       }
       var allStop = (it && it.sizes && it.sizes.length)
@@ -3503,6 +3910,12 @@
     }
     function applySlFilter() {
       if (!RT.view) return;      var q = (RT.sl.q || '').toLowerCase();
+      /* Экран 7: поиск ищет только по правой панели («что добавить») — левый стоп-лист не трогаем */
+      if (RT.cfg && RT.cfg.split) {
+        slPaneRender();
+        syncSl();
+        return;
+      }
       var any = false;
       Array.prototype.forEach.call(RT.view.querySelectorAll('[data-sl-row]'), function (r) {
         var name = (r.getAttribute('data-sl-name') || '').toLowerCase();
@@ -3604,7 +4017,20 @@
       var bodyEl = RT.view.querySelector('[data-sl-body]');
       if (bodyEl) {
         if (slData().length) bodyEl.innerHTML = slRowsHtml(slData());
-        else bodyEl.outerHTML = slEmptyHtml();
+        else bodyEl.outerHTML = slEmptyHtml(RT.cfg && RT.cfg.split);
+      } else if (slData().length) {
+        /* Список был пуст: пустое состояние заменило контейнер строк.
+           Позиции появились (например, внесли из панели) — возвращаем контейнер на место,
+           иначе добавить некуда и стоп-лист выглядит пустым */
+        var emptyEl = RT.view.querySelector('.kds-split__pane:not(.kds-split__pane--add) .kds-sempty') ||
+          RT.view.querySelector('.kds-sempty');
+        if (emptyEl && emptyEl.parentNode) {
+          var nb = document.createElement('div');
+          nb.className = 'kds-sbody';
+          nb.setAttribute('data-sl-body', '');
+          nb.innerHTML = slRowsHtml(slData());
+          emptyEl.parentNode.replaceChild(nb, emptyEl);
+        }
       }
       syncMass();
       applySlFilter();
@@ -3981,8 +4407,8 @@
     function slConfirm(a) {
       closeSlConfirm();
       if (a === 'yes') {
-        /* Очистка всего стоп-листа — глобальная: чистим и живой список, с какого бы экрана её ни открыли */
-        SLITEMS = [];
+        /* Очистка всего стоп-листа — чистим живой список того экрана, с которого открыли */
+        if (RT.cfg && RT.cfg.split) SLITEMS7 = []; else SLITEMS = [];
         slData().length = 0;
         RT.sl.checks = {};
         RT.sl.folds = {};
@@ -4067,6 +4493,8 @@
         /* Тап по полю — открываем цифровую панель: на сенсорном терминале клавиатуры нет */
         if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-sl-in')) {
           RT.sl.padInp = e.target;
+          /* Поле правой панели экрана 7: в панели ввода нужна кнопка «В стоп-лист» */
+          RT.sl.padPane = e.target.hasAttribute('data-sl-pane');
           RT.sl.padOrig = e.target.value;      /* «Отмена» вернёт это значение */
           var rowEl = e.target.closest ? e.target.closest('.kds-srow') : null;
           var nmEl = rowEl && rowEl.querySelector('.kds-srow__name');
@@ -4082,7 +4510,10 @@
           /* Экран 6: размер блюда выбирается прямо в панели — «Все размеры» или один размер */
           RT.sl.padDish = null; RT.sl.padPick = null;
           var sizesBox = view.querySelector('[data-sl-pad-sizes]');
-          var iDish = rowEl ? +rowEl.getAttribute('data-sl-row') : null;
+          /* Строка правой панели (экран 7) — это НЕ строка стоп-листа: индекс у неё свой,
+             поэтому подстановки по slData() для неё не делаем (иначе чужое название в шапке) */
+          var isPaneRow = !!(rowEl && rowEl.hasAttribute('data-sl-pane-row'));
+          var iDish = (rowEl && !isPaneRow) ? +rowEl.getAttribute('data-sl-row') : null;
           var itDish = iDish != null && !isNaN(iDish) ? slData()[iDish] : null;
           RT.sl.padDirty = false;      /* панель только открылась — применять нечего */
           /* Название в шапке — только блюдо, без размера: размер виден по выбранной кнопке */
@@ -4109,7 +4540,9 @@
             /* Вид панели один и тот же на всех экранах («Закрыть» — аутлайн, «Сохранить» — аутлайн);
                на внесении дополнительно показываем функцию «В стоп-лист» */
             var padAddBtn = padEl.querySelector('[data-sl-pad-add]');
-            if (padAddBtn) padAddBtn.hidden = !RT.sl.addMode;
+            /* Экран 7: панель ввода открыта из строки «Добавить в стоп-лист» —
+               кнопка внесения нужна и здесь, не только в режиме внесения */
+            if (padAddBtn) padAddBtn.hidden = !(RT.sl.addMode || RT.sl.padPane);
             padEl.hidden = false; RT.sl.padShownAt = Date.now(); slPadSync();
             /* Поле панели — рабочее: на десктопе фокус и выделение переходят в него,
                чтобы ввод с клавиатуры шёл туда, а не в поле строки под панелью */
@@ -4133,9 +4566,16 @@
         if (norm.length > 9) norm = norm.slice(0, 9);
         if (norm !== v) inp.value = norm;
         slRowErr(inp, inp.value !== '' && !parseRest(inp.value).ok);
+        /* Поле правой панели (экран 7): запоминаем значение, чтобы оно пережило поиск и перерисовку */
+        if (inp.hasAttribute('data-sl-pane') && RT.sl && RT.sl.pane && RT.sl.pane.vals) {
+          RT.sl.pane.vals[inp.getAttribute('data-sl-pane-key')] = inp.value;
+          var roInp = inp.closest('.kds-srow__val');
+          var roV = roInp && roInp.querySelector('.kds-srow__ro-val');
+          if (roV) roV.textContent = inp.value === '' ? '0' : inp.value;
+        }
         /* Стоп-лист: набрали положительный остаток — «Полный стоп» снимается сразу,
            не дожидаясь ухода из поля */
-        if (RT.sl && !RT.sl.addMode && !inp.hasAttribute('data-sl-group')) {
+        if (RT.sl && !RT.sl.addMode && !inp.hasAttribute('data-sl-group') && !inp.hasAttribute('data-sl-pane')) {
           var iN = +inp.getAttribute('data-sl-in');
           var siN = inp.hasAttribute('data-sl-si') ? +inp.getAttribute('data-sl-si') : null;
           var itN = slData()[iN];
@@ -4679,6 +5119,13 @@
     DOC['list-clean-copy-2'] = JSON.parse(JSON.stringify(DOC['list-clean-copy']));
     DOC['list-clean-copy-2'].t = 'Стоп-лист · копия экрана 5';
     DOC['list-clean-copy-2'].s = 'рабочая копия';
+    /* Экран 7: список и добавление на одном экране */
+    DOC['split'] = {
+      t: 'Стоп-лист и добавление',
+      s: 'две панели 60/40',
+      q: 'Позиции с ограничениями и добавление новых — на одном экране, без перехода между списком и внесением.',
+      d: 'Слева (60%) — стоп-лист как на экране 6: позиции и размеры отдельными строками, поле остатка, кнопки «Удалить из стоп-листа» и «В стоп», бейджи «Полный стоп» и «В стопе K из N». Справа (40%) — панель «Добавить в стоп-лист»: категории-панели и строки с полем остатка и своей кнопкой «В стоп-лист», как на экране внесения. Поиск в шапке ищет по правой панели по всем блюдам меню. Внесённая позиция сразу появляется слева, строка уходит из панели, снекбар сообщает результат.'
+    };
     function docHead(id, pill) {
       var x = DOC[id] || DOC['base'];
       /* Место (цех/сборка) — в заголовок, если его там ещё нет (поле s) */
@@ -4696,7 +5143,7 @@
        Текущий экран подсвечен. Данные — из самих описаний DOC.
        Порядок — по номерам сценариев (совпадает с реестром layouts.js). */
     var SCREEN_ORDER = ['base-noaccess', 'base',
-      'list-empty', 'add-row', 'list-clean-copy', 'list-clean-copy-2',
+      'list-empty', 'add-row', 'list-clean-copy', 'list-clean-copy-2', 'split',
       'multi-head', 'multi-partial', 'clear-confirm',
       'shift-off'];
     function scenList(curId) {
@@ -4856,15 +5303,23 @@
     /* ── Сборка экрана ── */
     var host = document.getElementById('kdsHost');
     /* Живой стоп-лист: после очистки/снятия/добавления список остаётся таким до перезагрузки.
-       null — ещё не трогали демо-данные SCREENS['list-clean-copy'] */
+       Свои хранилища: у экранов 5 и 6 — один, у экрана 7 — другой (там свой короткий набор)
+       null — ещё не трогали демо-данные экрана */
     var SLITEMS = null;
+    var SLITEMS7 = null;
     function slLiveItems() {
+      if (RT.cfg && RT.cfg.split) {
+        if (SLITEMS7 == null) SLITEMS7 = JSON.parse(JSON.stringify(SCREENS['split'].items || []));
+        return SLITEMS7;
+      }
       if (SLITEMS == null) SLITEMS = JSON.parse(JSON.stringify(SCREENS['list-clean-copy'].items || []));
       return SLITEMS;
     }
     /* Сброс живого списка из текущего рендера (только экран стоп-листа) */
     function slPersist() {
-      if (RT && RT.cfg && RT.cfg.__live) SLITEMS = JSON.parse(JSON.stringify(RT.cfg.items || []));
+      if (!RT || !RT.cfg || !RT.cfg.__live) return;
+      var copy = JSON.parse(JSON.stringify(RT.cfg.items || []));
+      if (RT.cfg.split) SLITEMS7 = copy; else SLITEMS = copy;
     }
     /* ── Внесение в живой стоп-лист ──
        Блюдо с размерами хранится ОДНОЙ позицией с размерами (как демо-данные):
@@ -4931,11 +5386,11 @@
       if (RT.sl && cfg.level) Object.keys(cfg.level).forEach(function (k) { RT.sl.levels[k] = cfg.level[k]; });
       /* Экран стоп-листа работает с живым списком: очистка/снятие/добавление переживают переходы.
          Живой экран списка — единственный: «панели раскрытия · рабочий вид» */
-      if (id === 'list-clean-copy' || id === 'list-clean-copy-2') {
+      if (id === 'list-clean-copy' || id === 'list-clean-copy-2' || id === 'split') {
         cfg.__live = true;
         cfg.items = JSON.parse(JSON.stringify(slLiveItems()));
-        /* Только на экране 6 (копия): размеры блюда показываем отдельными строками списка */
-        if (id === 'list-clean-copy-2') cfg.flatSizes = true;
+        /* На экране 6 (копия) и на экране 7 (две панели) размеры блюда — отдельными строками списка */
+        if (id === 'list-clean-copy-2' || id === 'split') cfg.flatSizes = true;
         /* Только что внесённое целиком блюдо с размерами показываем свёрнутым:
            одна строка блюда, панель размеров закрыта (заказчик 19.11.2026).
            Список может перерисоваться не один раз (панель ревью синхронизирует шаг),
@@ -4953,25 +5408,17 @@
          У позиции с размерами блюдо остаётся, пока есть размеры, которых нет в стоп-листе:
          размер уже внесён (с остатком или в полном стопе) — повторно его не предлагаем */
       if (RT.sl && RT.sl.addMode) {
-        var takenNames = {};
-        slLiveItems().forEach(function (x) {
-          takenNames[x.name] = 1;
-          if (x.sizes && x.sizes.length) {
-            x.sizes.forEach(function (sz) { takenNames[x.name + ' ' + sz.s] = 1; });
-          }
+        cfg.items = slMenuAvail(slLiveItems());
+      }
+      /* Экран 7: правая панель «Добавить в стоп-лист» — то же меню, что на экране внесения */
+      if (RT.sl && cfg.split) {
+        RT.sl.pane = { items: slMenuAvail(cfg.items), vals: {}, folds: {} };
+        /* По умолчанию все панели добавления СВЁРНУТЫ: сначала видно дерево категорий,
+           раскрывается та, которая нужна */
+        RT.sl.pane.items.forEach(function (it) {
+          var c = slCat(it);
+          if (c) RT.sl.pane.folds[c] = true;
         });
-        cfg.items = (cfg.items || []).map(function (it) {
-          if (it.sizes && it.sizes.length) {
-            var keep = JSON.parse(JSON.stringify(it));
-            keep.sizes = keep.sizes.filter(function (sz) { return !takenNames[it.name + ' ' + sz.s]; });
-            if (!keep.sizes.length) return null;
-            /* Полный размерный ряд — подпись покажет «2 из 3 размеров»,
-               если часть размеров уже в стоп-листе */
-            if (keep.sizes.length < it.sizes.length) keep.sizesTotal = it.sizes.length;
-            return keep;
-          }
-          return takenNames[it.name] ? null : it;
-        }).filter(Boolean);
       }
       prep(cfg);
       var body;
@@ -5014,6 +5461,9 @@
       if (RT.sl) {
         bindSl(RT.view);
         syncMass();
+        /* Подпись «Свернуть все / Раскрыть все» сразу по фактическому состоянию панелей:
+           на экране 7 правая панель стартует свёрнутой, и кнопка должна говорить «Раскрыть все» */
+        slSyncFoldAll();
         if (cfg.confirmOpen) openSlConfirm();
         /* Стенд правки: поле остатка в строке уже в фокусе (или показывает ошибку) */
         if (cfg.edit) {
@@ -5990,6 +6440,32 @@
             slPadValidate();
             return;
           }
+          /* Экран 7: тап по любому месту поля остатка (внутренние отступы, единица «шт»/«порц») —
+             это тап по полю: фокусируем input, и панель ввода открывается тем же focusin */
+          if (RT.cfg && RT.cfg.split) {
+            var padFrame = t.closest('.kds-srow__val .ds-input__frame');
+            if (padFrame && !t.closest('input') && !t.closest('button')) {
+              var padField = padFrame.querySelector('[data-sl-in]');
+              if (padField && !padField.disabled) {
+                e.preventDefault();
+                /* Поле уже в фокусе (панель закрыли, фокус остался) — перезапускаем focusin,
+                   иначе повторный тап не откроет панель */
+                if (document.activeElement === padField) padField.blur();
+                padField.focus(); return;
+              }
+            }
+            /* Тап по самой строке блюда (плашка с названием) — тоже открывает панель ввода:
+               попадать пальцем в поле не нужно. У внесённых строк поля нет — там ничего не делаем */
+            var paneRowEl = t.closest('[data-sl-pane-row]');
+            if (paneRowEl && !t.closest('input') && !t.closest('button')) {
+              var paneField = paneRowEl.querySelector('[data-sl-in]');
+              if (paneField && !paneField.disabled) {
+                e.preventDefault();
+                if (document.activeElement === paneField) paneField.blur();
+                paneField.focus(); return;
+              }
+            }
+          }
           if (!t.closest('.kds-numpad') && !t.closest('[data-sl-in]')) {
             /* Панель всплывает ровно под пальцем: событие click после открытия приходит уже
                на панель (mousedown был на поле) — такой клик её не закрывает */
@@ -6004,6 +6480,23 @@
           if (back) { render(back.getAttribute('data-sl-back')); return; }
           var addb = t.closest('[data-sl-add]');
           if (addb) { render('add-row'); return; }
+          /* Экран 7: внесение из правой панели и сворачивание её категорий */
+          var paneAddBtn = t.closest('[data-sl-paneadd]');
+          if (paneAddBtn) { e.preventDefault(); slPaneAdd(paneAddBtn.getAttribute('data-sl-paneadd')); return; }
+          var paneFoldBtn = t.closest('[data-sl-panefold]');
+          if (paneFoldBtn) {
+            e.preventDefault();
+            var pfCat = paneFoldBtn.getAttribute('data-sl-panefold');
+            var pfGrp = paneFoldBtn.closest('.kds-sgrp');
+            var pfOff = !(pfGrp && pfGrp.classList.contains('is-collapsed'));
+            RT.sl.pane.folds = RT.sl.pane.folds || {};
+            RT.sl.pane.folds[pfCat] = pfOff;
+            if (pfGrp) pfGrp.classList.toggle('is-collapsed', pfOff);
+            paneFoldBtn.setAttribute('aria-expanded', pfOff ? 'false' : 'true');
+            var pfIco = paneFoldBtn.querySelector('.kds-sgroup__ico');
+            if (pfIco) slMi(pfIco, pfOff ? 'chevron_right' : 'expand_more');
+            return;
+          }
           /* Вариант «своя кнопка в строке»: одна строка вносится сразу, экран остаётся */
           var rowAddBtn = t.closest('[data-sl-rowadd]');
           if (rowAddBtn) { e.preventDefault(); slAddRow(rowAddBtn); return; }
@@ -6048,16 +6541,36 @@
             slScrollSync();
             return;
           }
-          /* «Свернуть все / Раскрыть все»: есть хоть одна раскрытая панель — сворачиваем все, иначе раскрываем */
+          /* «Свернуть все / Раскрыть все»: на экране 7 у каждой колонки своя кнопка и своя область —
+             есть хоть одна раскрытая панель в этой колонке, сворачиваем все, иначе раскрываем */
           var gallBtn = t.closest('[data-sl-gfoldall]');
           if (gallBtn) {
             e.preventDefault();
-            var gAll = RT.view.querySelectorAll('.kds-sgrp--acc');
+            var inPaneCol = !!gallBtn.closest('.kds-split__pane--add');
+            var gAll = inPaneCol
+              ? RT.view.querySelectorAll('[data-sl-panegrp]')
+              : ((RT.cfg && RT.cfg.split)
+                  ? RT.view.querySelectorAll('[data-sl-body] .kds-sgrp--acc')
+                  : RT.view.querySelectorAll('.kds-sgrp--acc'));
             var anyOpen = Array.prototype.some.call(gAll, function (g) { return !g.classList.contains('is-collapsed'); });
             RT.sl.gfolds = RT.sl.gfolds || {};
             Array.prototype.forEach.call(gAll, function (g) {
-              var hb = g.querySelector('.kds-sgroup--acc');
               g.classList.toggle('is-collapsed', anyOpen);
+              /* Правая колонка: своё состояние (data-sl-panefold) и своя память */
+              if (inPaneCol) {
+                var ph = g.querySelector('[data-sl-panefold]');
+                if (ph) {
+                  if (RT.sl.pane) {
+                    RT.sl.pane.folds = RT.sl.pane.folds || {};
+                    RT.sl.pane.folds[ph.getAttribute('data-sl-panefold')] = anyOpen;
+                  }
+                  ph.setAttribute('aria-expanded', anyOpen ? 'false' : 'true');
+                  var pi = ph.querySelector('.kds-sgroup__ico');
+                  if (pi) slMi(pi, anyOpen ? 'chevron_right' : 'expand_more');
+                }
+                return;
+              }
+              var hb = g.querySelector('.kds-sgroup--acc');
               if (!hb) return;
               var nm = hb.getAttribute('data-sl-gfold');
               hb.setAttribute('aria-expanded', anyOpen ? 'false' : 'true');

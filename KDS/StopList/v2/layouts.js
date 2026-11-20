@@ -20,9 +20,10 @@ window.dsLayouts = {
     { file: 'kds-stoplist-v2.html', state: 'add-row', title: '4. Добавить в стоп-лист · своя кнопка в каждой строке' },
     { file: 'kds-stoplist-v2.html', state: 'list-clean-copy', title: '5. Стоп-лист · панели раскрытия · рабочий вид' },
     { file: 'kds-stoplist-v2.html', state: 'list-clean-copy-2', title: '6. Стоп-лист · копия экрана 5' },
-    { file: 'kds-stoplist-v2.html', state: 'multi-head', title: '7. Выбор позиций · действия в шапке' },
-    { file: 'kds-stoplist-v2.html', state: 'multi-partial', title: '8. Массовое снятие · результат с пропуском' },
-    { file: 'kds-stoplist-v2.html', state: 'clear-confirm', title: '9. Очистить стоп-лист · подтверждение' },
-    { file: 'kds-stoplist-v2.html', state: 'shift-off', title: '10. Смена выключена · возврат к заказам' }
+    { file: 'kds-stoplist-v2.html', state: 'split', title: '7. Стоп-лист и добавление · две панели 60/40' },
+    { file: 'kds-stoplist-v2.html', state: 'multi-head', title: '8. Выбор позиций · действия в шапке' },
+    { file: 'kds-stoplist-v2.html', state: 'multi-partial', title: '9. Массовое снятие · результат с пропуском' },
+    { file: 'kds-stoplist-v2.html', state: 'clear-confirm', title: '10. Очистить стоп-лист · подтверждение' },
+    { file: 'kds-stoplist-v2.html', state: 'shift-off', title: '11. Смена выключена · возврат к заказам' }
   ]
 };
