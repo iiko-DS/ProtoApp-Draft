@@ -942,11 +942,17 @@
     background: transparent;
     border: 0;
     box-sizing: border-box; }
+  /* Исключение по просьбе заказчика: у «Мясной» недоступная строка (блюдо и размеры)
+     остаётся с аутлайном — показательный пример такого состояния */
+  .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow.is-off-outline > .kds-srow__top > .kds-srow__plate {
+    background: transparent;
+    border: 1px solid var(--kds-line);
+    box-sizing: border-box; }
   /* Такую строку нельзя ни выбрать, ни нажать — курсор обычный, чекбокс и кнопка
      невидимы, но занимают место: ширина строки остаётся прежней */
   .kds-view .kds-srow.is-off-row, .kds-view .kds-srow.is-off-row .kds-srow__check { cursor: default; }
-  .kds-view .kds-srow.is-off-row .kds-srow__check,
-  .kds-view .kds-srow.is-off-row .kds-srow__add { visibility: hidden; }
+  .kds-view .kds-srow.is-off-row:not(.is-off-outline) .kds-srow__check,
+  .kds-view .kds-srow.is-off-row:not(.is-off-outline) .kds-srow__add { visibility: hidden; }
   /* Экран 7, правая панель: строки без боковых отступов 16 — плашка и кнопка идут от края до края */
   .kds-view .kds-slist--split .kds-split__pane--add .kds-sgrp--acc > .kds-srow { padding-left: 0; padding-right: 0; }
   /* Экран 7, правая панель: значение — обычный текст (цифра + единица), без поля
@@ -1487,6 +1493,15 @@
   .kds-view .kds-srow__val.is-off .ds-input__frame:hover,
   .kds-view .kds-srow__val.is-off .ds-input__frame:focus-within {
     background-color: var(--picca-dish, #212121) !important; }
+  /* «Мясная» (и другие строки с аутлайном): у поля в Disable фон не показываем —
+     состояние читается по обводке строки, поле остаётся только контуром */
+  .kds-view .kds-srow.is-off-outline .kds-srow__val.is-off .ds-input__frame,
+  .kds-view .kds-srow.is-off-outline .kds-srow__val.is-off .ds-input__frame:hover,
+  .kds-view .kds-srow.is-off-outline .kds-srow__val.is-off .ds-input__frame:focus-within,
+  .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow.is-off-outline .kds-srow__top .kds-srow__val.is-off .ds-input__frame,
+  .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow.is-off-outline .kds-srow__top .kds-srow__val.is-off .ds-input__frame:hover,
+  .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow.is-off-outline .kds-srow__top .kds-srow__val.is-off .ds-input__frame:focus-within {
+    background-color: transparent !important; }
   .kds-view .kds-srow__val.is-off .kds-btn[disabled] { color: var(--ds-color-text-disable, #9e9e9e); cursor: default; }
   /* Само блюдо тоже в состоянии Disable: название приглушено, тап не подсвечивает строку */
   .kds-view .kds-srow__main.is-off { cursor: default; pointer-events: none; }
@@ -1590,14 +1605,8 @@
   .kds-numpad__err { display: none; margin-top: var(--ds-space-1x, 4px);
     font-size: 16px; line-height: 24px; letter-spacing: .25px; color: var(--kds-ic-negative); }
   .kds-numpad__err.is-on { display: block; }
-  /* Сброс значения в поле панели — слот Element right у Input ДС: иконка 20, цель нажатия 48.
-     Видна, когда значение больше 0: быстро стереть и набрать новое */
-  .kds-numpad__clear { width: 48px; height: 48px; margin: -12px -12px -12px 0; padding: 0;
-    border: 0; background: transparent; color: var(--kds-text-2); display: none;
-    align-items: center; justify-content: center; border-radius: 8px; }
-  .kds-numpad__clear .material-icons { font-size: 20px; }
-  .kds-numpad__clear:active { background: rgba(255, 255, 255, .08); }
-  .kds-numpad__clear.is-on { display: inline-flex; }
+  /* Сброс значения — последняя клавиша сетки цифровой панели (крестик close),
+     крестика внутри поля больше нет ни на одном экране */
   /* Уровень ограничения переключается не в строке блюда — служебного сегмент-контрола в блоке
      позиции нет; показ размеров задаёт экран */
   /* Единица — колонка постоянной ширины (по самому длинному «порц»), текст мельче значения:
@@ -1777,7 +1786,7 @@
       /* Пиццы с размерами — на экранах внесения блюдо показывается заголовком,
          под ним раскрыты строки размеров (как в стоп-листе) */
       { name: 'Маргарита', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
-      { name: 'Мясная', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
+      { name: 'Мясная', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ], offOutline: true },
       { name: 'Пепперони', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
       { name: 'Четыре сыра', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
       { name: 'Гавайская', cat: 'Пицца', sizes: [ { s: '25 см' }, { s: '30 см' }, { s: '35 см' } ] },
@@ -2464,9 +2473,6 @@
       var ok = pr.ok && (pr.empty || pr.val === 0 || (pr.val >= 0.001 && pr.val <= 999.999));
       var box = f && f.closest ? f.closest('.ds-input') : null;
       if (box) box.classList.toggle('ds-input--error', !ok);
-      /* Крестик сброса — только когда значение больше 0 (быстро стереть и набрать новое) */
-      var clr = padEl.querySelector('[data-sl-pad-clear]');
-      if (clr) clr.classList.toggle('is-on', pr.ok && !pr.empty && pr.val > 0);
       /* ошибка показывается ВНУТРИ панели, под полем */
       var errEl = padEl.querySelector('[data-sl-pad-err]');
       if (errEl) errEl.classList.toggle('is-on', !ok);
@@ -2693,7 +2699,8 @@
         var pf = RT.view.querySelector('[data-sl-pad-val]');
         if (pf) {
           var pv = String(pf.value == null ? '' : pf.value);
-          if (k === 'back') pv = pv.slice(0, -1);
+          if (k === 'clear') pv = '';                    /* крестик сетки — сбросить всё значение */
+          else if (k === 'back') pv = pv.slice(0, -1);
           else if (k === ',') { if (pv.indexOf(',') === -1) pv = pv ? pv + ',' : '0,'; }
           else pv = pv + k;
           pv = slClampRest(pv);
@@ -3069,7 +3076,7 @@
           var szCap = szTotal
             ? it.sizes.length + ' из ' + szTotal + ' размеров'
             : it.sizes.length + ' ' + slSizePlur(it.sizes.length);
-          var szFoldOff = !!RT.sl.folds[i];
+          var szFoldOff = !!RT.sl.folds[i] && !it.offOutline;   /* «Мясная»: размеры не сворачиваем */
           var szFold = RT.cfg.acc
             ? '<button class="kds-srow__fold' + (szFoldOff ? ' is-collapsed' : '') + '" type="button" data-sl-fold="' + i + '" aria-label="Свернуть/развернуть размеры"><span class="material-icons">' + (szFoldOff ? 'chevron_right' : 'expand_more') + '</span></button>'
             : '';
@@ -3080,7 +3087,7 @@
             : '';
           /* Уже внесённое блюдо — чекбокс остаётся в разметке (ширина строки не меняется),
              но невидим и недоступен */
-          return '<div class="kds-srow' + (RT.sl.checks[i] ? ' is-sel' : '') + (rowOff ? ' is-off-row' : '') + '" data-sl-row="' + i + '" data-sl-key="' + i + '" data-sl-name="' + esc(it.name) + '">' +
+          return '<div class="kds-srow' + (RT.sl.checks[i] ? ' is-sel' : '') + (rowOff ? ' is-off-row' : '') + (rowOff && it.offOutline ? ' is-off-outline' : '') + '" data-sl-row="' + i + '" data-sl-key="' + i + '" data-sl-name="' + esc(it.name) + '">' +
             '<div class="kds-srow__top">' +
               (RT.cfg.rowAdd ? '<div class="kds-srow__plate">' : '') +
               '<div class="kds-srow__box">' + mChkRow +
@@ -3095,12 +3102,16 @@
               '</div>' +
               /* Общее поле блюда: значение — сразу всем размерам (Enter/«Сохранить»);
                  когда по размерам значения разные — поле пустое с подсказкой «разные» */
-              (rowOff ? '' : slGroupFieldHtml(it, i)) +
+              (rowOff
+                ? (it.offOutline
+                    ? slFieldHtml(i, null, slLiveRestOf(it, null), it.unit || 'шт', true, !!RT.cfg.noSteps, !!RT.cfg.noClear, '0', ' data-sl-group="' + i + '"')
+                    : '')
+                : slGroupFieldHtml(it, i)) +
               (RT.cfg.rowAdd ? '</div>' : '') +
               (RT.cfg.rowAdd && !rowOff
                 ? '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + i + '" aria-label="В стоп-лист" title="В стоп-лист"><span class="material-icons">add</span></button>'
                 : (RT.cfg.rowAdd
-                    ? '<button class="kds-btn-warn-out kds-srow__add is-ph" type="button" disabled aria-hidden="true" tabindex="-1"><span class="material-icons">add</span></button>'
+                    ? '<button class="kds-btn-warn-out kds-srow__add' + (rowOff && it.offOutline ? '' : ' is-ph') + '" type="button" disabled aria-hidden="' + (rowOff && it.offOutline ? 'false' : 'true') + '" tabindex="-1"><span class="material-icons">add</span></button>'
                     : '')) +
             '</div></div>' +
             slAddSizesHtml(it, i);
@@ -3111,6 +3122,10 @@
         var fieldHtml = slFieldHtml(i, null, it.rest != null ? String(it.rest) : '', it.unit || 'шт', !!it._fail, !!RT.cfg.noSteps, !!RT.cfg.rowAdd);
         /* Уже в стоп-листе — строка остаётся недоступной */
         var offPlain = slLiveInStop(it, null);
+        /* «Мясная»: поле и кнопка остаются видимыми, но в состоянии Disable */
+        var plainField = (offPlain && it.offOutline)
+          ? slFieldHtml(i, null, slLiveRestOf(it, null), it.unit || 'шт', true, !!RT.cfg.noSteps, !!RT.cfg.noClear)
+          : fieldHtml;
         var mChkPlain = (offPlain && RT.cfg.multi)
           ? '<button class="kds-srow__check is-off" type="button" data-sl-check="' + i + '" disabled aria-disabled="true"><span class="material-icons">check_box_outline_blank</span></button>'
           : mChk;
@@ -3131,12 +3146,12 @@
               '</div>' +
               (merged ? fieldHtml : '') +
             '</div>' +
-            (merged || offPlain ? '' : fieldHtml) +
+            (merged || (offPlain && !it.offOutline) ? '' : plainField) +
             (RT.cfg.rowAdd ? '</div>' : '') +
             (RT.cfg.rowAdd && !offPlain
               ? '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + i + '"' + (it._fail ? ' disabled' : '') + ' aria-label="В стоп-лист" title="В стоп-лист"><span class="material-icons">add</span></button>'
               : (RT.cfg.rowAdd
-                  ? '<button class="kds-btn-warn-out kds-srow__add is-ph" type="button" disabled aria-hidden="true" tabindex="-1"><span class="material-icons">add</span></button>'
+                  ? '<button class="kds-btn-warn-out kds-srow__add' + (offPlain && it.offOutline ? '' : ' is-ph') + '" type="button" disabled aria-hidden="' + (offPlain && it.offOutline ? 'false' : 'true') + '" tabindex="-1"><span class="material-icons">add</span></button>'
                   : '')) +
           '</div></div>';
       }
@@ -3225,14 +3240,14 @@
     /* Размеры позиции на экранах внесения — строки под заголовком блюда (Figma 10628:57825):
        у каждого размера своё поле остатка, чекбокс (массовое внесение) и своя кнопка «В стоп-лист» */
     function slAddSizesHtml(it, i) {
-      var foldOff = !!RT.sl.folds[i];
+      var foldOff = !!RT.sl.folds[i] && !it.offOutline;   /* «Мясная»: размеры остаются видны */
       return it.sizes.map(function (sz, si) {
         var szKey = i + ':' + si;
         var szOff = slLiveInStop(it, si);      /* размер уже в стоп-листе — строка недоступна */
         var chk = RT.cfg.multi
           ? '<button class="kds-srow__check' + (szOff ? ' is-off' : (RT.sl.checks[szKey] ? ' is-on' : '')) + '" type="button" data-sl-check="' + szKey + '"' + (szOff ? ' disabled aria-disabled="true"' : '') + '><span class="material-icons">' + (szOff ? 'check_box_outline_blank' : (RT.sl.checks[szKey] ? 'check_box' : 'check_box_outline_blank')) + '</span></button>'
           : '';
-        return '<div class="kds-srow kds-srow--sub' + (RT.sl.checks[szKey] ? ' is-sel' : '') + (szOff ? ' is-off-row' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-key="' + szKey + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '"' +
+        return '<div class="kds-srow kds-srow--sub' + (RT.sl.checks[szKey] ? ' is-sel' : '') + (szOff ? ' is-off-row' : '') + (szOff && it.offOutline ? ' is-off-outline' : '') + '" data-sl-row="' + i + '" data-sl-si="' + si + '" data-sl-key="' + szKey + '" data-sl-name="' + esc(it.name + ' ' + sz.s) + '"' +
           (foldOff ? ' style="display:none"' : '') + '>' +
           '<div class="kds-srow__top">' +
             (RT.cfg.rowAdd ? '<div class="kds-srow__plate">' : '') +
@@ -3244,12 +3259,12 @@
                 '<div class="kds-srow__meta"></div>' +
               '</div>' +
             '</div>' +
-            (szOff ? '' : slFieldHtml(i, si, sz.rest != null ? String(sz.rest) : '', it.unit || 'шт', false, !!RT.cfg.noSteps, !!RT.cfg.rowAdd)) +
+            (szOff && !it.offOutline ? '' : (szOff ? slFieldHtml(i, si, slLiveRestOf(it, si), it.unit || 'шт', true, !!RT.cfg.noSteps, !!RT.cfg.noClear) : slFieldHtml(i, si, sz.rest != null ? String(sz.rest) : '', it.unit || 'шт', false, !!RT.cfg.noSteps, !!RT.cfg.rowAdd))) +
             (RT.cfg.rowAdd ? '</div>' : '') +
             (RT.cfg.rowAdd && !szOff
               ? '<button class="kds-btn-warn-out kds-srow__add" type="button" data-sl-rowadd="' + szKey + '" aria-label="В стоп-лист" title="В стоп-лист"><span class="material-icons">add</span></button>'
               : (RT.cfg.rowAdd
-                  ? '<button class="kds-btn-warn-out kds-srow__add is-ph" type="button" disabled aria-hidden="true" tabindex="-1"><span class="material-icons">add</span></button>'
+                  ? '<button class="kds-btn-warn-out kds-srow__add' + (szOff && it.offOutline ? '' : ' is-ph') + '" type="button" disabled aria-hidden="' + (szOff && it.offOutline ? 'false' : 'true') + '" tabindex="-1"><span class="material-icons">add</span></button>'
                   : '')) +
           '</div></div>';
       }).join('');
@@ -3329,10 +3344,8 @@
       }).join('');
     }
     function slNumpadHtml() {
-      /* Экран 7: крестик живёт в сетке клавиш и сбрасывает ВСЁ значение — отдельный крестик
-         в поле не нужен; на остальных экранах — прежний вид с крестиком и «Стереть» */
-      var split = !!(RT.cfg && RT.cfg.split);
-      var lastKey = split ? 'clear' : 'back';
+      /* Крестик во всех экранах один и один и тот же: он живёт ПОСЛЕДНЕЙ КЛАВИШЕЙ сетки
+         и сбрасывает всё значение. Крестика внутри поля нет — он дублировал бы клавишу */
       return '<div class="kds-numpad" data-sl-numpad hidden>' +
         '<div class="kds-numpad__head">' +
           '<div class="kds-numpad__title">' +
@@ -3348,15 +3361,13 @@
                 '<input class="ds-input__field" type="text" inputmode="decimal" placeholder="0"' +
                   ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
               '</div>' +
-              /* Element right у Input ДС: быстро стереть значение (крестик 20, цель 48) */
-              (split ? '' : '<button class="ds-input__icon kds-numpad__clear" type="button" data-sl-pad-clear aria-label="Очистить значение" title="Очистить значение"><span class="material-icons">close</span></button>') +
               '</div>' +
             '</div>' +
             '<div class="kds-numpad__err" data-sl-pad-err>Допустимо от 0,001 до 999,999, не больше 3 знаков после запятой</div>' +
           '</div>' +
         '</div>' +
         '<div class="kds-numpad__grid">' +
-          ['1','2','3','4','5','6','7','8','9',',','0',lastKey].map(function (k) {
+          ['1','2','3','4','5','6','7','8','9',',','0','clear'].map(function (k) {
             return '<button class="kds-numpad__k" type="button" data-sl-k="' + k + '"' + (k === 'back' ? ' aria-label="Стереть"' : (k === 'clear' ? ' aria-label="Очистить значение" title="Очистить значение"' : '')) + '>' +
               (k === 'back' ? '<span class="material-icons">backspace</span>' : (k === 'clear' ? '<span class="material-icons">close</span>' : k)) + '</button>';
           }).join('') +
@@ -3686,7 +3697,11 @@
         slConfirmHtml() +
       '</div>';
     }
+    /* Снекбар пока отключён во всём прототипе (заказчик 23.11.2026):
+       сообщения о результате действий не показываем. Вернуть — поставить флаг в true */
+    var SL_BANNER_ON = false;
     function slBanner(text) {
+      if (!SL_BANNER_ON) return;
       var b = RT.view && RT.view.querySelector('[data-sl-banner]');
       if (!b) return;
       var t = b.querySelector('[data-sl-banner-text]');
@@ -3933,7 +3948,7 @@
         var show = (!q || name.indexOf(q) !== -1);
         /* свёрнутые размеры остаются скрытыми, но поиск по названию размера их показывает.
            Состояние не задано сотрудником — у полностью стопнутого блюда размеры свёрнуты */
-        if (show && !q && r.classList.contains('kds-srow--sub')) {
+        if (show && !q && r.classList.contains('kds-srow--sub') && !r.classList.contains('is-off-outline')) {
           var fi = r.getAttribute('data-sl-row');
           var fv = RT.sl.folds ? RT.sl.folds[fi] : undefined;
           if (fv === undefined) { var fit = slData()[+fi]; fv = fit ? slIsStopped(fit) : false; }
@@ -5314,6 +5329,30 @@
       if (SLITEMS == null) SLITEMS = JSON.parse(JSON.stringify(SCREENS['list-clean-copy'].items || []));
       return SLITEMS;
     }
+    /* Остаток позиции из живого стоп-листа: нужен для показа значения в недоступной строке */
+    function slLiveRestOf(it, si) {
+      if (!it) return '';
+      var live = slLiveItems();
+      for (var k = 0; k < live.length; k++) {
+        if (live[k].name !== it.name) continue;
+        if (si != null) {
+          var want = (it.sizes && it.sizes[si]) ? it.sizes[si].s : '';
+          var sz = (live[k].sizes || []).filter(function (s) { return s.s === want; })[0];
+          if (!sz) return '';
+          return sz.stop ? '0' : (sz.rest != null ? String(sz.rest) : '');
+        }
+        if (live[k].stop) return '0';
+        if (live[k].rest != null) return String(live[k].rest);
+        /* Блюдо с размерами: общее поле показывает значение, если оно одинаковое у всех размеров */
+        if (live[k].sizes && live[k].sizes.length) {
+          var vals = live[k].sizes.map(function (s) { return s.stop ? '0' : (s.rest != null ? String(s.rest) : ''); });
+          var same = vals.every(function (v) { return v === vals[0]; });
+          return same ? vals[0] : '';
+        }
+        return '';
+      }
+      return '';
+    }
     /* Позиция уже в живом стоп-листе: блюдо целиком или его конкретный размер */
     function slLiveInStop(it, si) {
       if (!it) return false;
@@ -6442,22 +6481,6 @@
           /* Экран 6: выбор размера прямо в панели */
           var padSizeBtn = t.closest('[data-sl-pad-size]');
           if (padSizeBtn) { e.preventDefault(); slPadPick(padSizeBtn.getAttribute('data-sl-pad-size')); return; }
-          /* Крестик в поле панели — стереть значение и набрать новое */
-          var padClr = t.closest('[data-sl-pad-clear]');          if (padClr) {
-            e.preventDefault();
-            var pf = RT.view.querySelector('[data-sl-pad-val]');
-            var ri = RT.sl && RT.sl.padInp;
-            if (pf) pf.value = '';
-            /* Экран 6: значение живёт в панели, строку до «Закрыть» не трогаем */
-            if (RT.cfg && RT.cfg.flatSizes && RT.sl && RT.sl.padDish != null) { RT.sl.padDirty = true; slPadLive(); }
-            else if (ri) {
-              ri.value = '';
-              var rb = ri.closest('.ds-input');
-              if (rb) rb.classList.remove('ds-input--error');
-            }
-            slPadValidate();
-            return;
-          }
           /* Экран 7: тап по любому месту поля остатка (внутренние отступы, единица «шт»/«порц») —
              это тап по полю: фокусируем input, и панель ввода открывается тем же focusin */
           if (RT.cfg && RT.cfg.split) {
