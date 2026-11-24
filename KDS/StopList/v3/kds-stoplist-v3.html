@@ -1521,11 +1521,14 @@
      Одна анатомия у поля в строке и у поля ввода в цифровой панели */
   .kds-srow__val .ds-input__field, .kds-numpad__field .ds-input__field {
     font: 700 22px/28px 'Roboto', 'Helvetica Neue', Arial, sans-serif; letter-spacing: .25px; color: var(--kds-text); }
-  /* Подсказка «0» в поле остатка — того же цвета, что само значение (#fff).
-     В Disable (.is-off) остаётся прежний вид: серый текст Text/Disable */
+  /* Подсказка «0» — это ПЛЕЙСХОЛДЕР, а не значение: цвет Text/Disable (#9e9e9e),
+     размер и начертание прежние (22/28 700), чтобы «0» не выглядел мельче значения.
+     Раньше подсказка была белой, как само значение, и нельзя было понять,
+     введён 0 (полный стоп) или поле пустое. В Disable (.is-off) — прежний серый текст */
   .kds-view .kds-srow__val:not(.is-off) .ds-input__field::placeholder,
-  .kds-view .kds-numpad__field .ds-input__field::placeholder { color: var(--kds-text); opacity: 1; }
-  .kds-view .kds-srow__val:not(.is-off) .ds-input__field:focus::placeholder { color: var(--kds-text); }
+  .kds-view .kds-numpad__field .ds-input__field::placeholder { color: var(--ds-color-text-disable, #9e9e9e); opacity: 1; }
+  .kds-view .kds-srow__val:not(.is-off) .ds-input__field:focus::placeholder,
+  .kds-view .kds-numpad__field .ds-input__field:focus::placeholder { color: var(--ds-color-text-disable, #9e9e9e); }
   /* За скриншотом клавиатуры: показывать белый фон над полем */
   /* Экранная клавиатура — стандартная андроидная для планшета: четыре ряда клавиш 52,
      нижний ряд [?123] [,] [RU/EN] [пробел] [.] [↵]. Появляется по тапу в поле поиска:
