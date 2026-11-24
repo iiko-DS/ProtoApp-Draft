@@ -1206,11 +1206,14 @@
   .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow .kds-srow__top .kds-srow__val .ds-input__frame:hover,
   .kds-view.kds-view--dishbg .kds-slist .kds-sgrp--acc .kds-srow .kds-srow__top .kds-srow__val .ds-input__frame:focus-within {
     border-color: var(--kds-line) !important; }
-  /* Поле цифровой панели — всегда в состоянии Focus: акцентная обводка Input/Focus ДС.
+  /* Поле цифровой панели — по состояниям Input ДС, а не «акцент всегда»:
+     Default — рамка #616161 в покое, Focus — акцент, когда поле в фокусе.
      Ошибка важнее фокуса — красная рамка Input/Error */
   .kds-view .kds-numpad .kds-numpad__field .ds-input__frame,
   .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame,
-  .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame:hover,
+  .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame:hover {
+    border-color: var(--kds-line) !important; }
+  .kds-view .kds-numpad .kds-numpad__field .ds-input__frame:focus-within,
   .kds-view.kds-view--dishbg .kds-slist .kds-numpad .kds-numpad__field .ds-input__frame:focus-within {
     border-color: var(--kds-ic-accent) !important; }
   .kds-view .kds-numpad .kds-numpad__field.ds-input--error > .ds-input__frame,
@@ -1529,6 +1532,12 @@
   .kds-view .kds-numpad__field .ds-input__field::placeholder { color: var(--ds-color-text-disable, #9e9e9e); opacity: 1; }
   .kds-view .kds-srow__val:not(.is-off) .ds-input__field:focus::placeholder,
   .kds-view .kds-numpad__field .ds-input__field:focus::placeholder { color: var(--ds-color-text-disable, #9e9e9e); }
+  /* Подсказка цифровой панели — текст «Введите остаток», а не цифра: обычная
+     типографика подсказки (16/24 500), чтобы фраза не читалась как значение */
+  .kds-view .kds-numpad__field .ds-input__field::placeholder,
+  .kds-view .kds-numpad__field .ds-input__field:focus::placeholder {
+    font: 500 16px/24px 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: .25px; color: var(--kds-text-2); }
   /* За скриншотом клавиатуры: показывать белый фон над полем */
   /* Экранная клавиатура — стандартная андроидная для планшета: четыре ряда клавиш 52,
      нижний ряд [?123] [,] [RU/EN] [пробел] [.] [↵]. Появляется по тапу в поле поиска:
@@ -1606,8 +1615,10 @@
   .kds-numpad__label { font-size: 14px; line-height: 20px; letter-spacing: .25px; color: var(--kds-text); }
   .kds-numpad__field { flex: 1 1 auto; min-width: 0; }
   .kds-numpad__field .ds-input { width: 100%; }
-  /* поле в фокусе — акцентная обводка, как у Input M в состоянии Focus */
-  .kds-numpad__field .ds-input__frame { background: var(--kds-row); border-color: var(--kds-ic-accent); }
+  /* Поле панели — обычный Input ДС со своими состояниями: рамка Default в покое,
+     акцентная — только когда поле в фокусе (не «акцент навсегда») */
+  .kds-numpad__field .ds-input__frame { background: var(--kds-row); border-color: var(--kds-line); }
+  .kds-numpad__field .ds-input__frame:focus-within { border-color: var(--kds-ic-accent); }
   /* ошибка ввода — внутри панели, под полем: Support/Error text ДС */
   .kds-numpad__err { display: none; margin-top: var(--ds-space-1x, 4px);
     font-size: 16px; line-height: 24px; letter-spacing: .25px; color: var(--kds-ic-negative); }
@@ -2120,7 +2131,7 @@
           '<div class="ds-input__frame">' +
             '<div class="ds-input__content">' +
               '<input class="ds-input__field" type="text" inputmode="decimal" enterkeyhint="done"' +
-                ' autocomplete="off" spellcheck="false" placeholder="' + esc(ph == null ? '0' : ph) + '"' + attrs +
+                ' autocomplete="off" spellcheck="false" placeholder="' + esc(ph == null ? '' : ph) + '"' + attrs +
                 ' value="' + esc(val) + '" aria-label="' + (extra && extra.indexOf('data-sl-group') !== -1 ? 'Количество для всех размеров' : 'Количество') + '"' + da + '>' +
             '</div>' +
             (unitIn ? '<span class="kds-srow__unit kds-srow__unit--in">' + esc(unit || '') + '</span>' : '') +
@@ -3052,7 +3063,7 @@
                  когда по размерам значения разные — поле пустое с подсказкой «разные» */
               (rowOff
                 ? (it.offOutline
-                    ? slFieldHtml(i, null, slLiveRestOf(it, null), it.unit || 'шт', true, !!RT.cfg.noSteps, !!RT.cfg.noClear, '0', ' data-sl-group="' + i + '"')
+                    ? slFieldHtml(i, null, slLiveRestOf(it, null), it.unit || 'шт', true, !!RT.cfg.noSteps, !!RT.cfg.noClear, '', ' data-sl-group="' + i + '"')
                     : '')
                 : slGroupFieldHtml(it, i)) +
               (RT.cfg.rowAdd ? '</div>' : '') +
@@ -3298,7 +3309,9 @@
             '<div class="kds-numpad__label">Остаток</div>' +
             '<div class="ds-input ds-input--m kds-numpad__field">' +
               '<div class="ds-input__frame"><div class="ds-input__content">' +
-                '<input class="ds-input__field" type="text" inputmode="decimal" placeholder="0"' +
+                /* Подсказка пустого поля — текст «Введите остаток», а не цифра:
+                   «0» читался как проставленное значение, прочерк выглядел лишним */
+                '<input class="ds-input__field" type="text" inputmode="decimal" placeholder="Введите остаток"' +
                   ' autocomplete="off" spellcheck="false" data-sl-pad-val aria-label="Вводимое значение">' +
               '</div>' +
               '</div>' +
@@ -3354,9 +3367,10 @@
       var unit = it.unit || 'шт';
       var extra = ' data-sl-pane="1" data-sl-pane-key="' + key + '"' + (si == null && it.sizes && it.sizes.length ? ' data-sl-group="' + i + '"' : '');
       /* Та же строка ввода, что и в стоп-листе (Input ДС): один паттерн на обе колонки.
-         Пустое поле — подсказка «0»; у блюда с размерами, когда по размерам ввели разное,
-         подсказка «разные» — как поле-группа в остальных экранах */
-      var ph = '0';
+         Пока значение не ввели — поле просто пустое (без подсказки «0» или «—»:
+         «0» читался как проставленное значение, а прочерк в строке выглядел лишним).
+         У блюда с размерами, когда по размерам ввели разное, подсказка «разные» */
+      var ph = '';
       if (si == null && it.sizes && it.sizes.length) {
         var vals = it.sizes.map(function (sz, sj) {
           return (RT.sl.pane.vals && RT.sl.pane.vals[i + ':' + sj]) || '';
@@ -3535,7 +3549,7 @@
       var g = RT.view.querySelector('[data-sl-pane-key="' + i + '"]');
       if (g) {
         g.value = same ? vals[0] : '';
-        g.placeholder = same ? '0' : 'разные';
+        g.placeholder = same ? '' : 'разные';
       }
     }
     function slPaneAdd(key) {
@@ -6447,7 +6461,13 @@
       RT.tickId = setInterval(function () {
         if (!RT.view || document.hidden) return;
         var clock = RT.view.querySelector('[data-clock]');
-        if (clock) clock.textContent = nowHHMM();
+        /* Часы в шапке — HH:MM: пишем только когда минута сменилась.
+           Иначе каждую секунду — запись в DOM, за ней MutationObserver и полный
+           проход по документу ради иконок (лишняя работа в фоне) */
+        if (clock) {
+          var hhmm = nowHHMM();
+          if (clock.textContent !== hhmm) clock.textContent = hhmm;
+        }
         var list = RT.cfg && RT.cfg.orders;
         if (!list || !RT.shift) return;
         var moved = false;
@@ -6848,7 +6868,25 @@
       }
     }
     var slGlyphQ = false;
-    function slGlyphsSoon() {
+    function slGlyphsSoon(muts) {
+      /* Пересобираем иконки только если в изменениях реально участвовали .material-icons:
+         иначе любая запись текста (часы, счётчики) тянула полный проход по документу */
+      if (muts && muts.length) {
+        var touched = false;
+        for (var i = 0; i < muts.length && !touched; i++) {
+          var m = muts[i];
+          var t = m.target;
+          if (t && t.nodeType === 1 && t.classList && t.classList.contains('material-icons')) { touched = true; break; }
+          var nodes = [].concat(Array.prototype.slice.call(m.addedNodes || []), Array.prototype.slice.call(m.removedNodes || []));
+          for (var j = 0; j < nodes.length; j++) {
+            var n = nodes[j];
+            if (n.nodeType !== 1) continue;
+            if (n.classList && n.classList.contains('material-icons')) { touched = true; break; }
+            if (n.querySelector && n.querySelector('.material-icons')) { touched = true; break; }
+          }
+        }
+        if (!touched) return;
+      }
       if (slGlyphQ) return;
       slGlyphQ = true;
       requestAnimationFrame(function () { slGlyphQ = false; slGlyphs(document); });
