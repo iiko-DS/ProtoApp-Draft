@@ -2349,12 +2349,16 @@
     function slPadHide() {
       var padEl = RT.view && RT.view.querySelector('[data-sl-numpad]');
       if (padEl) padEl.hidden = true;
-      if (RT.sl) { RT.sl.padInp = null; RT.sl.padDish = null; RT.sl.padPick = null; }
+      if (RT.sl) { RT.sl.padInp = null; RT.sl.padDish = null; RT.sl.padPick = null; RT.sl.padDirty = false; }
     }
     /* Отказ от ввода: возвращаем значение, которое было до открытия панели,
-       и убираем ошибку — невалидное значение не должно остаться «текущим» */
+       и убираем ошибку — невалидное значение не должно остаться «текущим».
+       Живой ввод (slPadLive) пишет значение сразу в модель, поэтому при открытии
+       панели снимаем снимок позиции и восстанавливаем его при отказе */
     function slPadRevert() {
       var inp = RT.sl && RT.sl.padInp;
+      var dishIdx = RT.sl ? RT.sl.padDish : null;
+      var snap = RT.sl ? RT.sl.padSnapshot : null;
       if (inp) {
         inp.value = RT.sl.padOrig == null ? '' : RT.sl.padOrig;
         inp.__slDone = true;
@@ -2370,6 +2374,26 @@
         var errEl = padEl.querySelector('[data-sl-pad-err]');
         if (errEl) errEl.classList.remove('is-on');
       }
+      /* Живой ввод уже записал значение в модель — возвращаем снимок, сделанный при открытии */
+      if (snap && dishIdx != null) {
+        var itRev = slData()[dishIdx];
+        try {
+          var s0 = JSON.parse(snap);
+          if (itRev) {
+            itRev.stop = s0.stop; itRev.rest = s0.rest;
+            if (itRev.sizes && s0.sizes) {
+              itRev.sizes.forEach(function (sz, si) {
+                var q = s0.sizes[si];
+                if (q) { sz.stop = q.stop; sz.rest = q.rest; }
+              });
+            }
+          }
+        } catch (e) { /* снимок битый — ничего не восстанавливаем */ }
+        slPersist();
+        slRerender();
+        slPaneRender();
+      }
+      if (RT.sl) RT.sl.padSnapshot = null;
       slPadHide();
     }
     /* Esc — закрыть всё, что открыто: панель цифр, диалог подтверждения, попап */
@@ -4063,6 +4087,20 @@
           }
         }
       }
+      /* Шапка собирается вместе с экраном: на пустом списке кнопки «Выбрать все» и счётчика
+         «Выбрано: N» нет (slSelAllHtml для пустого списка отдаёт пустую строку). Появились
+         позиции (внесли из правой панели) — дорисовываем блок выбора, иначе массовый выбор
+         на этом экране недоступен до полной перерисовки */
+      if (slData().length && !RT.view.querySelector('[data-sl-selall]') && !RT.sl.addMode) {
+        var actEl = RT.view.querySelector('.kds-split__pane .kds-shead__act') || RT.view.querySelector('.kds-shead__act');
+        var btnsEl = actEl ? actEl.querySelector('.kds-shead__btns') : null;
+        if (btnsEl && slSelAllHtml(slData())) {
+          var leftEl = document.createElement('div');
+          leftEl.className = 'kds-shead__left';
+          leftEl.innerHTML = '<span class="kds-shead__n" data-sl-tb-n hidden>Выбрано: 0</span>' + slSelAllHtml(slData());
+          btnsEl.insertBefore(leftEl, btnsEl.firstChild);
+        }
+      }
       syncMass();
       applySlFilter();
       slSyncFoldAll();
@@ -4571,6 +4609,16 @@
             /* Панель ввода открыта из строки «Добавить в стоп-лист» —
                кнопка внесения нужна и здесь, не только в режиме внесения */
             if (padAddBtn) padAddBtn.hidden = !(RT.sl.addMode || RT.sl.padPane);
+            /* Снимок позиции — чтобы откат при невалидном вводе возвращал прежнее значение */
+            RT.sl.padSnapshot = (function () {
+              var itSnap = RT.sl.padDish != null ? slData()[RT.sl.padDish] : null;
+              if (!itSnap) return null;
+              return JSON.stringify({
+                stop: !!itSnap.stop, rest: itSnap.rest == null ? null : itSnap.rest,
+                sizes: (itSnap.sizes || []).map(function (sz) { return { stop: !!sz.stop, rest: sz.rest == null ? null : sz.rest }; })
+              });
+            })();
+            RT.sl.padDirty = false;
             padEl.hidden = false; RT.sl.padShownAt = Date.now(); slPadSync();
             /* Поле панели — рабочее: на десктопе фокус и выделение переходят в него,
                чтобы ввод с клавиатуры шёл туда, а не в поле строки под панелью */
