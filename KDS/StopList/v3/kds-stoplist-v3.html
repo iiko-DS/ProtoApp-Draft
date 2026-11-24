@@ -3471,6 +3471,12 @@
       if (szName != null) {
         if (!tgt) { tgt = { name: src.name, unit: src.unit || 'шт', sizes: [] }; items.push(tgt); }
         if (!tgt.sizes) tgt.sizes = [];
+        /* Полный размерный ряд блюда держим рядом (sizesAll) — по нему видно, внесены ли ВСЕ
+           размеры. Без этого частичное внесение (25 и 30 из 25/30/35) не отличалось от полного,
+           и в списке появлялась одна строка с подписью «Все размеры» */
+        if (!tgt.sizesAll && src.sizes && src.sizes.length) {
+          tgt.sizesAll = src.sizes.map(function (s) { return s.s; });
+        }
         var sz = null;
         for (var j = 0; j < tgt.sizes.length; j++) if (tgt.sizes[j].s === szName) { sz = tgt.sizes[j]; break; }
         if (!sz) { sz = { s: szName }; tgt.sizes.push(sz); }
@@ -3868,8 +3874,11 @@
        Как только хоть один размер отличается (или внесена только часть размеров) —
        показываем размеры отдельными строками */
     function slSizesUniform(it) {
-      if (!it || !it.sizes || it.sizes.length < 2) return true;
+      if (!it || !it.sizes || !it.sizes.length) return true;
+      /* Часть размеров не внесена (25 и 30 из 25/30/35) — это НЕ «все размеры»:
+         строка блюда с общей подписью здесь врала бы, показываем внесённые размеры */
       if (it.sizesAll && it.sizesAll.length > it.sizes.length) return false;
+      if (it.sizes.length < 2) return true;
       var v0 = null;
       for (var k = 0; k < it.sizes.length; k++) {
         var sz = it.sizes[k];
