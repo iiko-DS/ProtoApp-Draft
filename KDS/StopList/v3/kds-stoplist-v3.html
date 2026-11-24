@@ -980,14 +980,6 @@
   /* Полоса действий — на всю ширину области списка */
   .kds-shead { display: flex; align-items: center; gap: var(--ds-space-2x, 8px);
     width: 100%; flex-wrap: wrap; }
-  /* Итог массового действия — строкой под полосой: применено и пропущено.
-     Снекбаров в прототипе нет; строка держится до следующего выбора */
-  .kds-shead__res { flex: 1 1 100%; padding: 0 var(--ds-space-2x, 8px) 4px;
-    font: var(--ds-font-caption-l-12-normal-regular, 400 12px/16px 'Roboto');
-    letter-spacing: var(--ds-font-caption-l-12-normal-regular-spacing, .5px);
-    color: var(--kds-text-2); }
-  .kds-shead__res[hidden] { display: none; }
-  .kds-shead__res b { font-weight: 500; color: var(--kds-ic-negative); }
   /* Поле поиска — компонент Search ДС (.ds-search / __icon / __label / __right-icon / __clear):
      геометрию, отступы 12, зазор 8, радиус 12 и состояния берём у компонента,
      а цвета задаём через его же переменные значениями из палитры КДС */
@@ -3179,7 +3171,7 @@
                 '<button class="kds-btn-out kds-srow__unstop" type="button" data-sl-rowunstop="' + i + '" aria-label="Удалить из стоп-листа" title="Удалить из стоп-листа"' + ((!slRestricted(it) || it.excluded) ? ' disabled' : '') + '>' +
                   '<span class="material-icons">delete</span></button>' +
                 '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + i + '" aria-label="В стоп" title="В стоп"' + ((allStop || it.excluded) ? ' disabled' : '') + '>' +
-                  '<span class="material-icons">do_not_disturb_on</span></button>' +
+                  '<span class="material-icons">block</span></button>' +
               '</span>'
             : '') +
         '</div></div>';
@@ -3250,7 +3242,7 @@
                   '<button class="kds-btn-out kds-srow__unstop" type="button" data-sl-rowunstop="' + szKey + '" aria-label="Удалить из стоп-листа" title="Удалить из стоп-листа"' + ((!slRestricted(sz) || it.excluded) ? ' disabled' : '') + '>' +
                     '<span class="material-icons">delete</span></button>' +
                   '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + szKey + '" aria-label="В стоп" title="В стоп"' + ((sz.stop || it.excluded) ? ' disabled' : '') + '>' +
-                    '<span class="material-icons">do_not_disturb_on</span></button>' +
+                    '<span class="material-icons">block</span></button>' +
                 '</span>'
               : '') +
           '</div></div>';
@@ -3288,7 +3280,7 @@
                   '<button class="kds-btn-out kds-srow__unstop" type="button" data-sl-rowunstop="' + szKey + '" aria-label="Удалить из стоп-листа" title="Удалить из стоп-листа"' + ((!slRestricted(sz) || it.excluded) ? ' disabled' : '') + '>' +
                     '<span class="material-icons">delete</span></button>' +
                   '<button class="kds-btn-neg-out kds-srow__stop" type="button" data-sl-rowstop="' + szKey + '" aria-label="В стоп" title="В стоп"' + ((sz.stop || it.excluded) ? ' disabled' : '') + '>' +
-                    '<span class="material-icons">do_not_disturb_on</span></button>' +
+                    '<span class="material-icons">block</span></button>' +
                 '</span>'
               : '') +
           '</div></div>';
@@ -3629,9 +3621,6 @@
       var headBlock = (!RT.sl.addMode || cfg.multi)
         ? '<div class="kds-shead">' +
             '<div class="kds-shead__act">' + headBtns + '</div>' +
-            /* Итог массового действия: применено и пропущено — без снекбара,
-               чтобы часть массового действия не терялась незаметно (§5.7/§8) */
-            '<div class="kds-shead__res" data-sl-mass-res' + (RT.sl.massRes ? '' : ' hidden') + '>' + (RT.sl.massRes || '') + '</div>' +
           '</div>'
         : '';
       var rows = items.length
@@ -3691,18 +3680,6 @@
       RT.slBannerT = setTimeout(function () {
         b.style.display = 'none';
       }, 3000);
-    }
-    /* Итог массового действия — строкой в шапке полосы, без снекбара.
-       Показываем применённое и пропущенное, чтобы часть действия не терялась незаметно (§5.7/§8).
-       Держится до следующего выбора; title — полный список пропущенных с причиной */
-    function slMassRes(html, title) {
-      if (!RT.sl) return;
-      RT.sl.massRes = html || '';
-      var el = RT.view && RT.view.querySelector('[data-sl-mass-res]');
-      if (!el) return;
-      el.innerHTML = html || '';
-      el.hidden = !html;
-      el.title = html ? (title || '') : '';
     }
     function slChecked() {
       if (!RT.sl || !RT.sl.checks) return [];
@@ -4108,8 +4085,6 @@
        а отметка всех размеров отмечает и блюдо — состояние позиции всегда согласовано */
     function toggleSlCheck(key) {
       if (!RT.sl) return;
-      /* Новый выбор — старый итог массового действия больше не актуален */
-      slMassRes('');
       key = String(key);
       var i = +key.split(':')[0];
       var cur = slData()[i];
@@ -4189,8 +4164,6 @@
     /* «Выбрать все»: отметить видимые позиции; если выбор уже есть — снять его */
     function slSelectAll() {
       if (!RT.sl) return;
-      /* Новый выбор — старый итог массового действия больше не актуален */
-      slMassRes('');
       /* Та же кнопка — выход из выбора: подпись «Снять выбор» говорит сама за себя */
       if (slChecked().length) {
         RT.sl.checks = {};
@@ -4378,14 +4351,11 @@
            Счётчик «+N» — на кнопке возврата */
         if (addedN) RT.sl.added = (RT.sl.added || 0) + addedN;
         slRerender();
-        if (addedN) slMassRes('Добавлено в стоп-лист: ' + addedN);
         return;
       }
       if (k === 'stop') {
         /* Массовое «В стоп» идёт по ОТМЕЧЕННЫМ ключам: отмечен размер — стопим только его,
-           отмечено блюдо — всё блюдо. Позиция, которая уже в полном стопе, пропускается:
-           в итоге пишем, сколько применено и что пропущено (как на экране массового снятия) */
-        var done = 0, skipped = [];
+           отмечено блюдо — всё блюдо. Позиция, которая уже в полном стопе, просто пропускается */
         slCheckedKeys().forEach(function (key) {
           var p = String(key).split(':');
           var i = +p[0], si = p.length > 1 ? +p[1] : null;
@@ -4393,34 +4363,26 @@
           if (!it) return;
           if (si != null && it.sizes && it.sizes[si]) {
             var sz = it.sizes[si];
-            if (sz.stop) { skipped.push(it.name + ' ' + sz.s); return; }
+            if (sz.stop) return;
             sz.stop = true; sz.rest = '';
-            done++;
             return;
           }
           if (it.sizes && it.sizes.length) {
-            if (slIsStopped(it)) { skipped.push(it.name); return; }
+            if (slIsStopped(it)) return;
             it.sizes.forEach(function (s) { s.stop = true; s.rest = ''; });
-            done++;
           } else {
-            if (it.stop) { skipped.push(it.name); return; }
+            if (it.stop) return;
             it.stop = true; it.rest = '';
-            done++;
           }
         });
         RT.sl.checks = {};
         refreshSl();
-        /* Результат массового действия — строкой в шапке: применено + пропущено */
-        slMassRes('В полном стопе: ' + done + (skipped.length
-          ? ' · <b>пропущено: ' + skipped.length + '</b>'
-          : ''), skipped.length ? 'Пропущено: ' + skipped.join(', ') + ' — уже в полном стопе' : '');
         return;
       }
       if (k === 'clear') {
         /* Массовое снятие тоже идёт по отмеченным ключам: отмечен размер — снимаем ограничение
            только у него, отмечено блюдо — блюдо уходит из стоп-листа. Позиция без ограничения
-           пропускается и называется в итоге */
-        var done = 0, skipped = [];
+           просто пропускается */
         var removeAll = {}, touched = {};
         slCheckedKeys().forEach(function (key) {
           var p = String(key).split(':');
@@ -4430,15 +4392,13 @@
           if (si != null && it.sizes && it.sizes[si]) {
             if (removeAll[i]) return;                 /* блюдо уже уходит целиком — не считаем дважды */
             var sz = it.sizes[si];
-            if (!(sz.stop || sz.rest)) { skipped.push(it.name + ' ' + sz.s); return; }
+            if (!(sz.stop || sz.rest)) return;
             sz.stop = false; sz.rest = null;
             touched[i] = 1;
-            done++;
             return;
           }
-          if (!slRestricted(it)) { skipped.push(it.name); return; }
+          if (!slRestricted(it)) return;
           removeAll[i] = 1;
-          done++;
         });
         for (var n = items.length - 1; n >= 0; n--) {
           if (removeAll[n]) { items.splice(n, 1); continue; }
@@ -4455,9 +4415,6 @@
         RT.sl.checks = {};
         RT.sl.folds = {};
         refreshSl();
-        slMassRes('Удалено из стоп-листа: ' + done + (skipped.length
-          ? ' · <b>пропущено: ' + skipped.length + '</b>'
-          : ''), skipped.length ? 'Пропущено: ' + skipped.join(', ') + ' — не было ограничения' : '');
         return;
       }
     }
@@ -5479,7 +5436,7 @@
       cfg.noWork = true;                                   // «В заказах: N» не показываем ни на одном экране
       RT.cfg = cfg; RT.M = {}; RT.hist = []; RT.filter = null; RT.shift = true; RT.asm = !!cfg.asm;
       RT.sl = (cfg.mode === 'slist' || cfg.mode === 'add')
-        ? { addMode: cfg.mode === 'add', added: 0, checks: {}, q: '', folds: {}, levels: {}, massRes: '', kbLayer: 'ru', kbLang: 'ru', kbShift: false }
+        ? { addMode: cfg.mode === 'add', added: 0, checks: {}, q: '', folds: {}, levels: {}, kbLayer: 'ru', kbLang: 'ru', kbShift: false }
         : null;
       if (RT.sl && cfg.sel) cfg.sel.forEach(function (i) { RT.sl.checks[i] = true; });
       /* Уровень ограничения по умолчанию — «Размеры»; состояние может задать другой (§5.4) */
