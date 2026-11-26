@@ -462,11 +462,9 @@
   /* Справа у отменённой строки — не кнопка, а просто крестик без подложки */
   .kds-row__ico--x { color: var(--kds-ic-negative); }
   .kds-row__ico--x .material-icons { font-size: 24px; }
-  /* ── Отменённый заказ (красная полоса): строки красные БЕЗ зачёркивания и без
-        подложки у кнопки, группа — наоборот: зачёркнута вся (как в макете) ── */
+  /* ── Отменённый заказ (красная полоса): красное — только название блюда и
+        изменённые модификаторы; зачёркивания в макете нет ── */
   .kds-card--cancelled .kds-row--neg .kds-row__name { color: var(--kds-ic-negative); text-decoration: none; }
-  .kds-card--cancelled .kds-kit--neg .kds-kit__name,
-  .kds-card--cancelled .kds-kit--neg .kds-kit__comp { text-decoration: line-through; }
   /* Звезда (stars) — признак «новое блюдо» (уже занята в продукте). У набора/группы звезды нет;
      точный вектор компонента stars из Figma (кольцо входит в глиф) — слот и цвет */
   .kds-star { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
@@ -545,6 +543,8 @@
   .kds-cset__row, .kds-kit__nrow { display: flex; align-items: center; gap: var(--ds-space-2x, 8px); min-width: 0; }
   .kds-seen-sub { display: none; }
   .kds-kit--neg .kds-kit__name { color: var(--kds-ic-negative); }
+  /* Название блюда в отменённом заказе — красное (модификаторы красные только изменённые) */
+  .kds-card--cancelled .kds-kit__name { color: var(--kds-ic-negative); }
   .kds-kit__comp { display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 var(--ds-space-3x, 12px) 0 var(--ds-space-4x, 16px);
     font-size: 18px; line-height: 24px; letter-spacing: .5px; color: #fff; }
   .kds-kit__comp--plain { padding-left: 41px; }
@@ -962,6 +962,19 @@
   .kds-view--light .kds-course:active { background: #d6d6d6; }
   .kds-view--light .kds-card--cancelled .kds-btn,
   .kds-view--light .kds-card--cancelled .kds-kit__btn { background: transparent; }
+  /* Состояния важнее обычного цвета текста: отменённое блюдо и изменённый модификатор —
+     красные (правило светлой темы выше красит всё в Text default) */
+  .kds-view--light .kds-row--neg .kds-row__name,
+  .kds-view--light .kds-card--cancelled .kds-kit__name,
+  .kds-view--light .kds-kit--neg .kds-kit__name,
+  .kds-view--light .kds-kit__comp--neg { color: var(--kds-ic-negative); }
+  /* Заголовок диалога «Очистить стоп-лист?» — был белым литералом, на белом попапе не виден */
+  .kds-view--light .kds-sconfirm__t { color: var(--kds-text); }
+  /* Иконки шапки в статусах «Приготовлен/Отменён» в тёмной теме белые (#ffffff) —
+     на светлом фоне их не видно: берём обычный Icon neutral, как у остальных карточек */
+  .kds-view--light .kds-card--wico .kds-hmeta__item .material-icons,
+  .kds-view--light .kds-card--wico .kds-hmeta__item .kds-svg-ico,
+  .kds-view--light .kds-card--wico .kds-card__rest .material-icons { color: var(--kds-ic-neutral); }
   /* Обводка outlined-кнопок — Button/Border color outlined #bdbdbd (в тёмной теме #9e9e9e) */
   .kds-view--light .kds-btn-out,
   .kds-view--light .kds-btn-neutral { border-color: #bdbdbd; }
