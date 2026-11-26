@@ -193,6 +193,7 @@
     --kds-row: #212121;           /* строка блюда / коробка группы */
     --kds-btn: #3b3b43;           /* фон кнопок-плашек — как у кнопок экрана 1 (Button_Check, Figma 10585:7549) */
     --kds-line: #616161;          /* рамки, разделители */
+    --kds-dash: #e0e0e0;          /* пунктир над комментарием — Comment/Border color */
     --kds-divider: var(--ds-palette-neutral-800, #424242);  /* разделитель строк в панелях — Neutral/800 из ДС, тише рамки */
     --kds-off-outline: #424242;   /* контур недоступной строки (State/Disabled в панелях) */
     /* Всплывающие поверхности — меню/настройки, диалог клавиатуры, попапы строк.
@@ -318,7 +319,9 @@
 
   /* ── Полоса скролла (Figma: Scroll 1280×12 на y=728, ползунок 8 px r8 #333) ── */
   .kds-scrollstrip { position: absolute; left: 0; right: 0; bottom: 56px; height: 12px; padding: 2px; z-index: 6; }
-  .kds-scrollstrip__thumb { height: 8px; border-radius: 8px; background: #333333; }
+  /* Скролл — компонент Scroll ДС по кадру: ползунок #616161 в обеих темах,
+     у светлой ещё и дорожка #bdbdbd (Scroll/Background), 8 px внутри 12 */
+  .kds-scrollstrip__thumb { height: 8px; border-radius: 8px; background: #616161; }
 
   /* ── Футер (Figma: Footer 1280×56, pad 4/16, space-between; текст Medium 16/24 ls .5;
         фон — var(--kds-bg) (#121212), нижние углы скруглены рамкой кадра) ── */
@@ -428,7 +431,7 @@
 
   /* Комментарий — пунктирная линия сверху, иконка 16 + текст 16/24 */
   .kds-comment { display: flex; align-items: flex-start; gap: 6px; padding: 1px 0 0; margin-top: 0; }
-  .kds-comment__inner { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 6px; border-top: 1px dashed var(--kds-line); padding: 4px 0 0; min-height: 28px; }
+  .kds-comment__inner { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 6px; border-top: 1px dashed var(--kds-dash, #e0e0e0); padding: 4px 0 0; min-height: 28px; }
   .kds-comment .material-icons { font-size: 16px; color: var(--kds-ic-warning); flex: 0 0 auto; padding-top: 4px; }
   .kds-comment__text { font-size: 16px; line-height: 24px; letter-spacing: .5px; color: var(--kds-text-3); padding-top: 0; }
 
@@ -860,7 +863,7 @@
   .kds-footer__btn:disabled:active { background: transparent; }
   /* ползунок полосы скролла можно тянуть */
   .kds-scrollstrip__thumb { cursor: grab; touch-action: none; }
-  .kds-scrollstrip__thumb:active { cursor: grabbing; background: #4d4d4d; }
+  .kds-scrollstrip__thumb:active { cursor: grabbing; background: #424242; }
 
   /* ── Светлая тема — палитра из кадра «Светлая тема» (Figma 10629:58713, тот же файл,
         что и тёмная: 7014:4550). Значения взяты из переменных этого кадра:
@@ -874,6 +877,7 @@
     --kds-line: #e0e0e0; --kds-text: #333333; --kds-text-2: #616161; --kds-text-3: #616161;
     --kds-ic-neutral: #757575;
     --kds-divider: #eeeeee;
+    --kds-dash: #9e9e9e;          /* Comment/Border color в светлой теме */
     --kds-off-outline: #bdbdbd;   /* Button/Border color outlined */
     --kds-pop: #ffffff; --kds-pop-shadow: 0 12px 40px rgba(0, 0, 0, .16);
     --kds-ic-accent: #448aff; --kds-btn-accent: #3969d5;
@@ -898,7 +902,10 @@
   .kds-view--light .kds-footer__total, .kds-view--light .kds-footer__btn,
   .kds-view--light .kds-poster__list li b, .kds-view--light .kds-card__num { color: #333333; }
   .kds-view--light .kds-footer__btn .material-icons { color: #333333; }
-  .kds-view--light .kds-card__head { border-color: #e0e0e0; }
+  /* Внутренний контур шапки уже задан тенью через --kds-line (#e0e0e0 в светлой теме),
+     поэтому border-color не переопределяем: иначе затирается верхняя полоса статуса
+     (border-top: 8px solid var(--st-band)) — в кадре 10629:58713 она цветная */
+  .kds-view--light .kds-card__head { border-color: var(--st-band, #bdbdbd); border-top-color: var(--st-band, #bdbdbd); }
   .kds-view--light .kds-menu { background: #ffffff; border-color: #e0e0e0; }
   .kds-view--light .kds-menu__title, .kds-view--light .kds-menu__item, .kds-view--light .kds-set__label,
   .kds-view--light .kds-set__title, .kds-view--light .kds-scale__val { color: #333333; }
@@ -983,6 +990,9 @@
   /* Скролл списка — Scroll ДС: ползунок #616161 (Scroll/Knob color) на дорожке #bdbdbd */
   .kds-view--light .kds-sbody-scroll { --ds-color-scroll-default-knob-color: #616161; }
   .kds-view--light .kds-scrollstrip__thumb { background: #616161; }
+  /* Дорожка скролла — Scroll/Background #bdbdbd (в тёмной теме дорожки нет) */
+  .kds-view--light .kds-scrollstrip { background: #bdbdbd; background-clip: content-box; border-radius: 8px; }
+  .kds-view--light .kds-vscroll__track { background: #bdbdbd; }
 
   /* ── Стоп-лист (PB-8111): отдельный интерфейс вместо экрана заказов, каркас тот же ── */
   /* Область стоп-листа — уже кадра: по 80 слева и справа, низ — над футером (56) с зазором 16 */
